@@ -1,0 +1,11 @@
+{
+  "name": "@dream-makeover/frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "React frontend for Dream Makeover POS",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "echo \"No frontend tests yet\" && exit 0",
+    "build": "echo \"No frontend build yet\" && exit 0"
+  }
+}

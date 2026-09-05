@@ -1,0 +1,11 @@
+{
+  "name": "@dream-makeover/backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NestJS backend for Dream Makeover POS",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "echo \"No backend tests yet\" && exit 0",
+    "build": "echo \"No backend build yet\" && exit 0"
+  }
+}
