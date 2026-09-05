@@ -5,7 +5,28 @@
   "description": "NestJS backend for Dream Makeover POS",
   "scripts": {
     "type-check": "tsc --noEmit",
-    "test": "echo \"No backend tests yet\" && exit 0",
-    "build": "tsc"
+    "test": "jest --config jest.config.js",
+    "build": "tsc -p tsconfig.build.json",
+    "start:dev": "nest start --watch"
+  },
+  "dependencies": {
+    "@nestjs/common": "^12.0.1",
+    "@nestjs/core": "^12.0.1",
+    "@nestjs/platform-express": "^12.0.1",
+    "@nestjs/typeorm": "^12.0.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "dotenv": "^17.4.2",
+    "mysql2": "^3.24.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "typeorm": "^0.3.31"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^12.0.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.4.1",
+    "jest": "^30.5.1",
+    "ts-jest": "^29.4.12"
   }
 }
