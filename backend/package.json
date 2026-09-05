@@ -5,7 +5,7 @@
   "description": "NestJS backend for Dream Makeover POS",
   "scripts": {
     "type-check": "tsc --noEmit",
-    "test": "jest --config jest.config.js",
+    "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js --config jest.config.js",
     "build": "tsc -p tsconfig.build.json",
     "start:dev": "nest start --watch"
   },
