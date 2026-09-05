@@ -6,6 +6,6 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "test": "echo \"No frontend tests yet\" && exit 0",
-    "build": "echo \"No frontend build yet\" && exit 0"
+    "build": "echo \"Frontend build will be configured when React is introduced\" && exit 0"
   }
 }

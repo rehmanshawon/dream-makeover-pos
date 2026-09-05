@@ -6,6 +6,6 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "test": "echo \"No desktop tests yet\" && exit 0",
-    "build": "echo \"No desktop build yet\" && exit 0"
+    "build": "tsc"
   }
 }

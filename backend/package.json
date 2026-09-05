@@ -6,6 +6,6 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "test": "echo \"No backend tests yet\" && exit 0",
-    "build": "echo \"No backend build yet\" && exit 0"
+    "build": "tsc"
   }
 }
