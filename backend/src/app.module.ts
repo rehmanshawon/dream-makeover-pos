@@ -5,6 +5,7 @@ import { CustomersModule } from './customers/customers.module';
 import { ProductsModule } from './products/products.module';
 import { SalonServicesModule } from './services/salon-services.module';
 import { TransactionsModule } from './transactions/transactions.module';
+import { UsersModule } from './users/users.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot(databaseConfig),
@@ -12,6 +13,7 @@ import { TransactionsModule } from './transactions/transactions.module';
     ProductsModule,
     SalonServicesModule,
     TransactionsModule,
+    UsersModule,
   ],
 })
 export class AppModule {}
