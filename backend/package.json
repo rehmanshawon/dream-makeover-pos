@@ -6,8 +6,11 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js --config jest.config.js",
+    "test:integration": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js --config jest.config.js --testRegex='.*\\.integration\\.spec\\.ts$' --runInBand",
     "build": "tsc -p tsconfig.build.json",
-    "start:dev": "nest start --watch"
+    "start:dev": "nest start --watch",
+    "migration:run": "typeorm-ts-node-commonjs -d src/config/typeorm-cli.config.ts migration:run",
+    "migration:revert": "typeorm-ts-node-commonjs -d src/config/typeorm-cli.config.ts migration:revert"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",
@@ -27,6 +30,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^26.4.1",
     "jest": "^30.5.1",
-    "ts-jest": "^29.4.12"
+    "ts-jest": "^29.4.12",
+    "ts-node": "^10.9.2"
   }
 }
