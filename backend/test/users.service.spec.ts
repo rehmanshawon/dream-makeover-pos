@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { UsersService } from '../src/users/users.service';
 import { User } from '../src/users/user.entity';
 import { CreateUserDto } from '../src/users/dto/create-user.dto';
@@ -32,36 +32,30 @@ describe('UsersService', () => {
     repository = module.get(getRepositoryToken(User));
   });
 
-  it('should hash password before saving', async () => {
+  it('should call setPassword and save hashed user', async () => {
+    const user = new User();
+    user.id = 'uuid-user-1';
+    user.username = 'admin';
+    user.displayName = 'Admin User';
+    user.role = UserRole.ADMIN;
+    user.active = true;
+
     jest.spyOn(repository, 'findOne').mockResolvedValue(null);
-
-    const plainPassword = 'secret123';
-
-    const createdUser = {
-      id: 'uuid-user-1',
-      username: 'admin',
-      passwordHash: await bcrypt.hash(plainPassword, 10),
-      displayName: 'Admin User',
-      role: UserRole.ADMIN,
-      active: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as User;
-
-    jest.spyOn(repository, 'create').mockReturnValue(createdUser);
-    jest.spyOn(repository, 'save').mockResolvedValue(createdUser);
+    jest.spyOn(repository, 'create').mockReturnValue(user);
+    jest.spyOn(user, 'setPassword').mockResolvedValue(undefined);
+    jest.spyOn(repository, 'save').mockResolvedValue(user);
 
     const dto: CreateUserDto = {
       username: 'admin',
-      password: plainPassword,
+      password: 'secret123',
       displayName: 'Admin User',
       role: UserRole.ADMIN,
     };
 
     const result = await service.create(dto);
 
-    expect(result).toBeDefined();
-    expect(createdUser.passwordHash).not.toBe(plainPassword);
+    expect(user.setPassword).toHaveBeenCalledWith('secret123');
+    expect(result.username).toBe('admin');
   });
 
   it('should verify correct password', async () => {

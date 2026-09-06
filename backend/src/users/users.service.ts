@@ -1,13 +1,10 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
-import { UserRole } from './user-role.enum';
-
-const BCRYPT_SALT_ROUNDS = 10;
 
 @Injectable()
 export class UsersService {
@@ -25,15 +22,14 @@ export class UsersService {
       throw new ConflictException('Username already exists');
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
-
     const user = this.userRepository.create({
       username: dto.username,
-      passwordHash,
       displayName: dto.displayName,
       role: dto.role,
       active: dto.active ?? true,
     });
+
+    await user.setPassword(dto.password);
 
     const saved = await this.userRepository.save(user);
     return this.toResponseDto(saved);
