@@ -3,20 +3,21 @@ import { CustomerRewardTier } from '../src/customers/customer-reward-tier.enum';
 import { describe, expect, it } from '@jest/globals';
 
 describe('Customer entity', () => {
-  it('should have a UUID primary key', () => {
+  it('should have an undefined ID before database insertion', () => {
     const customer = new Customer();
     expect(customer.id).toBeUndefined();
   });
 
-  it('should default to Silver tier', () => {
+  it('should initialize with the Silver reward tier by default', () => {
     const customer = new Customer();
-    customer.rewardTier = CustomerRewardTier.SILVER;
+    // We expect the class to apply this automatically now
     expect(customer.rewardTier).toBe(CustomerRewardTier.SILVER);
   });
 
-  it('should store lifetime spend in minor units', () => {
+  it('should initialize with 0 lifetime spend and 0 reward points', () => {
     const customer = new Customer();
-    customer.lifetimeSpendMinor = 570000;
-    expect(customer.lifetimeSpendMinor).toBe(570000);
+    // Testing the default initialization logic
+    expect(customer.lifetimeSpendMinor).toBe(0);
+    expect(customer.rewardPoints).toBe(0);
   });
 });
