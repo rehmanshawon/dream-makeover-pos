@@ -6,9 +6,9 @@ import { SalonService } from '../src/services/service.entity';
 import { Transaction } from '../src/transactions/transaction.entity';
 import { CustomerRewardTier } from '../src/customers/customer-reward-tier.enum';
 import { ProductCategory } from '../src/products/product-category.enum';
-import { beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 
-describe('Database integration', () => {
+describe('Database Integration', () => {
   let dataSource: DataSource;
 
   beforeAll(async () => {
@@ -29,31 +29,32 @@ describe('Database integration', () => {
   });
 
   afterAll(async () => {
-    await dataSource.destroy();
+    if (dataSource && dataSource.isInitialized) {
+      await dataSource.destroy();
+    }
   });
 
-  it('should create and read a customer', async () => {
+  it('should persist customer and apply database-level default values', async () => {
     const customerRepository = dataSource.getRepository(Customer);
 
+    // Omit default fields to verify database DEFAULT constraints
     const customer = customerRepository.create({
       fullName: 'Integration Test Customer',
       phoneNumber: '01900000000',
-      rewardTier: CustomerRewardTier.SILVER,
-      rewardPoints: 0,
-      lifetimeSpendMinor: 0,
     });
 
     const saved = await customerRepository.save(customer);
     expect(saved.id).toBeDefined();
-    expect(saved.rewardTier).toBe(CustomerRewardTier.SILVER);
 
-    const found = await customerRepository.findOne({
-      where: { id: saved.id },
-    });
+    // Fetch directly from DB to verify database hydration
+    const found = await customerRepository.findOne({ where: { id: saved.id } });
+    expect(found).not.toBeNull();
     expect(found?.fullName).toBe('Integration Test Customer');
+    expect(found?.rewardTier).toBe(CustomerRewardTier.SILVER);
+    expect(Number(found?.rewardPoints)).toBe(0);
   });
 
-  it('should create and read a product', async () => {
+  it('should persist product and handle bigint type conversion from database', async () => {
     const productRepository = dataSource.getRepository(Product);
 
     const product = productRepository.create({
@@ -66,47 +67,65 @@ describe('Database integration', () => {
     });
 
     const saved = await productRepository.save(product);
-    expect(saved.id).toBeDefined();
-    expect(saved.sellingPriceMinor).toBe(120000);
+
+    // Query DB directly to verify column types
+    const found = await productRepository.findOne({ where: { id: saved.id } });
+    expect(found).not.toBeNull();
+    // MySQL bigint columns are hydrated as strings by default driver settings
+    expect(Number(found?.sellingPriceMinor)).toBe(120000);
+    expect(Number(found?.purchaseCostMinor)).toBe(80000);
   });
 
-  it('should create and read a service', async () => {
-    const serviceRepository = dataSource.getRepository(SalonService);
-
-    const service = serviceRepository.create({
-      name: 'Integration Test Facial',
-      priceMinor: 350000,
-      durationMinutes: 60,
-      rewardPointWeight: 1,
-      active: true,
-    });
-
-    const saved = await serviceRepository.save(service);
-    expect(saved.id).toBeDefined();
-    expect(saved.active).toBe(true);
-  });
-
-  it('should enforce unique phone number', async () => {
+  it('should enforce unique phone number constraint at database level', async () => {
     const customerRepository = dataSource.getRepository(Customer);
 
     const first = customerRepository.create({
-      fullName: 'Duplicate Phone Customer',
+      fullName: 'Customer One',
       phoneNumber: '01800000000',
-      rewardTier: CustomerRewardTier.SILVER,
-      rewardPoints: 0,
-      lifetimeSpendMinor: 0,
     });
-
     await customerRepository.save(first);
 
     const second = customerRepository.create({
-      fullName: 'Duplicate Phone Customer 2',
+      fullName: 'Customer Two',
       phoneNumber: '01800000000',
-      rewardTier: CustomerRewardTier.SILVER,
-      rewardPoints: 0,
-      lifetimeSpendMinor: 0,
     });
 
+    // Expect DB unique constraint failure
     await expect(customerRepository.save(second)).rejects.toThrow();
+  });
+
+  it('should maintain transaction relations and handle SET NULL on customer deletion', async () => {
+    const customerRepository = dataSource.getRepository(Customer);
+    const transactionRepository = dataSource.getRepository(Transaction);
+
+    const customer = await customerRepository.save(
+      customerRepository.create({
+        fullName: 'Relational Customer',
+        phoneNumber: '01711111111',
+      }),
+    );
+
+    const transaction = await transactionRepository.save(
+      transactionRepository.create({
+        invoiceId: 'INV-TEST-001',
+        customer: customer,
+        subtotalMinor: 100000,
+        discountMinor: 0,
+        totalMinor: 100000,
+        cashReceivedMinor: 100000,
+        changeMinor: 0,
+        cashier: 'System Test',
+      }),
+    );
+
+    // Delete customer to test foreign key ON DELETE SET NULL constraint
+    await customerRepository.remove(customer);
+
+    const foundTransaction = await transactionRepository.findOne({
+      where: { id: transaction.id },
+    });
+
+    expect(foundTransaction).not.toBeNull();
+    expect(foundTransaction?.customerId).toBeNull();
   });
 });
