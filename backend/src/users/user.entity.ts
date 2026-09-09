@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { UserRole } from './user-role.enum';
+
 import * as bcrypt from 'bcryptjs';
 
 @Entity('users')
