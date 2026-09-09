@@ -21,18 +21,20 @@ export class Transaction {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
+  // Initialized to null for in-memory unit tests
   @Column({ name: 'customer_id', type: 'char', length: 36, nullable: true })
-  customerId: string | null;
+  customerId: string | null = null;
 
   @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'customer_id' })
-  customer: Customer | null;
+  customer: Customer | null = null;
 
   @Column({ name: 'subtotal_minor', type: 'bigint', unsigned: true })
   subtotalMinor: number;
 
+  // Property initialized with default value
   @Column({ name: 'discount_minor', type: 'bigint', unsigned: true, default: 0 })
-  discountMinor: number;
+  discountMinor: number = 0;
 
   @Column({ name: 'total_minor', type: 'bigint', unsigned: true })
   totalMinor: number;
@@ -45,4 +47,19 @@ export class Transaction {
 
   @Column({ type: 'varchar', length: 100 })
   cashier: string;
+
+  /**
+   * Calculates net total amount after discount in minor units.
+   */
+  calculateTotal(): number {
+    return Math.max(0, (this.subtotalMinor || 0) - (this.discountMinor || 0));
+  }
+
+  /**
+   * Calculates change due based on cash received.
+   */
+  calculateChange(): number {
+    const total = this.totalMinor ?? this.calculateTotal();
+    return Math.max(0, (this.cashReceivedMinor || 0) - total);
+  }
 }
