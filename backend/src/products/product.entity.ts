@@ -23,11 +23,12 @@ export class Product {
   })
   category: ProductCategory;
 
+  // Added property initializers (= 0) so pure unit tests see default values
   @Column({ type: 'int', unsigned: true, default: 0 })
-  stock: number;
+  stock: number = 0;
 
   @Column({ name: 'purchase_cost_minor', type: 'bigint', unsigned: true, default: 0 })
-  purchaseCostMinor: number;
+  purchaseCostMinor: number = 0;
 
   @Column({ name: 'selling_price_minor', type: 'bigint', unsigned: true })
   sellingPriceMinor: number;
@@ -38,11 +39,26 @@ export class Product {
     unsigned: true,
     default: 0,
   })
-  minimumStockThreshold: number;
+  minimumStockThreshold: number = 0;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  // Domain behavior method suitable for unit testing
+  decrementStock(quantity: number): void {
+    if (quantity <= 0) {
+      throw new Error('Quantity must be greater than zero');
+    }
+    if (this.stock < quantity) {
+      throw new Error('Insufficient stock');
+    }
+    this.stock -= quantity;
+  }
+
+  isLowStock(): boolean {
+    return this.stock <= this.minimumStockThreshold;
+  }
 }
