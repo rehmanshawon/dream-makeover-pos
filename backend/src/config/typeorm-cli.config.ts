@@ -4,6 +4,7 @@ import { Customer } from '../customers/customer.entity';
 import { Product } from '../products/product.entity';
 import { SalonService } from '../services/service.entity';
 import { Transaction } from '../transactions/transaction.entity';
+import { TransactionItem } from '../transactions/transaction-item.entity';
 import { migrations } from '../database/migrations';
 
 export default new DataSource({
@@ -13,7 +14,7 @@ export default new DataSource({
   username: process.env.DB_USERNAME ?? 'dream_app',
   password: process.env.DB_PASSWORD ?? 'change_me',
   database: process.env.DB_DATABASE ?? 'dream_makeover',
-  entities: [Customer, Product, SalonService, Transaction],
+  entities: [Customer, Product, SalonService, Transaction, TransactionItem],
   migrations,
   synchronize: false,
   logging: true,
