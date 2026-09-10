@@ -83,8 +83,8 @@ describe('ProductsService', () => {
           name: 'Matte Lipstick',
           category: ProductCategory.COSMETICS,
           stock: 15,
-          purchaseCostMinor: '50000', // TypeORM bigint often returns string
-          sellingPriceMinor: '90000',
+          purchaseCostMinor: 50000,
+          sellingPriceMinor: 90000,
           minimumStockThreshold: 3,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -99,7 +99,7 @@ describe('ProductsService', () => {
         order: { category: 'ASC', name: 'ASC' },
       });
       expect(result).toHaveLength(1);
-      // Verify toResponseDto string-to-number conversion
+      // bigintTransformer guarantees entity exposes numbers
       expect(result[0].purchaseCostMinor).toBe(50000);
       expect(result[0].sellingPriceMinor).toBe(90000);
     });

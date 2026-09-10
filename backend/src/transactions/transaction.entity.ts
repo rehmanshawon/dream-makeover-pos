@@ -85,17 +85,25 @@ export class Transaction {
   items: TransactionItem[];
 
   /**
-   * Calculates net total amount after discount in minor units.
+   * Calculates total amount after discount.
+   *
+   * Returns subtotal minus discount. Discount defaults to 0.
    */
   calculateTotal(): number {
-    return Math.max(0, (this.subtotalMinor || 0) - (this.discountMinor || 0));
+    const discount = this.discountMinor ?? 0;
+    return this.subtotalMinor - discount;
   }
 
   /**
-   * Calculates change due based on cash received.
+   * Calculates change owed to the customer.
+   *
+   * Uses the explicitly set totalMinor when available. Falls back to
+   * calculateTotal() when the total has not been computed yet.
+   * Never returns a negative number — insufficient cash yields 0 change.
    */
   calculateChange(): number {
     const total = this.totalMinor ?? this.calculateTotal();
-    return Math.max(0, (this.cashReceivedMinor || 0) - total);
+    const change = this.cashReceivedMinor - total;
+    return change > 0 ? change : 0;
   }
 }

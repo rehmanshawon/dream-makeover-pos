@@ -100,14 +100,14 @@ describe('SalonServicesService', () => {
       const mockServices = [
         {
           id: 'uuid-1',
-          name: 'Hair Cut',
-          priceMinor: '100000', // TypeORM bigint return string handling
-          durationMinutes: 30,
+          name: 'Bridal Facial',
+          priceMinor: 100000,
+          durationMinutes: 60,
           rewardPointWeight: 1,
           active: true,
           createdAt: new Date(),
           updatedAt: new Date(),
-        } as unknown as SalonService,
+        } as SalonService,
       ];
 
       repository.find.mockResolvedValue(mockServices);
