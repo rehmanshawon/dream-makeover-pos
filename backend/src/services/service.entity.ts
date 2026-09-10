@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { bigintTransformer } from '../common/transformers/bigint.transformer';
 
 @Entity('services')
 export class SalonService {
@@ -14,8 +15,14 @@ export class SalonService {
   @Column({ type: 'varchar', length: 150 })
   name: string;
 
-  @Column({ name: 'price_minor', type: 'bigint', unsigned: true })
-  priceMinor: number;
+  @Column({
+    name: 'price_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
+  priceMinor: number = 0;
 
   @Column({ name: 'duration_minutes', type: 'int', unsigned: true })
   durationMinutes: number;
@@ -26,10 +33,10 @@ export class SalonService {
     unsigned: true,
     default: 1,
   })
-  rewardPointWeight: number;
+  rewardPointWeight: number = 1;
 
   @Column({ type: 'boolean', default: true })
-  active: boolean;
+  active: boolean = true;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

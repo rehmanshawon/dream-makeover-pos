@@ -56,7 +56,7 @@ export class CustomersService {
       phoneNumber: customer.phoneNumber,
       rewardTier: customer.rewardTier,
       rewardPoints: customer.rewardPoints,
-      lifetimeSpendMinor: Number(customer.lifetimeSpendMinor),
+      lifetimeSpendMinor: customer.lifetimeSpendMinor,
       createdAt: customer.createdAt,
       updatedAt: customer.updatedAt,
     };

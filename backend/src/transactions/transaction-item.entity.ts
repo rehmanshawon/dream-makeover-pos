@@ -9,6 +9,7 @@ import {
 import type { Transaction } from './transaction.entity';
 import { Product } from '../products/product.entity';
 import { SalonService } from '../services/service.entity';
+import { bigintTransformer } from '../common/transformers/bigint.transformer';
 
 export enum TransactionItemType {
   PRODUCT = 'PRODUCT',
@@ -54,11 +55,23 @@ export class TransactionItem {
   @Column({ type: 'int', unsigned: true })
   quantity: number;
 
-  @Column({ name: 'unit_price_minor', type: 'bigint', unsigned: true })
-  unitPriceMinor: number;
+  @Column({
+    name: 'unit_price_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
+  unitPriceMinor: number = 0;
 
-  @Column({ name: 'total_price_minor', type: 'bigint', unsigned: true })
-  totalPriceMinor: number;
+  @Column({
+    name: 'total_price_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
+  totalPriceMinor: number = 0;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

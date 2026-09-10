@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsNotEmpty, IsUUID, Min } from 'class-validator';
+import { IsEnum, IsInt, IsUUID, Min } from 'class-validator';
 import { TransactionItemType } from '../../transaction-item.entity';
 
 export class CheckoutItemDto {

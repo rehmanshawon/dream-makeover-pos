@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ProductCategory } from './product-category.enum';
+import { bigintTransformer } from '../common/transformers/bigint.transformer';
 
 @Entity('products')
 export class Product {
@@ -27,11 +28,23 @@ export class Product {
   @Column({ type: 'int', unsigned: true, default: 0 })
   stock: number = 0;
 
-  @Column({ name: 'purchase_cost_minor', type: 'bigint', unsigned: true, default: 0 })
+  @Column({
+    name: 'purchase_cost_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
   purchaseCostMinor: number = 0;
 
-  @Column({ name: 'selling_price_minor', type: 'bigint', unsigned: true })
-  sellingPriceMinor: number;
+  @Column({
+    name: 'selling_price_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
+  sellingPriceMinor: number = 0;
 
   @Column({
     name: 'minimum_stock_threshold',

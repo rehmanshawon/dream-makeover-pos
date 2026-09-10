@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { CustomerRewardTier } from './customer-reward-tier.enum';
+import { bigintTransformer } from '../common/transformers/bigint.transformer';
 
 @Entity('customers')
 export class Customer {
@@ -39,6 +40,7 @@ export class Customer {
     type: 'bigint',
     unsigned: true,
     default: 0,
+    transformer: bigintTransformer,
   })
   lifetimeSpendMinor: number = 0;
 

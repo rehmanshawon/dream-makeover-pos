@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Customer } from '../customers/customer.entity';
 import { TransactionItem } from './transaction-item.entity';
+import { bigintTransformer } from '../common/transformers/bigint.transformer';
 
 @Entity('transactions')
 export class Transaction {
@@ -31,21 +32,51 @@ export class Transaction {
   @JoinColumn({ name: 'customer_id' })
   customer: Customer | null = null;
 
-  @Column({ name: 'subtotal_minor', type: 'bigint', unsigned: true })
-  subtotalMinor: number;
+  @Column({
+    name: 'subtotal_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
+  subtotalMinor: number = 0;
 
   // Property initialized with default value
-  @Column({ name: 'discount_minor', type: 'bigint', unsigned: true, default: 0 })
+  @Column({
+    name: 'discount_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
   discountMinor: number = 0;
 
-  @Column({ name: 'total_minor', type: 'bigint', unsigned: true })
-  totalMinor: number;
+  @Column({
+    name: 'total_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
+  totalMinor: number = 0;
 
-  @Column({ name: 'cash_received_minor', type: 'bigint', unsigned: true })
-  cashReceivedMinor: number;
+  @Column({
+    name: 'cash_received_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
+  cashReceivedMinor: number = 0;
 
-  @Column({ name: 'change_minor', type: 'bigint', unsigned: true })
-  changeMinor: number;
+  @Column({
+    name: 'change_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
+  changeMinor: number = 0;
 
   @Column({ type: 'varchar', length: 100 })
   cashier: string;

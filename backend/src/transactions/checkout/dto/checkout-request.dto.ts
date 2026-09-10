@@ -1,13 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  IsArray,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsUUID,
-  Min,
-  ValidateNested,
-} from 'class-validator';
+import { IsArray, IsInt, IsOptional, IsUUID, Min, ValidateNested } from 'class-validator';
 import { CheckoutItemDto } from './checkout-item.dto';
 
 export class CheckoutRequestDto {

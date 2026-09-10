@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+
+import { DataSource } from 'typeorm';
 import { Transaction } from '../transaction.entity';
 import { TransactionItem, TransactionItemType } from '../transaction-item.entity';
 import { Product } from '../../products/product.entity';
@@ -11,17 +11,7 @@ import { CheckoutResponseDto, CheckoutItemResponseDto } from './dto/checkout-res
 
 @Injectable()
 export class CheckoutService {
-  constructor(
-    private readonly dataSource: DataSource,
-    @InjectRepository(Product)
-    private readonly productRepository: Repository<Product>,
-    @InjectRepository(SalonService)
-    private readonly serviceRepository: Repository<SalonService>,
-    @InjectRepository(Customer)
-    private readonly customerRepository: Repository<Customer>,
-    @InjectRepository(Transaction)
-    private readonly transactionRepository: Repository<Transaction>,
-  ) {}
+  constructor(private readonly dataSource: DataSource) {}
 
   async checkout(dto: CheckoutRequestDto, cashierName: string): Promise<CheckoutResponseDto> {
     if (!dto.items || dto.items.length === 0) {
@@ -187,7 +177,7 @@ export class CheckoutService {
         changeMinor,
         items: itemResponses,
         loyaltyPointsEarned,
-        newRewardTier,
+        ...(newRewardTier === undefined ? {} : { newRewardTier }),
       };
     });
   }

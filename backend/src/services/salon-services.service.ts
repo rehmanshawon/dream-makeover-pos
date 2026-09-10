@@ -52,7 +52,7 @@ export class SalonServicesService {
     return {
       id: service.id,
       name: service.name,
-      priceMinor: Number(service.priceMinor),
+      priceMinor: service.priceMinor,
       durationMinutes: service.durationMinutes,
       rewardPointWeight: service.rewardPointWeight,
       active: service.active,
