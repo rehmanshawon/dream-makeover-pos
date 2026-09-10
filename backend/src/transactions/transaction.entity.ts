@@ -5,9 +5,11 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Customer } from '../customers/customer.entity';
+import { TransactionItem } from './transaction-item.entity';
 
 @Entity('transactions')
 export class Transaction {
@@ -47,6 +49,9 @@ export class Transaction {
 
   @Column({ type: 'varchar', length: 100 })
   cashier: string;
+
+  @OneToMany(() => TransactionItem, (item) => item.transaction)
+  items: TransactionItem[];
 
   /**
    * Calculates net total amount after discount in minor units.

@@ -7,6 +7,7 @@ import { SalonServicesModule } from './services/salon-services.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { CheckoutModule } from './transactions/checkout/checkout.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot(databaseConfig),
@@ -16,6 +17,7 @@ import { AuthModule } from './auth/auth.module';
     TransactionsModule,
     UsersModule,
     AuthModule,
+    CheckoutModule,
   ],
 })
 export class AppModule {}

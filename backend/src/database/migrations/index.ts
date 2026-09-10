@@ -3,6 +3,7 @@ import { CreateProductsTable1700000000001 } from './1700000000001-CreateProducts
 import { CreateServicesTable1700000000002 } from './1700000000002-CreateServicesTable';
 import { CreateTransactionsTable1700000000003 } from './1700000000003-CreateTransactionsTable';
 import { CreateUsersTable1700000000004 } from './1700000000004-CreateUsersTable';
+import { CreateTransactionItemsTable1700000000005 } from './1700000000005-CreateTransactionItemsTable';
 
 export const migrations = [
   CreateCustomersTable1700000000000,
@@ -10,4 +11,5 @@ export const migrations = [
   CreateServicesTable1700000000002,
   CreateTransactionsTable1700000000003,
   CreateUsersTable1700000000004,
+  CreateTransactionItemsTable1700000000005,
 ];
