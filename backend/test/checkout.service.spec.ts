@@ -10,6 +10,7 @@ import { Customer } from '../src/customers/customer.entity';
 import { CustomerRewardTier } from '../src/customers/customer-reward-tier.enum';
 import { CheckoutRequestDto } from '../src/transactions/checkout/dto/checkout-request.dto';
 import { TransactionItemType } from '../src/transactions/transaction-item.entity';
+import { describe, beforeEach, it, jest, expect } from '@jest/globals';
 
 describe('CheckoutService', () => {
   let service: CheckoutService;
@@ -109,6 +110,7 @@ describe('CheckoutService', () => {
         { itemType: TransactionItemType.PRODUCT, itemId: 'p1', quantity: 2 },
         { itemType: TransactionItemType.SERVICE, itemId: 's1', quantity: 1 },
       ],
+      customerId: 'c1',
       discountMinor: 1000,
       cashReceivedMinor: 70000,
     };

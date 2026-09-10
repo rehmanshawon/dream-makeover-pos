@@ -4,6 +4,7 @@ import { Customer } from '../src/customers/customer.entity';
 import { Product } from '../src/products/product.entity';
 import { SalonService } from '../src/services/service.entity';
 import { Transaction } from '../src/transactions/transaction.entity';
+import { TransactionItem } from '../src/transactions/transaction-item.entity';
 import { CustomerRewardTier } from '../src/customers/customer-reward-tier.enum';
 import { ProductCategory } from '../src/products/product-category.enum';
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
@@ -19,7 +20,7 @@ describe('Database Integration', () => {
       username: process.env.DB_USERNAME ?? 'dream_app',
       password: process.env.DB_PASSWORD ?? 'change_me',
       database: process.env.DB_DATABASE ?? 'dream_makeover_test',
-      entities: [Customer, Product, SalonService, Transaction],
+      entities: [Customer, Product, SalonService, Transaction, TransactionItem],
       synchronize: true,
       dropSchema: true,
       logging: false,

@@ -6,7 +6,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Transaction } from './transaction.entity';
+import type { Transaction } from './transaction.entity';
 import { Product } from '../products/product.entity';
 import { SalonService } from '../services/service.entity';
 

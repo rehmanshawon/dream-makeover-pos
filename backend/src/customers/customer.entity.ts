@@ -48,3 +48,5 @@ export class Customer {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }
+
+export { CustomerRewardTier };
