@@ -23,7 +23,7 @@ export class TransactionItem {
   @Column({ name: 'transaction_id', type: 'char', length: 36 })
   transactionId: string;
 
-  @ManyToOne(() => Transaction, { onDelete: 'CASCADE' })
+  @ManyToOne('Transaction', 'items', { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'transaction_id' })
   transaction: Transaction;
 
