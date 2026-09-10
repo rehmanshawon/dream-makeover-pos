@@ -51,7 +51,6 @@ export class CheckoutService {
           await productRepo.save(product);
 
           const item = itemRepo.create({
-            transaction: null as any, // will set later
             productId: product.id,
             serviceId: null,
             itemType: TransactionItemType.PRODUCT,
@@ -82,7 +81,6 @@ export class CheckoutService {
           subtotalMinor += lineTotal;
 
           const item = itemRepo.create({
-            transaction: null as any,
             productId: null,
             serviceId: service.id,
             itemType: TransactionItemType.SERVICE,

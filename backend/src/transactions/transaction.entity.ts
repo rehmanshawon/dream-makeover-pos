@@ -5,11 +5,9 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Customer } from '../customers/customer.entity';
-import { TransactionItem } from './transaction-item.entity';
 import { bigintTransformer } from '../common/transformers/bigint.transformer';
 
 @Entity('transactions')
@@ -24,7 +22,6 @@ export class Transaction {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  // Initialized to null for in-memory unit tests
   @Column({ name: 'customer_id', type: 'char', length: 36, nullable: true })
   customerId: string | null = null;
 
@@ -36,12 +33,10 @@ export class Transaction {
     name: 'subtotal_minor',
     type: 'bigint',
     unsigned: true,
-    default: 0,
     transformer: bigintTransformer,
   })
-  subtotalMinor: number = 0;
+  subtotalMinor: number;
 
-  // Property initialized with default value
   @Column({
     name: 'discount_minor',
     type: 'bigint',
@@ -55,39 +50,32 @@ export class Transaction {
     name: 'total_minor',
     type: 'bigint',
     unsigned: true,
-    default: 0,
     transformer: bigintTransformer,
   })
-  totalMinor: number = 0;
+  totalMinor: number;
 
   @Column({
     name: 'cash_received_minor',
     type: 'bigint',
     unsigned: true,
-    default: 0,
     transformer: bigintTransformer,
   })
-  cashReceivedMinor: number = 0;
+  cashReceivedMinor: number;
 
   @Column({
     name: 'change_minor',
     type: 'bigint',
     unsigned: true,
-    default: 0,
     transformer: bigintTransformer,
   })
-  changeMinor: number = 0;
+  changeMinor: number;
 
   @Column({ type: 'varchar', length: 100 })
   cashier: string;
 
-  @OneToMany(() => TransactionItem, (item) => item.transaction)
-  items: TransactionItem[];
-
   /**
-   * Calculates total amount after discount.
-   *
-   * Returns subtotal minus discount. Discount defaults to 0.
+   * Calculates total after discount. Falls back to subtotal when discount
+   * is not set.
    */
   calculateTotal(): number {
     const discount = this.discountMinor ?? 0;
@@ -95,11 +83,9 @@ export class Transaction {
   }
 
   /**
-   * Calculates change owed to the customer.
-   *
-   * Uses the explicitly set totalMinor when available. Falls back to
-   * calculateTotal() when the total has not been computed yet.
-   * Never returns a negative number — insufficient cash yields 0 change.
+   * Calculates change owed to the customer. Uses the explicitly computed
+   * totalMinor when present; otherwise computes it. Never returns a
+   * negative number.
    */
   calculateChange(): number {
     const total = this.totalMinor ?? this.calculateTotal();

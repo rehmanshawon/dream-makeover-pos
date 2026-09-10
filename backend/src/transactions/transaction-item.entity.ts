@@ -6,7 +6,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import type { Transaction } from './transaction.entity';
+import { Transaction } from './transaction.entity';
 import { Product } from '../products/product.entity';
 import { SalonService } from '../services/service.entity';
 import { bigintTransformer } from '../common/transformers/bigint.transformer';
@@ -24,7 +24,7 @@ export class TransactionItem {
   @Column({ name: 'transaction_id', type: 'char', length: 36 })
   transactionId: string;
 
-  @ManyToOne('Transaction', 'items', { onDelete: 'CASCADE' })
+  @ManyToOne(() => Transaction, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'transaction_id' })
   transaction: Transaction;
 
@@ -59,19 +59,17 @@ export class TransactionItem {
     name: 'unit_price_minor',
     type: 'bigint',
     unsigned: true,
-    default: 0,
     transformer: bigintTransformer,
   })
-  unitPriceMinor: number = 0;
+  unitPriceMinor: number;
 
   @Column({
     name: 'total_price_minor',
     type: 'bigint',
     unsigned: true,
-    default: 0,
     transformer: bigintTransformer,
   })
-  totalPriceMinor: number = 0;
+  totalPriceMinor: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

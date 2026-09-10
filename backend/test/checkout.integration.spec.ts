@@ -175,10 +175,14 @@ describe('Checkout (integration)', () => {
     const transactionRepo = dataSource.getRepository(Transaction);
     const savedTransaction = await transactionRepo.findOne({
       where: { id: response.body.transactionId },
-      relations: ['items'],
     });
     expect(savedTransaction).toBeDefined();
-    expect(savedTransaction?.items).toHaveLength(2);
+
+    const itemRepo = dataSource.getRepository(TransactionItem);
+    const items = await itemRepo.find({
+      where: { transactionId: response.body.transactionId },
+    });
+    expect(items).toHaveLength(2);
   });
 
   it('should roll back when stock is insufficient', async () => {
