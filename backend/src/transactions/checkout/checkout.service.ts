@@ -55,7 +55,6 @@ export class CheckoutService {
           const lineTotal = product.sellingPriceMinor * itemDto.quantity;
           subtotalMinor += lineTotal;
 
-          // Decrement stock
           product.stock -= itemDto.quantity;
           await productRepo.save(product);
 
@@ -78,40 +77,7 @@ export class CheckoutService {
             unitPriceMinor: product.sellingPriceMinor,
             totalPriceMinor: lineTotal,
           });
-        } else {
-          // SERVICE
-          const service = await serviceRepo.findOne({
-            where: { id: itemDto.itemId, active: true },
-          });
-          if (!service) {
-            throw new NotFoundException(`Service not found or inactive: ${itemDto.itemId}`);
-          }
-
-          const lineTotal = service.priceMinor * itemDto.quantity;
-          subtotalMinor += lineTotal;
-
-          const item = itemRepo.create({
-            productId: null,
-            serviceId: service.id,
-            packageId: null,
-            itemType: TransactionItemType.SERVICE,
-            itemName: service.name,
-            quantity: itemDto.quantity,
-            unitPriceMinor: service.priceMinor,
-            totalPriceMinor: lineTotal,
-          });
-          itemsToSave.push(item);
-
-          itemResponses.push({
-            itemType: TransactionItemType.SERVICE,
-            itemName: service.name,
-            quantity: itemDto.quantity,
-            unitPriceMinor: service.priceMinor,
-            totalPriceMinor: lineTotal,
-          });
-        }
-        // PACKAGE
-        if (itemDto.itemType === TransactionItemType.PACKAGE) {
+        } else if (itemDto.itemType === TransactionItemType.PACKAGE) {
           const pkg = await packageRepo.findOne({
             where: { id: itemDto.itemId, active: true },
           });
@@ -165,6 +131,37 @@ export class CheckoutService {
             itemName: pkg.name,
             quantity: itemDto.quantity,
             unitPriceMinor: pkg.packagePriceMinor,
+            totalPriceMinor: lineTotal,
+          });
+        } else {
+          // SERVICE
+          const service = await serviceRepo.findOne({
+            where: { id: itemDto.itemId, active: true },
+          });
+          if (!service) {
+            throw new NotFoundException(`Service not found or inactive: ${itemDto.itemId}`);
+          }
+
+          const lineTotal = service.priceMinor * itemDto.quantity;
+          subtotalMinor += lineTotal;
+
+          const item = itemRepo.create({
+            productId: null,
+            serviceId: service.id,
+            packageId: null,
+            itemType: TransactionItemType.SERVICE,
+            itemName: service.name,
+            quantity: itemDto.quantity,
+            unitPriceMinor: service.priceMinor,
+            totalPriceMinor: lineTotal,
+          });
+          itemsToSave.push(item);
+
+          itemResponses.push({
+            itemType: TransactionItemType.SERVICE,
+            itemName: service.name,
+            quantity: itemDto.quantity,
+            unitPriceMinor: service.priceMinor,
             totalPriceMinor: lineTotal,
           });
         }
