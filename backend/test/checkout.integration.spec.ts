@@ -16,6 +16,7 @@ import { ProductCategory } from '../src/products/product-category.enum';
 import { SalonService } from '../src/services/service.entity';
 import { Transaction } from '../src/transactions/transaction.entity';
 import { TransactionItem, TransactionItemType } from '../src/transactions/transaction-item.entity';
+import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
 
 describe('Checkout (integration)', () => {
   let app: INestApplication;
@@ -28,20 +29,9 @@ describe('Checkout (integration)', () => {
   let customer: Customer;
 
   beforeAll(async () => {
-    dataSource = new DataSource({
-      type: 'mysql',
-      host: process.env.DB_HOST ?? '127.0.0.1',
-      port: Number(process.env.DB_PORT ?? 3306),
-      username: process.env.DB_USERNAME ?? 'dream_app',
-      password: process.env.DB_PASSWORD ?? 'change_me',
-      database: process.env.DB_DATABASE ?? 'dream_makeover_test',
-      entities: [Customer, Product, SalonService, Transaction, TransactionItem, User],
-      synchronize: true,
-      dropSchema: true,
-      logging: false,
-    });
+    dataSource = await createTestDataSource();
 
-    await dataSource.initialize();
+    // await dataSource.initialize(); // Already initialized in createTestDataSource()
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -81,13 +71,7 @@ describe('Checkout (integration)', () => {
 
   beforeEach(async () => {
     // Clean tables between tests to keep isolation
-    await dataSource.query('SET FOREIGN_KEY_CHECKS = 0');
-    await dataSource.query('TRUNCATE TABLE transaction_items');
-    await dataSource.query('TRUNCATE TABLE transactions');
-    await dataSource.query('TRUNCATE TABLE products');
-    await dataSource.query('TRUNCATE TABLE services');
-    await dataSource.query('TRUNCATE TABLE customers');
-    await dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
+    await truncateAllTables(dataSource);
 
     const productRepo = dataSource.getRepository(Product);
     product = await productRepo.save(

@@ -9,11 +9,7 @@ import { User } from '../src/users/user.entity';
 import { UserRole } from '../src/users/user-role.enum';
 import * as bcrypt from 'bcryptjs';
 import { describe, beforeAll, afterAll, it, expect } from '@jest/globals';
-import { Customer } from '../src/customers/customer.entity';
-import { Product } from '../src/products/product.entity';
-import { SalonService } from '../src/services/service.entity';
-import { Transaction } from '../src/transactions/transaction.entity';
-import { TransactionItem } from '../src/transactions/transaction-item.entity';
+import { createTestDataSource } from './helpers/test-data-source';
 
 describe('RBAC (integration)', () => {
   let app: INestApplication;
@@ -24,20 +20,9 @@ describe('RBAC (integration)', () => {
 
   beforeAll(async () => {
     // Create test database connection with synchronize
-    dataSource = new DataSource({
-      type: 'mysql',
-      host: process.env.DB_HOST ?? '127.0.0.1',
-      port: Number(process.env.DB_PORT ?? 3306),
-      username: process.env.DB_USERNAME ?? 'dream_app',
-      password: process.env.DB_PASSWORD ?? 'change_me',
-      database: process.env.DB_DATABASE ?? 'dream_makeover_test',
-      entities: [Customer, Product, SalonService, Transaction, TransactionItem, User],
-      synchronize: true,
-      dropSchema: true,
-      logging: false,
-    });
+    dataSource = await createTestDataSource();
 
-    await dataSource.initialize();
+    // await dataSource.initialize(); // Already initialized in createTestDataSource()
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],

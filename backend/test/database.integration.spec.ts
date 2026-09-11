@@ -1,5 +1,5 @@
-import 'dotenv/config';
 import { DataSource } from 'typeorm';
+import { describe, beforeAll, afterAll, beforeEach, it, expect } from '@jest/globals';
 import { Customer } from '../src/customers/customer.entity';
 import { Product } from '../src/products/product.entity';
 import { SalonService } from '../src/services/service.entity';
@@ -7,26 +7,17 @@ import { Transaction } from '../src/transactions/transaction.entity';
 import { TransactionItem } from '../src/transactions/transaction-item.entity';
 import { CustomerRewardTier } from '../src/customers/customer-reward-tier.enum';
 import { ProductCategory } from '../src/products/product-category.enum';
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
 
 describe('Database Integration', () => {
   let dataSource: DataSource;
 
   beforeAll(async () => {
-    dataSource = new DataSource({
-      type: 'mysql',
-      host: process.env.DB_HOST ?? '127.0.0.1',
-      port: Number(process.env.DB_PORT ?? 3306),
-      username: process.env.DB_USERNAME ?? 'dream_app',
-      password: process.env.DB_PASSWORD ?? 'change_me',
-      database: process.env.DB_DATABASE ?? 'dream_makeover_test',
-      entities: [Customer, Product, SalonService, Transaction, TransactionItem],
-      synchronize: true,
-      dropSchema: true,
-      logging: false,
-    });
+    dataSource = await createTestDataSource();
+  });
 
-    await dataSource.initialize();
+  beforeEach(async () => {
+    await truncateAllTables(dataSource);
   });
 
   afterAll(async () => {
@@ -36,97 +27,102 @@ describe('Database Integration', () => {
   });
 
   it('should persist customer and apply database-level default values', async () => {
-    const customerRepository = dataSource.getRepository(Customer);
-
-    // Omit default fields to verify database DEFAULT constraints
-    const customer = customerRepository.create({
-      fullName: 'Integration Test Customer',
+    const repo = dataSource.getRepository(Customer);
+    const customer = repo.create({
+      fullName: 'Integration Customer',
       phoneNumber: '01900000000',
     });
+    const saved = await repo.save(customer);
 
-    const saved = await customerRepository.save(customer);
     expect(saved.id).toBeDefined();
 
-    // Fetch directly from DB to verify database hydration
-    const found = await customerRepository.findOne({ where: { id: saved.id } });
-    expect(found).not.toBeNull();
-    expect(found?.fullName).toBe('Integration Test Customer');
-    expect(found?.rewardTier).toBe(CustomerRewardTier.SILVER);
-    expect(Number(found?.rewardPoints)).toBe(0);
+    const reloaded = await repo.findOne({ where: { id: saved.id } });
+    expect(reloaded?.rewardTier).toBe(CustomerRewardTier.SILVER);
+    expect(reloaded?.rewardPoints).toBe(0);
+    expect(reloaded?.lifetimeSpendMinor).toBe(0);
+    // Explicitly assert the transformer ran: DB returns string, entity returns number
+    expect(typeof reloaded?.lifetimeSpendMinor).toBe('number');
   });
 
   it('should persist product and handle bigint type conversion from database', async () => {
-    const productRepository = dataSource.getRepository(Product);
+    const repo = dataSource.getRepository(Product);
+    const saved = await repo.save(
+      repo.create({
+        name: 'Integration Lipstick',
+        category: ProductCategory.COSMETICS,
+        stock: 10,
+        purchaseCostMinor: 80000,
+        sellingPriceMinor: 120000,
+        minimumStockThreshold: 3,
+      }),
+    );
 
-    const product = productRepository.create({
-      name: 'Integration Test Lipstick',
-      category: ProductCategory.COSMETICS,
-      stock: 10,
-      purchaseCostMinor: 80000,
-      sellingPriceMinor: 120000,
-      minimumStockThreshold: 3,
-    });
-
-    const saved = await productRepository.save(product);
-
-    // Query DB directly to verify column types
-    const found = await productRepository.findOne({ where: { id: saved.id } });
-    expect(found).not.toBeNull();
-    // MySQL bigint columns are hydrated as strings by default driver settings
-    expect(Number(found?.sellingPriceMinor)).toBe(120000);
-    expect(Number(found?.purchaseCostMinor)).toBe(80000);
+    const reloaded = await repo.findOne({ where: { id: saved.id } });
+    expect(reloaded?.sellingPriceMinor).toBe(120000);
+    expect(typeof reloaded?.sellingPriceMinor).toBe('number');
   });
 
   it('should enforce unique phone number constraint at database level', async () => {
-    const customerRepository = dataSource.getRepository(Customer);
+    const repo = dataSource.getRepository(Customer);
 
-    const first = customerRepository.create({
-      fullName: 'Customer One',
-      phoneNumber: '01800000000',
-    });
-    await customerRepository.save(first);
+    await repo.save(repo.create({ fullName: 'First', phoneNumber: '01700000000' }));
 
-    const second = customerRepository.create({
-      fullName: 'Customer Two',
-      phoneNumber: '01800000000',
-    });
-
-    // Expect DB unique constraint failure
-    await expect(customerRepository.save(second)).rejects.toThrow();
+    await expect(
+      repo.save(repo.create({ fullName: 'Second', phoneNumber: '01700000000' })),
+    ).rejects.toThrow();
   });
 
   it('should maintain transaction relations and handle SET NULL on customer deletion', async () => {
-    const customerRepository = dataSource.getRepository(Customer);
-    const transactionRepository = dataSource.getRepository(Transaction);
+    const customerRepo = dataSource.getRepository(Customer);
+    const txRepo = dataSource.getRepository(Transaction);
+    const itemRepo = dataSource.getRepository(TransactionItem);
+    const productRepo = dataSource.getRepository(Product);
 
-    const customer = await customerRepository.save(
-      customerRepository.create({
-        fullName: 'Relational Customer',
-        phoneNumber: '01711111111',
+    const customer = await customerRepo.save(
+      customerRepo.create({ fullName: 'Will Be Deleted', phoneNumber: '01600000001' }),
+    );
+
+    const product = await productRepo.save(
+      productRepo.create({
+        name: 'Linked Product',
+        category: ProductCategory.COSMETICS,
+        stock: 10,
+        purchaseCostMinor: 50000,
+        sellingPriceMinor: 80000,
+        minimumStockThreshold: 1,
       }),
     );
 
-    const transaction = await transactionRepository.save(
-      transactionRepository.create({
-        invoiceId: 'INV-TEST-001',
-        customer: customer,
-        subtotalMinor: 100000,
+    const tx = await txRepo.save(
+      txRepo.create({
+        invoiceId: 'INV-DB-TEST-1',
+        customerId: customer.id,
+        subtotalMinor: 80000,
         discountMinor: 0,
-        totalMinor: 100000,
+        totalMinor: 80000,
         cashReceivedMinor: 100000,
-        changeMinor: 0,
-        cashier: 'System Test',
+        changeMinor: 20000,
+        cashier: 'test',
       }),
     );
 
-    // Delete customer to test foreign key ON DELETE SET NULL constraint
-    await customerRepository.remove(customer);
+    await itemRepo.save(
+      itemRepo.create({
+        transactionId: tx.id,
+        productId: product.id,
+        serviceId: null,
+        itemType: 'PRODUCT',
+        itemName: 'Linked Product',
+        quantity: 1,
+        unitPriceMinor: 80000,
+        totalPriceMinor: 80000,
+      }),
+    );
 
-    const foundTransaction = await transactionRepository.findOne({
-      where: { id: transaction.id },
-    });
+    await customerRepo.delete(customer.id);
 
-    expect(foundTransaction).not.toBeNull();
-    expect(foundTransaction?.customerId).toBeNull();
+    const reloaded = await txRepo.findOne({ where: { id: tx.id } });
+    expect(reloaded).toBeDefined();
+    expect(reloaded?.customerId).toBeNull();
   });
 });
