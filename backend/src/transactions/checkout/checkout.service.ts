@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { Transaction } from '../transaction.entity';
 import { TransactionItem, TransactionItemType } from '../transaction-item.entity';
 import { Product } from '../../products/product.entity';
@@ -9,20 +9,12 @@ import { Customer, CustomerRewardTier } from '../../customers/customer.entity';
 import { CheckoutRequestDto } from './dto/checkout-request.dto';
 import { CheckoutResponseDto, CheckoutItemResponseDto } from './dto/checkout-response.dto';
 import { InvoiceNumberService } from '../invoice-number.service';
-import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class CheckoutService {
   constructor(
     private readonly dataSource: DataSource,
-    @InjectRepository(Product)
-    private readonly productRepository: Repository<Product>,
-    @InjectRepository(SalonService)
-    private readonly serviceRepository: Repository<SalonService>,
-    @InjectRepository(Customer)
-    private readonly customerRepository: Repository<Customer>,
-    @InjectRepository(Transaction)
-    private readonly transactionRepository: Repository<Transaction>,
+
     private readonly invoiceNumberService: InvoiceNumberService,
   ) {}
 

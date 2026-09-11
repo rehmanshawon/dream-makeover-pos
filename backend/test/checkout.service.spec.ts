@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
+
 import { DataSource } from 'typeorm';
 import { CheckoutService } from '../src/transactions/checkout/checkout.service';
 import { Transaction } from '../src/transactions/transaction.entity';
@@ -11,6 +11,7 @@ import { CustomerRewardTier } from '../src/customers/customer-reward-tier.enum';
 import { CheckoutRequestDto } from '../src/transactions/checkout/dto/checkout-request.dto';
 import { TransactionItemType } from '../src/transactions/transaction-item.entity';
 import { describe, beforeEach, it, jest, expect } from '@jest/globals';
+import { InvoiceNumberService } from '../src/transactions/invoice-number.service';
 
 describe('CheckoutService', () => {
   let service: CheckoutService;
@@ -20,6 +21,7 @@ describe('CheckoutService', () => {
   let customerRepo: any;
   let transactionRepo: any;
   let itemRepo: any;
+  let invoiceNumberService: InvoiceNumberService;
 
   beforeEach(async () => {
     const mockManager = {
@@ -29,6 +31,7 @@ describe('CheckoutService', () => {
         if (entity === Customer) return customerRepo;
         if (entity === Transaction) return transactionRepo;
         if (entity === TransactionItem) return itemRepo;
+        throw new Error(`Unexpected entity in test: ${entity.name}`);
       }),
     };
 
@@ -57,15 +60,15 @@ describe('CheckoutService', () => {
       save: jest.fn(),
     };
 
+    invoiceNumberService = {
+      next: jest.fn().mockResolvedValue('DM-20260911-0001'),
+    } as unknown as InvoiceNumberService;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CheckoutService,
         { provide: DataSource, useValue: dataSource },
-        { provide: getRepositoryToken(Product), useValue: productRepo },
-        { provide: getRepositoryToken(SalonService), useValue: serviceRepo },
-        { provide: getRepositoryToken(Customer), useValue: customerRepo },
-        { provide: getRepositoryToken(Transaction), useValue: transactionRepo },
-        { provide: getRepositoryToken(TransactionItem), useValue: itemRepo },
+        { provide: InvoiceNumberService, useValue: invoiceNumberService },
       ],
     }).compile();
 
