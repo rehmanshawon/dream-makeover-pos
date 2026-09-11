@@ -6,7 +6,8 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js --config jest.config.js",
-    "test:integration": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js --config jest.config.js --testRegex='.*\\.integration\\.spec\\.ts$' --runInBand",
+    "test:integration": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js --config jest.integration.config.js",
+    "test:all": "npm run test && npm run test:integration",
     "build": "tsc -p tsconfig.build.json",
     "start:dev": "nest start --watch",
     "migration:run": "typeorm-ts-node-commonjs -d src/config/typeorm-cli.config.ts migration:run",

@@ -1,10 +1,7 @@
-/* global module */
-
 module.exports = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: '.',
-  testRegex: '.*\\.spec\\.ts$',
-  testPathIgnorePatterns: ['/node_modules/', '\\.integration\\.spec\\.ts$'],
+  testRegex: '.*\\.integration\\.spec\\.ts$',
   transform: {
     '^.+\\.ts$': [
       'ts-jest',
@@ -21,8 +18,8 @@ module.exports = {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
-  collectCoverageFrom: ['src/**/*.(t|j)s'],
-  coverageDirectory: 'coverage',
   testEnvironment: 'node',
   setupFiles: ['<rootDir>/test/setup.ts'],
+  // Integration tests share a database. Never parallelize.
+  maxWorkers: 1,
 };
