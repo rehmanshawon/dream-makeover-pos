@@ -6,10 +6,14 @@ import { SalonService } from '../../src/services/service.entity';
 import { Transaction } from '../../src/transactions/transaction.entity';
 import { TransactionItem } from '../../src/transactions/transaction-item.entity';
 import { User } from '../../src/users/user.entity';
+import { Package } from '../../src/packages/package.entity';
+import { PackageItem } from '../../src/packages/package-item.entity';
 
 const TEST_TABLES = [
   'transaction_items',
   'transactions',
+  'package_items',
+  'packages',
   'products',
   'services',
   'customers',
@@ -46,7 +50,16 @@ export async function createTestDataSource(): Promise<DataSource> {
     username: env.DB_USERNAME ?? 'dream_app',
     password: env.DB_PASSWORD ?? 'change_me',
     database: env.DB_DATABASE ?? 'dream_makeover_test',
-    entities: [Customer, Product, SalonService, Transaction, TransactionItem, User],
+    entities: [
+      Customer,
+      Product,
+      SalonService,
+      Transaction,
+      TransactionItem,
+      User,
+      Package,
+      PackageItem,
+    ],
     synchronize: false,
     dropSchema: false,
     logging: false,

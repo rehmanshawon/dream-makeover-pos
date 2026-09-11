@@ -6,6 +6,8 @@ import { SalonService } from '../services/service.entity';
 import { Transaction } from '../transactions/transaction.entity';
 import { User } from '../users/user.entity';
 import { TransactionItem } from '../transactions/transaction-item.entity';
+import { Package } from '../packages/package.entity';
+import { PackageItem } from '../packages/package-item.entity';
 
 const env = process.env;
 
@@ -16,7 +18,16 @@ export const databaseConfig: TypeOrmModuleOptions = {
   username: env.DB_USERNAME ?? 'dream_app',
   password: env.DB_PASSWORD ?? 'change_me',
   database: env.DB_DATABASE ?? 'dream_makeover',
-  entities: [Customer, Product, SalonService, Transaction, TransactionItem, User],
+  entities: [
+    Customer,
+    Product,
+    SalonService,
+    Transaction,
+    TransactionItem,
+    User,
+    Package,
+    PackageItem,
+  ],
   synchronize: false,
   logging: env.NODE_ENV === 'development',
 };
