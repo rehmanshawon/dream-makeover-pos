@@ -9,6 +9,8 @@ import { Customer, CustomerRewardTier } from '../../customers/customer.entity';
 import { CheckoutRequestDto } from './dto/checkout-request.dto';
 import { CheckoutResponseDto, CheckoutItemResponseDto } from './dto/checkout-response.dto';
 import { InvoiceNumberService } from '../invoice-number.service';
+import { Package } from '../../packages/package.entity';
+import { PackageItem } from '../../packages/package-item.entity';
 
 @Injectable()
 export class CheckoutService {
@@ -30,6 +32,8 @@ export class CheckoutService {
       const customerRepo = manager.getRepository(Customer);
       const transactionRepo = manager.getRepository(Transaction);
       const itemRepo = manager.getRepository(TransactionItem);
+      const packageRepo = manager.getRepository(Package);
+      const packageItemRepo = manager.getRepository(PackageItem);
 
       let subtotalMinor = 0;
       const itemResponses: CheckoutItemResponseDto[] = [];
@@ -58,6 +62,7 @@ export class CheckoutService {
           const item = itemRepo.create({
             productId: product.id,
             serviceId: null,
+            packageId: null,
             itemType: TransactionItemType.PRODUCT,
             itemName: product.name,
             quantity: itemDto.quantity,
@@ -88,6 +93,7 @@ export class CheckoutService {
           const item = itemRepo.create({
             productId: null,
             serviceId: service.id,
+            packageId: null,
             itemType: TransactionItemType.SERVICE,
             itemName: service.name,
             quantity: itemDto.quantity,
@@ -101,6 +107,64 @@ export class CheckoutService {
             itemName: service.name,
             quantity: itemDto.quantity,
             unitPriceMinor: service.priceMinor,
+            totalPriceMinor: lineTotal,
+          });
+        }
+        // PACKAGE
+        if (itemDto.itemType === TransactionItemType.PACKAGE) {
+          const pkg = await packageRepo.findOne({
+            where: { id: itemDto.itemId, active: true },
+          });
+          if (!pkg) {
+            throw new NotFoundException(`Package not found or inactive: ${itemDto.itemId}`);
+          }
+
+          const lineTotal = pkg.packagePriceMinor * itemDto.quantity;
+          subtotalMinor += lineTotal;
+
+          // Expand package components to reduce stock of any contained products.
+          const components = await packageItemRepo.find({
+            where: { packageId: pkg.id },
+          });
+
+          for (const component of components) {
+            if (component.productId) {
+              const product = await productRepo.findOne({
+                where: { id: component.productId },
+              });
+              if (!product) {
+                throw new NotFoundException(
+                  `Product inside package not found: ${component.productId}`,
+                );
+              }
+              const requiredQty = itemDto.quantity;
+              if (product.stock < requiredQty) {
+                throw new BadRequestException(
+                  `Insufficient stock for ${product.name} in package ${pkg.name}`,
+                );
+              }
+              product.stock -= requiredQty;
+              await productRepo.save(product);
+            }
+          }
+
+          const item = itemRepo.create({
+            productId: null,
+            serviceId: null,
+            packageId: pkg.id,
+            itemType: TransactionItemType.PACKAGE,
+            itemName: pkg.name,
+            quantity: itemDto.quantity,
+            unitPriceMinor: pkg.packagePriceMinor,
+            totalPriceMinor: lineTotal,
+          });
+          itemsToSave.push(item);
+
+          itemResponses.push({
+            itemType: TransactionItemType.PACKAGE,
+            itemName: pkg.name,
+            quantity: itemDto.quantity,
+            unitPriceMinor: pkg.packagePriceMinor,
             totalPriceMinor: lineTotal,
           });
         }

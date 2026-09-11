@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Check,
   Index,
   JoinColumn,
   ManyToOne,
@@ -15,6 +16,10 @@ import { bigintTransformer } from '../common/transformers/bigint.transformer';
 
 @Entity('package_items')
 @Index('idx_package_items_package', ['packageId'])
+@Check(
+  'chk_package_items_kind',
+  `(item_kind = 'SERVICE' AND service_id IS NOT NULL AND product_id IS NULL) OR (item_kind = 'PRODUCT' AND product_id IS NOT NULL AND service_id IS NULL)`,
+)
 export class PackageItem {
   @PrimaryGeneratedColumn('uuid')
   id: string;

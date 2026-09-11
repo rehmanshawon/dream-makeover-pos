@@ -68,6 +68,14 @@ export async function createTestDataSource(): Promise<DataSource> {
   await dataSource.initialize();
   await dropAllTables(dataSource);
   await dataSource.synchronize(); // Rebuild the schema after dropping all tables
+  await dataSource.query(`
+    ALTER TABLE package_items
+    ADD CONSTRAINT chk_package_items_kind CHECK (
+      (item_kind = 'SERVICE' AND service_id IS NOT NULL AND product_id IS NULL)
+      OR
+      (item_kind = 'PRODUCT' AND product_id IS NOT NULL AND service_id IS NULL)
+    )
+  `);
   return dataSource;
 }
 

@@ -1,22 +1,25 @@
 import 'dotenv/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { AppModule } from '../src/app.module';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
-import { AppModule } from '../src/app.module';
+import { Product, ProductCategory } from '../src/products/product.entity';
 import { User } from '../src/users/user.entity';
 import { UserRole } from '../src/users/user-role.enum';
 import * as bcrypt from 'bcryptjs';
 import { describe, beforeAll, afterAll, it, expect, beforeEach } from '@jest/globals';
 import { Customer } from '../src/customers/customer.entity';
 import { CustomerRewardTier } from '../src/customers/customer-reward-tier.enum';
-import { Product } from '../src/products/product.entity';
-import { ProductCategory } from '../src/products/product-category.enum';
+// import { Product } from '../src/products/product.entity';
+// import { ProductCategory } from '../src/products/product-category.enum';
 import { SalonService } from '../src/services/service.entity';
 import { Transaction } from '../src/transactions/transaction.entity';
 import { TransactionItem, TransactionItemType } from '../src/transactions/transaction-item.entity';
 import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
+import { Package } from '../src/packages/package.entity';
+import { PackageItem } from '../src/packages/package-item.entity';
 
 describe('Checkout (integration)', () => {
   let app: INestApplication;
@@ -309,5 +312,95 @@ describe('Checkout (integration)', () => {
     const secondSeq = Number(second.body.invoiceId.split('-')[2]);
 
     expect(secondSeq).toBe(firstSeq + 1);
+  });
+
+  it('should sell a package and reduce contained product stock', async () => {
+    const productRepo = dataSource.getRepository(Product);
+    const serviceRepo = dataSource.getRepository(SalonService);
+    const packageRepo = dataSource.getRepository(Package);
+    const packageItemRepo = dataSource.getRepository(PackageItem);
+
+    const containedProduct = await productRepo.save(
+      productRepo.create({
+        name: 'Contained Cosmetics',
+        category: ProductCategory.COSMETICS,
+        stock: 10,
+        purchaseCostMinor: 50000,
+        sellingPriceMinor: 90000,
+        minimumStockThreshold: 1,
+      }),
+    );
+
+    const containedService = await serviceRepo.save(
+      serviceRepo.create({
+        name: 'Contained Facial',
+        priceMinor: 200000,
+        durationMinutes: 45,
+        rewardPointWeight: 1,
+        active: true,
+      }),
+    );
+
+    const bridalPackage = await packageRepo.save(
+      packageRepo.create({
+        name: 'Test Bridal Package',
+        normalPriceMinor: 290000,
+        packagePriceMinor: 250000,
+        savingsMinor: 40000,
+        active: true,
+      }),
+    );
+
+    await packageItemRepo.save([
+      packageItemRepo.create({
+        packageId: bridalPackage.id,
+        itemKind: 'PRODUCT',
+        productId: containedProduct.id,
+        serviceId: null,
+        snapshotPriceMinor: 90000,
+      }),
+      packageItemRepo.create({
+        packageId: bridalPackage.id,
+        itemKind: 'SERVICE',
+        serviceId: containedService.id,
+        productId: null,
+        snapshotPriceMinor: 200000,
+      }),
+    ]);
+
+    const payload = {
+      items: [
+        {
+          itemType: TransactionItemType.PACKAGE,
+          itemId: bridalPackage.id,
+          quantity: 2,
+        },
+      ],
+      customerId: customer.id,
+      discountMinor: 0,
+      cashReceivedMinor: 1000000,
+    };
+
+    const response = await request(app.getHttpServer())
+      .post('/checkout')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(payload)
+      .expect(201);
+
+    expect(response.body.subtotalMinor).toBe(500000);
+    expect(response.body.items[0].itemType).toBe('PACKAGE');
+
+    const reloadedProduct = await productRepo.findOne({
+      where: { id: containedProduct.id },
+    });
+    expect(reloadedProduct?.stock).toBe(8);
+
+    const items = await dataSource.getRepository(TransactionItem).find({
+      where: { transactionId: response.body.transactionId },
+    });
+    expect(items).toHaveLength(1);
+    expect(items[0].packageId).toBe(bridalPackage.id);
+    expect(items[0].productId).toBeNull();
+    expect(items[0].serviceId).toBeNull();
   });
 });

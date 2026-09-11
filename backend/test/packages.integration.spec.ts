@@ -134,6 +134,44 @@ describe('Package persistence (integration)', () => {
     ).rejects.toThrow();
   });
 
+  it('accepts a package item with only a service reference', async () => {
+    const serviceRepo = dataSource.getRepository(SalonService);
+    const packageRepo = dataSource.getRepository(Package);
+    const itemRepo = dataSource.getRepository(PackageItem);
+
+    const service = await serviceRepo.save(
+      serviceRepo.create({
+        name: 'Service Only',
+        priceMinor: 100000,
+        durationMinutes: 30,
+        rewardPointWeight: 1,
+        active: true,
+      }),
+    );
+    const pkg = await packageRepo.save(
+      packageRepo.create({
+        name: 'Service Package',
+        normalPriceMinor: 100000,
+        packagePriceMinor: 90000,
+        savingsMinor: 10000,
+        active: true,
+      }),
+    );
+
+    const item = await itemRepo.save(
+      itemRepo.create({
+        packageId: pkg.id,
+        itemKind: 'SERVICE',
+        serviceId: service.id,
+        productId: null,
+        snapshotPriceMinor: 100000,
+      }),
+    );
+
+    const reloaded = await itemRepo.findOne({ where: { id: item.id } });
+    expect(reloaded?.serviceId).toBe(service.id);
+  });
+
   it('cascades delete of package items when package is deleted', async () => {
     const serviceRepo = dataSource.getRepository(SalonService);
     const packageRepo = dataSource.getRepository(Package);

@@ -6,6 +6,7 @@ import { CreateUsersTable1700000000004 } from './1700000000004-CreateUsersTable'
 import { CreateTransactionItemsTable1700000000005 } from './1700000000005-CreateTransactionItemsTable';
 import { CreatePackagesTable1700000000006 } from './1700000000006-CreatePackagesTable';
 import { CreatePackageItemsTable1700000000007 } from './1700000000007-CreatePackageItemsTable';
+import { AddPackageIdToTransactionItems1700000000008 } from './1700000000008-AddPackageIdToTransactionItems';
 
 export const migrations = [
   CreateCustomersTable1700000000000,
@@ -16,4 +17,5 @@ export const migrations = [
   CreateTransactionItemsTable1700000000005,
   CreatePackagesTable1700000000006,
   CreatePackageItemsTable1700000000007,
+  AddPackageIdToTransactionItems1700000000008,
 ];

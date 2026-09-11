@@ -12,6 +12,8 @@ import { CheckoutRequestDto } from '../src/transactions/checkout/dto/checkout-re
 import { TransactionItemType } from '../src/transactions/transaction-item.entity';
 import { describe, beforeEach, it, jest, expect } from '@jest/globals';
 import { InvoiceNumberService } from '../src/transactions/invoice-number.service';
+import { Package } from '../src/packages/package.entity';
+import { PackageItem } from '../src/packages/package-item.entity';
 
 describe('CheckoutService', () => {
   let service: CheckoutService;
@@ -21,6 +23,8 @@ describe('CheckoutService', () => {
   let customerRepo: any;
   let transactionRepo: any;
   let itemRepo: any;
+  let packageRepo: any;
+  let packageItemRepo: any;
   let invoiceNumberService: InvoiceNumberService;
 
   beforeEach(async () => {
@@ -31,6 +35,8 @@ describe('CheckoutService', () => {
         if (entity === Customer) return customerRepo;
         if (entity === Transaction) return transactionRepo;
         if (entity === TransactionItem) return itemRepo;
+        if (entity === Package) return packageRepo;
+        if (entity === PackageItem) return packageItemRepo;
         throw new Error(`Unexpected entity in test: ${entity.name}`);
       }),
     };
@@ -57,6 +63,14 @@ describe('CheckoutService', () => {
     };
     itemRepo = {
       create: jest.fn(),
+      save: jest.fn(),
+    };
+    packageRepo = {
+      findOne: jest.fn(),
+      save: jest.fn(),
+    };
+    packageItemRepo = {
+      findOne: jest.fn(),
       save: jest.fn(),
     };
 
@@ -169,5 +183,62 @@ describe('CheckoutService', () => {
     };
 
     await expect(service.checkout(dto, 'admin')).rejects.toThrow('Insufficient cash received');
+  });
+
+  it('sells a package and reduces stock of contained products', async () => {
+    const containedProduct = {
+      id: 'p-in-pkg',
+      name: 'Cosmetics Kit',
+      stock: 10,
+      sellingPriceMinor: 120000,
+    } as Product;
+
+    const pkg = {
+      id: 'pkg-1',
+      name: 'Bridal Package',
+      packagePriceMinor: 499900,
+      active: true,
+    } as Package;
+
+    const component = {
+      id: 'pkg-item-1',
+      packageId: 'pkg-1',
+      productId: 'p-in-pkg',
+      serviceId: null,
+      itemKind: 'PRODUCT',
+    } as PackageItem;
+
+    packageRepo.findOne.mockResolvedValue(pkg);
+    packageItemRepo.find.mockResolvedValue([component]);
+    productRepo.findOne.mockResolvedValue(containedProduct);
+    productRepo.save.mockImplementation(async (p) => p);
+
+    transactionRepo.create.mockReturnValue({} as Transaction);
+    transactionRepo.save.mockResolvedValue({
+      id: 't-1',
+      invoiceId: 'DM-20260912-0001',
+    } as Transaction);
+    itemRepo.create.mockImplementation((data) => data);
+    itemRepo.save.mockResolvedValue({} as TransactionItem);
+
+    const dto: CheckoutRequestDto = {
+      items: [{ itemType: TransactionItemType.PACKAGE, itemId: 'pkg-1', quantity: 2 }],
+      discountMinor: 0,
+      cashReceivedMinor: 1000000,
+    };
+
+    const result = await service.checkout(dto, 'admin');
+
+    expect(result.subtotalMinor).toBe(999800);
+    expect(result.totalMinor).toBe(999800);
+    // Contained product stock reduced by 2
+    expect(containedProduct.stock).toBe(8);
+    // Item has packageId set
+    expect(itemRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        packageId: 'pkg-1',
+        itemType: TransactionItemType.PACKAGE,
+      }),
+    );
   });
 });
