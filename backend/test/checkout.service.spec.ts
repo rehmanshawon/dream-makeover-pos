@@ -70,6 +70,7 @@ describe('CheckoutService', () => {
       save: jest.fn(),
     };
     packageItemRepo = {
+      find: jest.fn(),
       findOne: jest.fn(),
       save: jest.fn(),
     };
