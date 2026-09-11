@@ -8,6 +8,7 @@ import { Customer } from '../../customers/customer.entity';
 import { CheckoutService } from './checkout.service';
 import { CheckoutController } from './checkout.controller';
 import { AuthCommonModule } from '../../auth/auth-common.module';
+import { InvoiceNumberService } from '../invoice-number.service';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { AuthCommonModule } from '../../auth/auth-common.module';
     AuthCommonModule,
   ],
   controllers: [CheckoutController],
-  providers: [CheckoutService],
-  exports: [CheckoutService],
+  providers: [CheckoutService, InvoiceNumberService],
+  exports: [CheckoutService, InvoiceNumberService],
 })
 export class CheckoutModule {}

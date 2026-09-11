@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Transaction } from '../transaction.entity';
 import { TransactionItem, TransactionItemType } from '../transaction-item.entity';
 import { Product } from '../../products/product.entity';
@@ -8,10 +8,23 @@ import { SalonService } from '../../services/service.entity';
 import { Customer, CustomerRewardTier } from '../../customers/customer.entity';
 import { CheckoutRequestDto } from './dto/checkout-request.dto';
 import { CheckoutResponseDto, CheckoutItemResponseDto } from './dto/checkout-response.dto';
+import { InvoiceNumberService } from '../invoice-number.service';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class CheckoutService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
+    @InjectRepository(SalonService)
+    private readonly serviceRepository: Repository<SalonService>,
+    @InjectRepository(Customer)
+    private readonly customerRepository: Repository<Customer>,
+    @InjectRepository(Transaction)
+    private readonly transactionRepository: Repository<Transaction>,
+    private readonly invoiceNumberService: InvoiceNumberService,
+  ) {}
 
   async checkout(dto: CheckoutRequestDto, cashierName: string): Promise<CheckoutResponseDto> {
     if (!dto.items || dto.items.length === 0) {
@@ -114,8 +127,7 @@ export class CheckoutService {
 
       const changeMinor = dto.cashReceivedMinor - totalMinor;
 
-      // Generate invoice ID (simple for now)
-      const invoiceId = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const invoiceId = await this.invoiceNumberService.next();
 
       // Create transaction
       const transaction = transactionRepo.create({

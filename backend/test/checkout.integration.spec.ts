@@ -267,4 +267,47 @@ describe('Checkout (integration)', () => {
     expect(updated?.rewardPoints).toBe(220);
     expect(updated?.rewardTier).toBe(CustomerRewardTier.GOLD);
   });
+
+  it('should generate a DM-format invoice ID', async () => {
+    const payload = {
+      items: [{ itemType: TransactionItemType.PRODUCT, itemId: product.id, quantity: 1 }],
+      customerId: customer.id,
+      discountMinor: 0,
+      cashReceivedMinor: 200000,
+    };
+
+    const response = await request(app.getHttpServer())
+      .post('/checkout')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(payload)
+      .expect(201);
+
+    expect(response.body.invoiceId).toMatch(/^DM-\d{8}-\d{4}$/);
+  });
+
+  it('should generate sequential invoice IDs on the same day', async () => {
+    const payload = {
+      items: [{ itemType: TransactionItemType.PRODUCT, itemId: product.id, quantity: 1 }],
+      customerId: customer.id,
+      discountMinor: 0,
+      cashReceivedMinor: 200000,
+    };
+
+    const first = await request(app.getHttpServer())
+      .post('/checkout')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(payload)
+      .expect(201);
+
+    const second = await request(app.getHttpServer())
+      .post('/checkout')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(payload)
+      .expect(201);
+
+    const firstSeq = Number(first.body.invoiceId.split('-')[2]);
+    const secondSeq = Number(second.body.invoiceId.split('-')[2]);
+
+    expect(secondSeq).toBe(firstSeq + 1);
+  });
 });
