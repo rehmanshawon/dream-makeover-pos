@@ -1,0 +1,27 @@
+.empty-state {
+  padding: var(--space-10) var(--space-6);
+  text-align: center;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.empty-state__title {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-2);
+  color: var(--color-text);
+}
+
+.empty-state__description {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.empty-state__action {
+  margin-top: var(--space-4);
+  display: flex;
+  justify-content: center;
+}
