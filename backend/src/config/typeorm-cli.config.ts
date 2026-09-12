@@ -7,6 +7,7 @@ import { Transaction } from '../transactions/transaction.entity';
 import { TransactionItem } from '../transactions/transaction-item.entity';
 import { Package } from '../packages/package.entity';
 import { PackageItem } from '../packages/package-item.entity';
+import { StockMovement } from '../inventory/stock-movement.entity';
 import { migrations } from '../database/migrations';
 
 export default new DataSource({
@@ -16,7 +17,16 @@ export default new DataSource({
   username: process.env.DB_USERNAME ?? 'dream_app',
   password: process.env.DB_PASSWORD ?? 'change_me',
   database: process.env.DB_DATABASE ?? 'dream_makeover',
-  entities: [Customer, Product, SalonService, Transaction, TransactionItem, Package, PackageItem],
+  entities: [
+    Customer,
+    Product,
+    SalonService,
+    Transaction,
+    TransactionItem,
+    Package,
+    PackageItem,
+    StockMovement,
+  ],
   migrations,
   synchronize: false,
   logging: true,

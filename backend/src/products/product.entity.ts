@@ -75,3 +75,5 @@ export class Product {
     return this.stock <= this.minimumStockThreshold;
   }
 }
+
+export { ProductCategory };

@@ -11,6 +11,8 @@ import { CheckoutResponseDto, CheckoutItemResponseDto } from './dto/checkout-res
 import { InvoiceNumberService } from '../invoice-number.service';
 import { Package } from '../../packages/package.entity';
 import { PackageItem } from '../../packages/package-item.entity';
+import { InventoryService } from '../../inventory/inventory.service';
+import { StockMovementReason } from '../../inventory/stock-movement-reason.enum';
 
 @Injectable()
 export class CheckoutService {
@@ -18,6 +20,7 @@ export class CheckoutService {
     private readonly dataSource: DataSource,
 
     private readonly invoiceNumberService: InvoiceNumberService,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   async checkout(dto: CheckoutRequestDto, cashierName: string): Promise<CheckoutResponseDto> {
@@ -25,7 +28,6 @@ export class CheckoutService {
       throw new BadRequestException('At least one item is required');
     }
 
-    // Start a database transaction
     return await this.dataSource.transaction(async (manager) => {
       const productRepo = manager.getRepository(Product);
       const serviceRepo = manager.getRepository(SalonService);
@@ -38,8 +40,8 @@ export class CheckoutService {
       let subtotalMinor = 0;
       const itemResponses: CheckoutItemResponseDto[] = [];
       const itemsToSave: TransactionItem[] = [];
+      const pendingStockDeltas: Array<{ productId: string; delta: number }> = [];
 
-      // Process each item
       for (const itemDto of dto.items) {
         if (itemDto.itemType === TransactionItemType.PRODUCT) {
           const product = await productRepo.findOne({
@@ -54,9 +56,10 @@ export class CheckoutService {
 
           const lineTotal = product.sellingPriceMinor * itemDto.quantity;
           subtotalMinor += lineTotal;
-
-          product.stock -= itemDto.quantity;
-          await productRepo.save(product);
+          pendingStockDeltas.push({
+            productId: product.id,
+            delta: -itemDto.quantity,
+          });
 
           const item = itemRepo.create({
             productId: product.id,
@@ -88,7 +91,6 @@ export class CheckoutService {
           const lineTotal = pkg.packagePriceMinor * itemDto.quantity;
           subtotalMinor += lineTotal;
 
-          // Expand package components to reduce stock of any contained products.
           const components = await packageItemRepo.find({
             where: { packageId: pkg.id },
           });
@@ -103,14 +105,15 @@ export class CheckoutService {
                   `Product inside package not found: ${component.productId}`,
                 );
               }
-              const requiredQty = itemDto.quantity;
-              if (product.stock < requiredQty) {
+              if (product.stock < itemDto.quantity) {
                 throw new BadRequestException(
                   `Insufficient stock for ${product.name} in package ${pkg.name}`,
                 );
               }
-              product.stock -= requiredQty;
-              await productRepo.save(product);
+              pendingStockDeltas.push({
+                productId: product.id,
+                delta: -itemDto.quantity,
+              });
             }
           }
 
@@ -134,7 +137,6 @@ export class CheckoutService {
             totalPriceMinor: lineTotal,
           });
         } else {
-          // SERVICE
           const service = await serviceRepo.findOne({
             where: { id: itemDto.itemId, active: true },
           });
@@ -167,22 +169,18 @@ export class CheckoutService {
         }
       }
 
-      // Validate discount
       if (dto.discountMinor > subtotalMinor) {
         throw new BadRequestException('Discount cannot exceed subtotal');
       }
 
       const totalMinor = subtotalMinor - dto.discountMinor;
-
       if (dto.cashReceivedMinor < totalMinor) {
         throw new BadRequestException('Insufficient cash received');
       }
-
       const changeMinor = dto.cashReceivedMinor - totalMinor;
 
       const invoiceId = await this.invoiceNumberService.next();
 
-      // Create transaction
       const transaction = transactionRepo.create({
         invoiceId,
         customerId: dto.customerId ?? null,
@@ -193,16 +191,24 @@ export class CheckoutService {
         changeMinor,
         cashier: cashierName,
       });
-
       const savedTransaction = await transactionRepo.save(transaction);
 
-      // Save items with transaction reference
       for (const item of itemsToSave) {
         item.transactionId = savedTransaction.id;
         await itemRepo.save(item);
       }
 
-      // Update customer if provided
+      for (const delta of pendingStockDeltas) {
+        await this.inventoryService.applyMovement(manager, {
+          productId: delta.productId,
+          delta: delta.delta,
+          reason: StockMovementReason.SALE,
+          referenceId: savedTransaction.id,
+          note: null,
+          createdBy: cashierName,
+        });
+      }
+
       let loyaltyPointsEarned = 0;
       let newRewardTier: CustomerRewardTier | undefined;
 
@@ -214,17 +220,10 @@ export class CheckoutService {
           throw new NotFoundException('Customer not found');
         }
 
-        // Update lifetime spend
         customer.lifetimeSpendMinor += totalMinor;
-
-        // Calculate points earned (1 point per 100 taka = 10000 poisha)
         loyaltyPointsEarned = Math.floor(totalMinor / 10000);
-
         customer.rewardPoints += loyaltyPointsEarned;
-
-        // Recalculate tier based on total points
         customer.rewardTier = this.calculateTier(customer.rewardPoints);
-
         await customerRepo.save(customer);
 
         newRewardTier = customer.rewardTier;
@@ -240,7 +239,7 @@ export class CheckoutService {
         changeMinor,
         items: itemResponses,
         loyaltyPointsEarned,
-        ...(newRewardTier === undefined ? {} : { newRewardTier }),
+        ...(newRewardTier !== undefined && { newRewardTier }),
       };
     });
   }

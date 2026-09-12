@@ -14,6 +14,7 @@ import { describe, beforeEach, it, jest, expect } from '@jest/globals';
 import { InvoiceNumberService } from '../src/transactions/invoice-number.service';
 import { Package } from '../src/packages/package.entity';
 import { PackageItem } from '../src/packages/package-item.entity';
+import { InventoryService } from '../src/inventory/inventory.service';
 
 describe('CheckoutService', () => {
   let service: CheckoutService;
@@ -26,6 +27,7 @@ describe('CheckoutService', () => {
   let packageRepo: any;
   let packageItemRepo: any;
   let invoiceNumberService: InvoiceNumberService;
+  let inventoryService: InventoryService;
 
   beforeEach(async () => {
     const mockManager = {
@@ -79,11 +81,25 @@ describe('CheckoutService', () => {
       next: jest.fn().mockResolvedValue('DM-20260911-0001'),
     } as unknown as InvoiceNumberService;
 
+    inventoryService = {
+      applyMovement: jest.fn().mockImplementation(async (_manager, input) => ({
+        id: 'movement-1',
+        productId: input.productId,
+        delta: input.delta,
+        reason: input.reason,
+        referenceId: input.referenceId,
+        note: input.note,
+        createdBy: input.createdBy,
+        createdAt: new Date(),
+      })),
+    } as unknown as InventoryService;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CheckoutService,
         { provide: DataSource, useValue: dataSource },
         { provide: InvoiceNumberService, useValue: invoiceNumberService },
+        { provide: InventoryService, useValue: inventoryService },
       ],
     }).compile();
 
@@ -140,7 +156,10 @@ describe('CheckoutService', () => {
     expect(result.totalMinor).toBe(69000);
     expect(result.cashReceivedMinor).toBe(70000);
     expect(result.changeMinor).toBe(1000);
-    expect(productRepo.save).toHaveBeenCalledWith(expect.objectContaining({ stock: 8 }));
+    expect(inventoryService.applyMovement).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ productId: 'p1', delta: -2 }),
+    );
     expect(customerRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({ lifetimeSpendMinor: 69000, rewardPoints: 6 }),
     );

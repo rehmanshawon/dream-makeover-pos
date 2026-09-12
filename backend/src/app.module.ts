@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { CheckoutModule } from './transactions/checkout/checkout.module';
 import { PackagesModule } from './packages/packages.module';
+import { InventoryModule } from './inventory/inventory.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot(databaseConfig),
@@ -20,6 +21,7 @@ import { PackagesModule } from './packages/packages.module';
     AuthModule,
     CheckoutModule,
     PackagesModule,
+    InventoryModule,
   ],
 })
 export class AppModule {}
