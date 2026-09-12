@@ -10,6 +10,7 @@ import { PackageItem } from '../packages/package-item.entity';
 import { StockMovement } from '../inventory/stock-movement.entity';
 import { Employee } from '../employees/employee.entity';
 import { SalaryPayment } from '../salary-payments/salary-payment.entity';
+import { Expense } from '../expenses/expense.entity';
 import { migrations } from '../database/migrations';
 
 export default new DataSource({
@@ -30,6 +31,7 @@ export default new DataSource({
     StockMovement,
     Employee,
     SalaryPayment,
+    Expense,
   ],
   migrations,
   synchronize: false,
