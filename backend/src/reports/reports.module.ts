@@ -8,6 +8,9 @@ import { SalaryPayment } from '../salary-payments/salary-payment.entity';
 import { FinancialSummaryService } from './financial-summary.service';
 import { ReportsController } from './reports.controller';
 import { AuthCommonModule } from '../auth/auth-common.module';
+import { RevenueTrendService } from './revenue-trend.service';
+import { TopItemsService } from './top-items.service';
+import { ExpenseBreakdownService } from './expense-breakdown.service';
 
 @Module({
   imports: [
@@ -15,7 +18,12 @@ import { AuthCommonModule } from '../auth/auth-common.module';
     AuthCommonModule,
   ],
   controllers: [ReportsController],
-  providers: [FinancialSummaryService],
-  exports: [FinancialSummaryService],
+  providers: [
+    FinancialSummaryService,
+    RevenueTrendService,
+    TopItemsService,
+    ExpenseBreakdownService,
+  ],
+  exports: [FinancialSummaryService, RevenueTrendService, TopItemsService, ExpenseBreakdownService],
 })
 export class ReportsModule {}
