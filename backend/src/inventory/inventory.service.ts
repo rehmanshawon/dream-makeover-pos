@@ -8,6 +8,24 @@ import { AdjustmentDto } from './dto/adjustment.dto';
 import { StockMovementResponseDto } from './dto/stock-movement-response.dto';
 import { LowStockProductDto } from './dto/low-stock-product.dto';
 import { InventoryStatsDto } from './dto/inventory-stats.dto';
+
+/**
+ * InventoryService — the single writer for product stock.
+ *
+ * Concurrency strategy:
+ * - Every stock change goes through applyMovement.
+ * - applyMovement acquires a pessimistic write lock on the target product
+ *   row via SELECT ... FOR UPDATE.
+ * - The lock is held until the surrounding database transaction commits.
+ *
+ * This guarantees that two concurrent stock changes on the same product
+ * are serialized. The second transaction sees the post-update value and
+ * computes the correct next value.
+ *
+ * Do not bypass applyMovement. Any direct mutation of Product.stock
+ * outside this service risks introducing lost updates and desynchronizing
+ * the stock_movements ledger.
+ */
 @Injectable()
 export class InventoryService {
   constructor(private readonly dataSource: DataSource) {}
@@ -144,6 +162,19 @@ export class InventoryService {
    *
    * Callers are responsible for wrapping this call in a transaction.
    */
+  /**
+   * Applies a stock movement inside an existing transaction manager.
+   *
+   * This is the single point where product stock and stock movement rows
+   * are written together. It is used by stockIn, adjust, and by the
+   * checkout service (with reason SALE).
+   *
+   * The product row is locked with SELECT ... FOR UPDATE before being
+   * read. This prevents lost updates when two concurrent transactions
+   * attempt to modify the same product.
+   *
+   * Callers are responsible for wrapping this call in a transaction.
+   */
   async applyMovement(
     manager: EntityManager,
     input: {
@@ -160,6 +191,7 @@ export class InventoryService {
 
     const product = await productRepo.findOne({
       where: { id: input.productId },
+      lock: { mode: 'pessimistic_write' },
     });
     if (!product) {
       throw new NotFoundException('Product not found');
