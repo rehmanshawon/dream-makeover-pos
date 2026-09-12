@@ -1,13 +1,7 @@
 import { createContext, useContext, type JSX, type ReactNode } from 'react';
+import type { AuthenticatedUser } from '../../types/auth';
 
-export type UserRole = 'ADMIN' | 'STAFF';
-
-export interface AuthenticatedUser {
-  id: string;
-  username: string;
-  displayName: string;
-  role: UserRole;
-}
+export type { AuthenticatedUser, UserRole } from '../../types/auth';
 
 interface AuthContextValue {
   user: AuthenticatedUser | null;
@@ -19,10 +13,6 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 interface AuthProviderProps {
   children: ReactNode;
-  /**
-   * The current user. For now this is supplied by the caller as a
-   * placeholder. Sprint 11 will replace this with a real login flow.
-   */
   user: AuthenticatedUser | null;
 }
 
@@ -38,7 +28,6 @@ export function AuthProvider({ children, user }: AuthProviderProps): JSX.Element
     isAuthenticated: user !== null,
     isAdmin: user?.role === 'ADMIN',
   };
-
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

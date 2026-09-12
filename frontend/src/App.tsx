@@ -17,12 +17,6 @@ import { StaffPage } from './app/pages/StaffPage';
 import { ExpenditurePage } from './app/pages/ExpenditurePage';
 import { SettingsPage } from './app/pages/SettingsPage';
 
-/**
- * Placeholder authenticated user.
- *
- * Sprint 11 replaces this with a real login flow. For now the layout
- * exercises admin-visible navigation.
- */
 const PLACEHOLDER_USER: AuthenticatedUser = {
   id: 'placeholder',
   username: 'admin',

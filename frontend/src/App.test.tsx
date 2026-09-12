@@ -10,7 +10,6 @@ describe('App', () => {
 
   it('renders the topbar with the dashboard title', () => {
     render(<App />);
-    // jsdom defaults to '/' so the dashboard is the active route
     expect(screen.getByRole('heading', { name: /^dashboard$/i, level: 1 })).toBeInTheDocument();
   });
 
