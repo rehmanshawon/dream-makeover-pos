@@ -1,0 +1,81 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.app-header {
+  height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.app-brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-md);
+  letter-spacing: 0.5px;
+}
+
+.app-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.app-brand-name {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.app-brand-tagline {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.app-main {
+  flex: 1;
+  padding: var(--space-10);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.placeholder-card {
+  max-width: 560px;
+  padding: var(--space-8);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+.placeholder-card h1 {
+  margin-bottom: var(--space-3);
+}
+
+.placeholder-card p {
+  color: var(--color-text-muted);
+}

@@ -4,8 +4,27 @@
   "private": true,
   "description": "React frontend for Dream Makeover POS",
   "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "test": "echo \"No frontend tests yet\" && exit 0",
-    "build": "echo \"Frontend build will be configured when React is introduced\" && exit 0"
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^30.0.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.0"
   }
 }
