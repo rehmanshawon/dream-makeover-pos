@@ -11,6 +11,8 @@ import { CheckoutModule } from './transactions/checkout/checkout.module';
 import { PackagesModule } from './packages/packages.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { EmployeesModule } from './employees/employees.module';
+import { SalaryPaymentsModule } from './salary-payments/salary-payments.module';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot(databaseConfig),
@@ -24,6 +26,7 @@ import { EmployeesModule } from './employees/employees.module';
     PackagesModule,
     InventoryModule,
     EmployeesModule,
+    SalaryPaymentsModule,
   ],
 })
 export class AppModule {}
