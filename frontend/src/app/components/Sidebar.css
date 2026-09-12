@@ -131,3 +131,15 @@
   letter-spacing: 1px;
   text-transform: uppercase;
 }
+
+.sidebar__logout {
+  margin-top: var(--space-2);
+  width: 100%;
+  justify-content: flex-start;
+  color: var(--color-sidebar-text-muted);
+}
+
+.sidebar__logout:hover:not(:disabled) {
+  color: var(--color-sidebar-text);
+  background: rgba(255, 255, 255, 0.06);
+}

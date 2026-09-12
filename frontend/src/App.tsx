@@ -1,7 +1,11 @@
 import type { JSX } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { AuthProvider, type AuthenticatedUser } from './app/auth/AuthContext';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './app/auth/AuthContext';
+import { ProtectedRoute } from './app/auth/ProtectedRoute';
+import { AdminRoute } from './app/auth/AdminRoute';
+import { RedirectIfAuthenticated } from './app/auth/RedirectIfAuthenticated';
 import { AppLayout } from './app/layouts/AppLayout';
+import { LoginPage } from './app/pages/LoginPage';
 import { DashboardPage } from './app/pages/DashboardPage';
 import { NewSalePage } from './app/pages/NewSalePage';
 import { ParlourServicePage } from './app/pages/ParlourServicePage';
@@ -17,24 +21,45 @@ import { StaffPage } from './app/pages/StaffPage';
 import { ExpenditurePage } from './app/pages/ExpenditurePage';
 import { SettingsPage } from './app/pages/SettingsPage';
 
-const PLACEHOLDER_USER: AuthenticatedUser = {
-  id: 'placeholder',
-  username: 'admin',
-  displayName: 'Administrator',
-  role: 'ADMIN',
-};
-
-interface AppProps {
-  user?: AuthenticatedUser | null;
-}
-
-export function App({ user = PLACEHOLDER_USER }: AppProps): JSX.Element {
+/**
+ * Top-level application. Provides auth context and routing.
+ *
+ * Route structure:
+ * - /login is public, but authenticated users are redirected away.
+ * - All other routes require authentication.
+ * - Admin-only pages are wrapped in AdminRoute in addition to
+ *   ProtectedRoute.
+ */
+export function App(): JSX.Element {
   return (
-    <AuthProvider user={user}>
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<AppLayout />}>
-            <Route index element={<DashboardPage />} />
+          <Route
+            path="/login"
+            element={
+              <RedirectIfAuthenticated>
+                <LoginPage />
+              </RedirectIfAuthenticated>
+            }
+          />
+
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route
+              index
+              element={
+                <AdminRoute>
+                  <DashboardPage />
+                </AdminRoute>
+              }
+            />
             <Route path="pos" element={<NewSalePage />} />
             <Route path="parlour" element={<ParlourServicePage />} />
             <Route path="cosmetics" element={<CosmeticsPage />} />
@@ -43,12 +68,49 @@ export function App({ user = PLACEHOLDER_USER }: AppProps): JSX.Element {
             <Route path="stock" element={<StockPage />} />
             <Route path="packages" element={<PackagesPage />} />
             <Route path="customers" element={<CustomersPage />} />
-            <Route path="sales-report" element={<SalesReportPage />} />
-            <Route path="accounts" element={<AccountsPage />} />
-            <Route path="staff" element={<StaffPage />} />
-            <Route path="expenditure" element={<ExpenditurePage />} />
-            <Route path="settings" element={<SettingsPage />} />
+            <Route
+              path="sales-report"
+              element={
+                <AdminRoute>
+                  <SalesReportPage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="accounts"
+              element={
+                <AdminRoute>
+                  <AccountsPage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="staff"
+              element={
+                <AdminRoute>
+                  <StaffPage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="expenditure"
+              element={
+                <AdminRoute>
+                  <ExpenditurePage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <AdminRoute>
+                  <SettingsPage />
+                </AdminRoute>
+              }
+            />
           </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

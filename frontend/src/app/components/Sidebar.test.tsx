@@ -1,17 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { screen } from '@testing-library/react';
 import { Sidebar } from './Sidebar';
-import { AuthProvider, type AuthenticatedUser } from '../auth/AuthContext';
+import type { AuthenticatedUser } from '../auth/AuthContext';
+import { renderWithProviders } from '../../test/render-with-providers';
 
 function renderSidebar(user: AuthenticatedUser | null): void {
-  render(
-    <MemoryRouter>
-      <AuthProvider user={user}>
-        <Sidebar />
-      </AuthProvider>
-    </MemoryRouter>,
-  );
+  renderWithProviders(<Sidebar />, { user });
 }
 
 const ADMIN: AuthenticatedUser = {

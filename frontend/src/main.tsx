@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { App } from './App';
 import { createQueryClient } from './api/query-client';
+import { authStore } from './app/auth/auth-store';
 import './styles/global.css';
 
 const rootElement = document.getElementById('root');
@@ -10,6 +11,9 @@ const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error('Root element #root not found. Check frontend/index.html.');
 }
+
+// Wire the auth store's token into the API client before the app mounts.
+authStore.wireTokenProvider();
 
 const queryClient = createQueryClient();
 

@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { Icon } from './Icon';
 import { NAV_ITEMS, NAV_GROUP_LABELS, type NavGroup } from '../nav-items';
 import { useAuth } from '../auth/AuthContext';
+import { Button } from '../../ui/Button';
 import './Sidebar.css';
 
 /**
@@ -13,7 +14,7 @@ import './Sidebar.css';
  * convenience; the server enforces real authorization.
  */
 export function Sidebar(): JSX.Element {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
 
   const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
 
@@ -75,6 +76,11 @@ export function Sidebar(): JSX.Element {
           <span className="sidebar__user-name">{user?.displayName ?? 'Not signed in'}</span>
           <span className="sidebar__user-role">{user?.role ?? '—'}</span>
         </div>
+        {user && (
+          <Button variant="ghost" size="sm" onClick={logout} className="sidebar__logout">
+            Sign out
+          </Button>
+        )}
       </div>
     </aside>
   );
