@@ -29,28 +29,35 @@ const STAFF: AuthenticatedUser = {
 };
 
 describe('Sidebar', () => {
-  it('shows all navigation items for admins', () => {
+  it('shows all navigation links for admins', () => {
     renderSidebar(ADMIN);
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('New Sale')).toBeInTheDocument();
-    expect(screen.getByText('Staff')).toBeInTheDocument();
-    expect(screen.getByText('Accounts / Financial Summary')).toBeInTheDocument();
-    expect(screen.getByText('Settings')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^dashboard$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^new sale$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^staff$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /accounts \/ financial summary/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^settings$/i })).toBeInTheDocument();
   });
 
-  it('hides admin-only items from staff', () => {
+  it('hides admin-only navigation links from staff', () => {
     renderSidebar(STAFF);
-    expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
-    expect(screen.queryByText('Staff')).not.toBeInTheDocument();
-    expect(screen.queryByText('Accounts / Financial Summary')).not.toBeInTheDocument();
-    expect(screen.queryByText('Settings')).not.toBeInTheDocument();
+
+    // Query by link role to avoid matching the footer user name,
+    // which may contain the same word as a nav label.
+    expect(screen.queryByRole('link', { name: /^dashboard$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^staff$/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /accounts \/ financial summary/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^settings$/i })).not.toBeInTheDocument();
   });
 
-  it('shows staff-visible items to staff', () => {
+  it('shows staff-visible navigation links to staff', () => {
     renderSidebar(STAFF);
-    expect(screen.getByText('New Sale')).toBeInTheDocument();
-    expect(screen.getByText('Parlour Service')).toBeInTheDocument();
-    expect(screen.getByText('Customers')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^new sale$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^parlour service$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^customers$/i })).toBeInTheDocument();
   });
 
   it('displays the current user name and role', () => {
