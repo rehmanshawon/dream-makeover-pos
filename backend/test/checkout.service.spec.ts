@@ -15,6 +15,7 @@ import { InvoiceNumberService } from '../src/transactions/invoice-number.service
 import { Package } from '../src/packages/package.entity';
 import { PackageItem } from '../src/packages/package-item.entity';
 import { InventoryService } from '../src/inventory/inventory.service';
+import { StockMovementReason } from '../src/inventory/stock-movement-reason.enum';
 
 describe('CheckoutService', () => {
   let service: CheckoutService;
@@ -251,8 +252,15 @@ describe('CheckoutService', () => {
 
     expect(result.subtotalMinor).toBe(999800);
     expect(result.totalMinor).toBe(999800);
-    // Contained product stock reduced by 2
-    expect(containedProduct.stock).toBe(8);
+    // Inventory service should be called to reduce stock of contained products
+    expect(inventoryService.applyMovement).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        productId: 'p-in-pkg',
+        delta: -2,
+        reason: StockMovementReason.SALE,
+      }),
+    );
     // Item has packageId set
     expect(itemRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({

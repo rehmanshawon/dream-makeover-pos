@@ -9,11 +9,23 @@ import { CheckoutService } from './checkout.service';
 import { CheckoutController } from './checkout.controller';
 import { AuthCommonModule } from '../../auth/auth-common.module';
 import { InvoiceNumberService } from '../invoice-number.service';
+import { InventoryModule } from '../../inventory/inventory.module';
+import { Package } from '../../packages/package.entity';
+import { PackageItem } from '../../packages/package-item.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Transaction, TransactionItem, Product, SalonService, Customer]),
+    TypeOrmModule.forFeature([
+      Transaction,
+      TransactionItem,
+      Product,
+      SalonService,
+      Customer,
+      Package,
+      PackageItem,
+    ]),
     AuthCommonModule,
+    InventoryModule,
   ],
   controllers: [CheckoutController],
   providers: [CheckoutService, InvoiceNumberService],
