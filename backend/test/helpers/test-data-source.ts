@@ -9,6 +9,8 @@ import { User } from '../../src/users/user.entity';
 import { Package } from '../../src/packages/package.entity';
 import { PackageItem } from '../../src/packages/package-item.entity';
 import { StockMovement } from '../../src/inventory/stock-movement.entity';
+import { Employee } from '../../src/employees/employee.entity';
+
 const TEST_TABLES = [
   'transaction_items',
   'transactions',
@@ -19,6 +21,7 @@ const TEST_TABLES = [
   'services',
   'customers',
   'users',
+  'employees',
 ];
 
 /**
@@ -61,6 +64,7 @@ export async function createTestDataSource(): Promise<DataSource> {
       Package,
       PackageItem,
       StockMovement,
+      Employee,
     ],
     synchronize: false,
     dropSchema: false,

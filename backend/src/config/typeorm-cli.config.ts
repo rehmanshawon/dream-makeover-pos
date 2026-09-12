@@ -8,6 +8,7 @@ import { TransactionItem } from '../transactions/transaction-item.entity';
 import { Package } from '../packages/package.entity';
 import { PackageItem } from '../packages/package-item.entity';
 import { StockMovement } from '../inventory/stock-movement.entity';
+import { Employee } from '../employees/employee.entity';
 import { migrations } from '../database/migrations';
 
 export default new DataSource({
@@ -26,6 +27,7 @@ export default new DataSource({
     Package,
     PackageItem,
     StockMovement,
+    Employee,
   ],
   migrations,
   synchronize: false,

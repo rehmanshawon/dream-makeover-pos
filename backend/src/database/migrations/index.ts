@@ -8,6 +8,7 @@ import { CreatePackagesTable1700000000006 } from './1700000000006-CreatePackages
 import { CreatePackageItemsTable1700000000007 } from './1700000000007-CreatePackageItemsTable';
 import { AddPackageIdToTransactionItems1700000000008 } from './1700000000008-AddPackageIdToTransactionItems';
 import { CreateStockMovementsTable1700000000009 } from './1700000000009-CreateStockMovementsTable';
+import { CreateEmployeesTable1700000000010 } from './1700000000010-CreateEmployeesTable';
 
 export const migrations = [
   CreateCustomersTable1700000000000,
@@ -20,4 +21,5 @@ export const migrations = [
   CreatePackageItemsTable1700000000007,
   AddPackageIdToTransactionItems1700000000008,
   CreateStockMovementsTable1700000000009,
+  CreateEmployeesTable1700000000010,
 ];

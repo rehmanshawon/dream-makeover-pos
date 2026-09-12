@@ -9,6 +9,7 @@ import { TransactionItem } from '../transactions/transaction-item.entity';
 import { Package } from '../packages/package.entity';
 import { PackageItem } from '../packages/package-item.entity';
 import { StockMovement } from '../inventory/stock-movement.entity';
+import { Employee } from '../employees/employee.entity';
 
 const env = process.env;
 
@@ -29,6 +30,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
     Package,
     PackageItem,
     StockMovement,
+    Employee,
   ],
   synchronize: false,
   logging: env.NODE_ENV === 'development',
