@@ -122,4 +122,113 @@ describe('Inventory (integration)', () => {
     expect(history[0].delta).toBe(-2);
     expect(history[1].delta).toBe(10);
   });
+
+  it('detects low stock products correctly', async () => {
+    const productRepo = dataSource.getRepository(Product);
+
+    await productRepo.save([
+      productRepo.create({
+        name: 'Plenty',
+        category: ProductCategory.COSMETICS,
+        stock: 20,
+        purchaseCostMinor: 10000,
+        sellingPriceMinor: 20000,
+        minimumStockThreshold: 5,
+      }),
+      productRepo.create({
+        name: 'Almost Gone',
+        category: ProductCategory.COSMETICS,
+        stock: 3,
+        purchaseCostMinor: 10000,
+        sellingPriceMinor: 20000,
+        minimumStockThreshold: 5,
+      }),
+      productRepo.create({
+        name: 'At Threshold',
+        category: ProductCategory.COSMETICS,
+        stock: 5,
+        purchaseCostMinor: 10000,
+        sellingPriceMinor: 20000,
+        minimumStockThreshold: 5,
+      }),
+      productRepo.create({
+        name: 'Empty',
+        category: ProductCategory.COSMETICS,
+        stock: 0,
+        purchaseCostMinor: 10000,
+        sellingPriceMinor: 20000,
+        minimumStockThreshold: 5,
+      }),
+    ]);
+
+    const lowStock = await service.findLowStock();
+    const names = lowStock.map((p) => p.name).sort();
+
+    expect(names).toEqual(['Almost Gone', 'At Threshold', 'Empty']);
+  });
+
+  it('detects out-of-stock products correctly', async () => {
+    const productRepo = dataSource.getRepository(Product);
+
+    await productRepo.save([
+      productRepo.create({
+        name: 'Available',
+        category: ProductCategory.COSMETICS,
+        stock: 5,
+        purchaseCostMinor: 10000,
+        sellingPriceMinor: 20000,
+        minimumStockThreshold: 2,
+      }),
+      productRepo.create({
+        name: 'Sold Out',
+        category: ProductCategory.COSMETICS,
+        stock: 0,
+        purchaseCostMinor: 10000,
+        sellingPriceMinor: 20000,
+        minimumStockThreshold: 2,
+      }),
+    ]);
+
+    const outOfStock = await service.findOutOfStock();
+    expect(outOfStock).toHaveLength(1);
+    expect(outOfStock[0].name).toBe('Sold Out');
+    expect(outOfStock[0].outOfStock).toBe(true);
+  });
+
+  it('returns aggregate stats', async () => {
+    const productRepo = dataSource.getRepository(Product);
+
+    await productRepo.save([
+      productRepo.create({
+        name: 'Healthy',
+        category: ProductCategory.COSMETICS,
+        stock: 50,
+        purchaseCostMinor: 10000,
+        sellingPriceMinor: 20000,
+        minimumStockThreshold: 5,
+      }),
+      productRepo.create({
+        name: 'Low',
+        category: ProductCategory.COSMETICS,
+        stock: 3,
+        purchaseCostMinor: 10000,
+        sellingPriceMinor: 20000,
+        minimumStockThreshold: 5,
+      }),
+      productRepo.create({
+        name: 'Empty',
+        category: ProductCategory.COSMETICS,
+        stock: 0,
+        purchaseCostMinor: 10000,
+        sellingPriceMinor: 20000,
+        minimumStockThreshold: 5,
+      }),
+    ]);
+
+    const stats = await service.getStats();
+
+    expect(stats.totalProducts).toBe(3);
+    expect(stats.lowStockCount).toBe(2);
+    expect(stats.outOfStockCount).toBe(1);
+  });
 });

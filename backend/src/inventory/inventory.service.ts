@@ -6,7 +6,8 @@ import { StockMovementReason } from './stock-movement-reason.enum';
 import { StockInDto } from './dto/stock-in.dto';
 import { AdjustmentDto } from './dto/adjustment.dto';
 import { StockMovementResponseDto } from './dto/stock-movement-response.dto';
-
+import { LowStockProductDto } from './dto/low-stock-product.dto';
+import { InventoryStatsDto } from './dto/inventory-stats.dto';
 @Injectable()
 export class InventoryService {
   constructor(private readonly dataSource: DataSource) {}
@@ -65,6 +66,73 @@ export class InventoryService {
     });
 
     return movements.map((m) => this.toResponse(m));
+  }
+
+  /**
+   * Returns products whose current stock is at or below their minimum
+   * threshold, ordered by severity (lowest stock first).
+   *
+   * Out-of-stock products are included.
+   */
+  async findLowStock(): Promise<LowStockProductDto[]> {
+    const productRepo = this.dataSource.getRepository(Product);
+    const products = await productRepo
+      .createQueryBuilder('p')
+      .where('p.stock <= p.minimum_stock_threshold')
+      .orderBy('p.stock', 'ASC')
+      .addOrderBy('p.name', 'ASC')
+      .getMany();
+
+    return products.map((p) => this.toLowStockDto(p));
+  }
+
+  /**
+   * Returns products whose current stock is exactly zero.
+   */
+  async findOutOfStock(): Promise<LowStockProductDto[]> {
+    const productRepo = this.dataSource.getRepository(Product);
+    const products = await productRepo.find({
+      where: { stock: 0 },
+      order: { name: 'ASC' },
+    });
+
+    return products.map((p) => this.toLowStockDto(p));
+  }
+
+  /**
+   * Returns aggregate inventory statistics for dashboard display.
+   */
+  async getStats(): Promise<InventoryStatsDto> {
+    const productRepo = this.dataSource.getRepository(Product);
+
+    const totalProducts = await productRepo.count();
+
+    const lowStockCount = await productRepo
+      .createQueryBuilder('p')
+      .where('p.stock <= p.minimum_stock_threshold')
+      .getCount();
+
+    const outOfStockCount = await productRepo.count({
+      where: { stock: 0 },
+    });
+
+    return {
+      totalProducts,
+      lowStockCount,
+      outOfStockCount,
+    };
+  }
+
+  private toLowStockDto(product: Product): LowStockProductDto {
+    return {
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      stock: product.stock,
+      minimumStockThreshold: product.minimumStockThreshold,
+      sellingPriceMinor: product.sellingPriceMinor,
+      outOfStock: product.stock === 0,
+    };
   }
 
   /**

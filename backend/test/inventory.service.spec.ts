@@ -75,4 +75,96 @@ describe('InventoryService', () => {
       NotFoundException,
     );
   });
+
+  describe('findLowStock', () => {
+    it('returns products at or below threshold', async () => {
+      const repo = {
+        createQueryBuilder: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          addOrderBy: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValue([
+            {
+              id: 'p1',
+              name: 'Almost Gone',
+              category: 'Cosmetics',
+              stock: 1,
+              minimumStockThreshold: 3,
+              sellingPriceMinor: 50000,
+            },
+          ]),
+        }),
+      } as any;
+
+      (dataSource as any).getRepository = jest.fn(() => repo);
+
+      const result = await service.findLowStock();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('p1');
+      expect(result[0].outOfStock).toBe(false);
+    });
+
+    it('marks out-of-stock products correctly', async () => {
+      const repo = {
+        createQueryBuilder: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          addOrderBy: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValue([
+            {
+              id: 'p2',
+              name: 'Empty',
+              category: 'Cosmetics',
+              stock: 0,
+              minimumStockThreshold: 3,
+              sellingPriceMinor: 50000,
+            },
+          ]),
+        }),
+      } as any;
+
+      (dataSource as any).getRepository = jest.fn(() => repo);
+
+      const result = await service.findLowStock();
+      expect(result[0].outOfStock).toBe(true);
+    });
+  });
+
+  describe('findOutOfStock', () => {
+    it('queries only products with stock zero', async () => {
+      const find = jest.fn().mockResolvedValue([]);
+      (dataSource as any).getRepository = jest.fn(() => ({ find }));
+
+      await service.findOutOfStock();
+
+      expect(find).toHaveBeenCalledWith({
+        where: { stock: 0 },
+        order: { name: 'ASC' },
+      });
+    });
+  });
+
+  describe('getStats', () => {
+    it('returns aggregate counts', async () => {
+      const repo = {
+        count: jest
+          .fn()
+          .mockResolvedValueOnce(10) // total
+          .mockResolvedValueOnce(3), // out of stock
+        createQueryBuilder: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnThis(),
+          getCount: jest.fn().mockResolvedValue(4),
+        }),
+      } as any;
+
+      (dataSource as any).getRepository = jest.fn(() => repo);
+
+      const result = await service.getStats();
+
+      expect(result.totalProducts).toBe(10);
+      expect(result.lowStockCount).toBe(4);
+      expect(result.outOfStockCount).toBe(3);
+    });
+  });
 });

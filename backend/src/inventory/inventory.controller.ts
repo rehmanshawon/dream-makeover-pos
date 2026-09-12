@@ -8,6 +8,8 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
 import { JwtPayload } from '../auth/jwt.strategy';
+import { LowStockProductDto } from './dto/low-stock-product.dto';
+import { InventoryStatsDto } from './dto/inventory-stats.dto';
 
 @Controller('inventory')
 export class InventoryController {
@@ -31,6 +33,24 @@ export class InventoryController {
     @Req() req: { user: JwtPayload },
   ): Promise<StockMovementResponseDto> {
     return this.inventoryService.adjust(dto, req.user.username);
+  }
+
+  @Get('low-stock')
+  @UseGuards(JwtAuthGuard)
+  async lowStock(): Promise<LowStockProductDto[]> {
+    return this.inventoryService.findLowStock();
+  }
+
+  @Get('out-of-stock')
+  @UseGuards(JwtAuthGuard)
+  async outOfStock(): Promise<LowStockProductDto[]> {
+    return this.inventoryService.findOutOfStock();
+  }
+
+  @Get('stats')
+  @UseGuards(JwtAuthGuard)
+  async stats(): Promise<InventoryStatsDto> {
+    return this.inventoryService.getStats();
   }
 
   @Get('products/:productId/history')
