@@ -3,18 +3,19 @@ import { render, screen } from '@testing-library/react';
 import { App } from './App';
 
 describe('App', () => {
-  it('renders the brand name', () => {
+  it('renders the sidebar', () => {
     render(<App />);
-    expect(screen.getByText('Dream Makeover')).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: /primary navigation/i })).toBeInTheDocument();
   });
 
-  it('renders the tagline', () => {
+  it('renders the topbar with the dashboard title', () => {
     render(<App />);
-    expect(screen.getByText('A Luxury Beauty Salon')).toBeInTheDocument();
+    // jsdom defaults to '/' so the dashboard is the active route
+    expect(screen.getByRole('heading', { name: /^dashboard$/i, level: 1 })).toBeInTheDocument();
   });
 
-  it('renders the placeholder heading', () => {
+  it('renders the dashboard placeholder', () => {
     render(<App />);
-    expect(screen.getByRole('heading', { name: /frontend foundation ready/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^dashboard$/i, level: 2 })).toBeInTheDocument();
   });
 });
