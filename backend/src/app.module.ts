@@ -12,7 +12,7 @@ import { PackagesModule } from './packages/packages.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { EmployeesModule } from './employees/employees.module';
 import { SalaryPaymentsModule } from './salary-payments/salary-payments.module';
-
+import { ExpensesModule } from './expenses/expenses.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot(databaseConfig),
@@ -27,6 +27,7 @@ import { SalaryPaymentsModule } from './salary-payments/salary-payments.module';
     InventoryModule,
     EmployeesModule,
     SalaryPaymentsModule,
+    ExpensesModule,
   ],
 })
 export class AppModule {}
