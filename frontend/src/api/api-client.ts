@@ -45,7 +45,7 @@ function buildHeaders(options: RequestOptions, hasBody: boolean): HeadersInit {
   return headers;
 }
 
-async function parseErrorResponse(response: Response): Promise<ApiError> {
+async function parseErrorResponse(response: Response, url: string): Promise<ApiError> {
   let message = `Request failed with status ${response.status}`;
   let details: unknown = undefined;
 
@@ -72,7 +72,7 @@ async function parseErrorResponse(response: Response): Promise<ApiError> {
     // Fall back to the default message.
   }
 
-  return new ApiError(response.status, message, details);
+  return new ApiError(response.status, message, details, url);
 }
 
 async function request<T>(
@@ -101,14 +101,14 @@ async function request<T>(
     // fetch throws on network errors, CORS failures, and aborts.
     // We normalize all of these into ApiError with status 0.
     if (err instanceof DOMException && err.name === 'AbortError') {
-      throw new ApiError(0, 'Request was aborted');
+      throw new ApiError(0, 'Request was aborted', undefined, url);
     }
     const message = err instanceof Error ? err.message : 'Network request failed';
-    throw new ApiError(0, message, err);
+    throw new ApiError(0, message, err, url);
   }
 
   if (!response.ok) {
-    throw await parseErrorResponse(response);
+    throw await parseErrorResponse(response, url);
   }
 
   if (response.status === 204) {
