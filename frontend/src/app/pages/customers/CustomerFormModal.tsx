@@ -88,7 +88,7 @@ export function CustomerFormModal({
           autoFocus
           value={form.fullName}
           onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))}
-          error={fieldErrors.fullName}
+          {...(fieldErrors.fullName ? { error: fieldErrors.fullName } : {})}
           disabled={submitting}
         />
 
@@ -97,7 +97,7 @@ export function CustomerFormModal({
           inputMode="tel"
           value={form.phoneNumber}
           onChange={(e) => setForm((s) => ({ ...s, phoneNumber: e.target.value }))}
-          error={fieldErrors.phoneNumber}
+          {...(fieldErrors.phoneNumber ? { error: fieldErrors.phoneNumber } : {})}
           hint="Used to identify returning customers"
           disabled={submitting}
         />

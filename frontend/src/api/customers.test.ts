@@ -41,7 +41,7 @@ describe('customersApi', () => {
 
     const result = await customersApi.list();
     expect(result).toHaveLength(1);
-    expect(result[0].fullName).toBe('Alice');
+    expect(result[0]!.fullName).toBe('Alice');
   });
 
   it('fetches a customer by id', async () => {
