@@ -14,7 +14,8 @@ import { ShariPage } from './app/pages/ShariPage';
 import { ThreePiecePage } from './app/pages/ThreePiecePage';
 import { StockPage } from './app/pages/StockPage';
 import { PackagesPage } from './app/pages/PackagesPage';
-import { CustomersPage } from './app/pages/CustomersPage';
+import { CustomersPage } from './app/pages/customers/CustomersPage';
+import { CustomerDetailPage } from './app/pages/customers/CustomerDetailPage';
 import { SalesReportPage } from './app/pages/SalesReportPage';
 import { AccountsPage } from './app/pages/AccountsPage';
 import { StaffPage } from './app/pages/StaffPage';
@@ -68,6 +69,7 @@ export function App(): JSX.Element {
             <Route path="stock" element={<StockPage />} />
             <Route path="packages" element={<PackagesPage />} />
             <Route path="customers" element={<CustomersPage />} />
+            <Route path="customers/:id" element={<CustomerDetailPage />} />
             <Route
               path="sales-report"
               element={

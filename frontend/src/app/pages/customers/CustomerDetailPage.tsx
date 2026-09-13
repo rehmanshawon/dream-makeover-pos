@@ -1,0 +1,94 @@
+import type { JSX } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { useCustomer } from '../../../api/customer-hooks';
+import { ApiError } from '../../../api/api-error';
+import { Badge, type BadgeVariant } from '../../../ui/Badge';
+import { Card } from '../../../ui/Card';
+import { EmptyState } from '../../../ui/EmptyState';
+import { Spinner } from '../../../ui/Spinner';
+import { formatBdt, formatDateTime } from '../../../utils/format';
+import type { CustomerRewardTier } from '../../../types/customers';
+import './CustomerDetailPage.css';
+
+const TIER_VARIANT: Record<CustomerRewardTier, BadgeVariant> = {
+  Silver: 'neutral',
+  Gold: 'warning',
+  Platinum: 'accent',
+  Diamond: 'success',
+};
+
+export function CustomerDetailPage(): JSX.Element {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading, error } = useCustomer(id);
+
+  if (isLoading) {
+    return (
+      <div className="customer-detail__loading">
+        <Spinner label="Loading customer" />
+      </div>
+    );
+  }
+
+  if (error) {
+    const notFound = error instanceof ApiError && error.status === 404;
+    return (
+      <div className="customer-detail">
+        <EmptyState
+          title={notFound ? 'Customer not found' : 'Unable to load customer'}
+          description={
+            notFound
+              ? 'The customer may have been removed, or the link is incorrect.'
+              : 'Please try again in a moment.'
+          }
+          action={
+            <Link to="/customers" className="customer-detail__back">
+              Back to customers
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
+
+  if (!data) return <></>;
+
+  return (
+    <div className="customer-detail">
+      <div className="customer-detail__breadcrumb">
+        <Link to="/customers">Customers</Link>
+        <span aria-hidden="true"> / </span>
+        <span>{data.fullName}</span>
+      </div>
+
+      <div className="customer-detail__grid">
+        <Card
+          title={data.fullName}
+          subtitle={`Customer since ${formatDateTime(data.createdAt)}`}
+          actions={<Badge variant={TIER_VARIANT[data.rewardTier]}>{data.rewardTier}</Badge>}
+        >
+          <dl className="customer-detail__facts">
+            <div className="customer-detail__fact">
+              <dt>Phone</dt>
+              <dd>{data.phoneNumber}</dd>
+            </div>
+            <div className="customer-detail__fact">
+              <dt>Reward points</dt>
+              <dd>{data.rewardPoints.toLocaleString('en-BD')}</dd>
+            </div>
+            <div className="customer-detail__fact">
+              <dt>Lifetime spend</dt>
+              <dd>{formatBdt(data.lifetimeSpendMinor)}</dd>
+            </div>
+          </dl>
+        </Card>
+
+        <Card title="Purchase history" subtitle="Recent activity">
+          <EmptyState
+            title="No purchases yet"
+            description="Transaction history will appear here once the customer makes a purchase."
+          />
+        </Card>
+      </div>
+    </div>
+  );
+}
