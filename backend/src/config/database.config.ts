@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './env';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { Customer } from '../customers/customer.entity';
 import { Product } from '../products/product.entity';
