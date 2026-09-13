@@ -1,0 +1,26 @@
+.products-page {
+  padding: var(--space-6);
+}
+
+.products-page__toolbar {
+  margin-bottom: var(--space-4);
+  max-width: 320px;
+}
+
+.products-page__loading {
+  padding: var(--space-8);
+  display: flex;
+  justify-content: center;
+}
+
+.products-page__error {
+  padding: var(--space-4);
+  background: var(--color-danger-soft);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+}
+
+.product-cell__name {
+  font-weight: var(--font-weight-medium);
+}

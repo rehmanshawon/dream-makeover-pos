@@ -56,7 +56,7 @@ describe('CustomerDetailPage', () => {
 
     renderPage();
 
-    expect(await screen.findByText('Alice Rahman')).toBeInTheDocument();
+    expect(await screen.findAllByText('Alice Rahman')).toHaveLength(2);
     expect(screen.getByText('01700000000')).toBeInTheDocument();
     expect(screen.getByText(/250/)).toBeInTheDocument();
     expect(screen.getByText(/5,000\.00/)).toBeInTheDocument();

@@ -9,9 +9,8 @@ import { LoginPage } from './app/pages/LoginPage';
 import { DashboardPage } from './app/pages/DashboardPage';
 import { NewSalePage } from './app/pages/NewSalePage';
 import { ParlourServicePage } from './app/pages/ParlourServicePage';
-import { CosmeticsPage } from './app/pages/CosmeticsPage';
-import { ShariPage } from './app/pages/ShariPage';
-import { ThreePiecePage } from './app/pages/ThreePiecePage';
+import { CategoryProductsPage } from './app/pages/products/CategoryProductsPage';
+import { ProductDetailPage } from './app/pages/products/ProductDetailPage';
 import { StockPage } from './app/pages/StockPage';
 import { PackagesPage } from './app/pages/PackagesPage';
 import { CustomersPage } from './app/pages/customers/CustomersPage';
@@ -63,9 +62,10 @@ export function App(): JSX.Element {
             />
             <Route path="pos" element={<NewSalePage />} />
             <Route path="parlour" element={<ParlourServicePage />} />
-            <Route path="cosmetics" element={<CosmeticsPage />} />
-            <Route path="shari" element={<ShariPage />} />
-            <Route path="three-piece" element={<ThreePiecePage />} />
+            <Route path="cosmetics" element={<CategoryProductsPage slug="cosmetics" />} />
+            <Route path="shari" element={<CategoryProductsPage slug="shari" />} />
+            <Route path="three-piece" element={<CategoryProductsPage slug="three-piece" />} />
+            <Route path="product/:id" element={<ProductDetailPage />} />
             <Route path="stock" element={<StockPage />} />
             <Route path="packages" element={<PackagesPage />} />
             <Route path="customers" element={<CustomersPage />} />

@@ -48,3 +48,29 @@ export function formatDateTime(iso: string): string {
     minute: '2-digit',
   });
 }
+
+/**
+ * Parses a Taka string (e.g., "1250.50") into an integer number of
+ * poisha. Uses Math.round to avoid floating-point drift.
+ *
+ * Returns null if the input is not a valid positive number.
+ */
+export function parseTakaToMinor(input: string): number | null {
+  const trimmed = input.trim();
+  if (trimmed === '') return null;
+
+  const value = Number(trimmed);
+  if (!Number.isFinite(value) || value < 0) return null;
+
+  return Math.round(value * 100);
+}
+
+/**
+ * Formats a minor-unit amount as a Taka decimal string suitable for an
+ * input field. Omits the currency symbol and thousand separators.
+ *
+ * Example: 125050 → "1250.50"
+ */
+export function minorToTakaInput(minorUnits: number): string {
+  return (minorUnits / 100).toFixed(2);
+}

@@ -1,0 +1,42 @@
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+  type UseQueryResult,
+} from '@tanstack/react-query';
+import { productsApi } from './products';
+import type { Product, CreateProductRequest } from '../types/products';
+
+export const productKeys = {
+  all: ['products'] as const,
+  list: () => [...productKeys.all, 'list'] as const,
+  detail: (id: string) => [...productKeys.all, 'detail', id] as const,
+};
+
+export function useProducts(): UseQueryResult<Product[], Error> {
+  return useQuery({
+    queryKey: productKeys.list(),
+    queryFn: () => productsApi.list(),
+  });
+}
+
+export function useProduct(id: string | undefined): UseQueryResult<Product, Error> {
+  return useQuery({
+    queryKey: productKeys.detail(id ?? ''),
+    queryFn: () => productsApi.getById(id as string),
+    enabled: Boolean(id),
+  });
+}
+
+export function useCreateProduct(): UseMutationResult<Product, Error, CreateProductRequest> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateProductRequest) => productsApi.create(payload),
+    onSuccess: (created) => {
+      void queryClient.invalidateQueries({ queryKey: productKeys.all });
+      queryClient.setQueryData(productKeys.detail(created.id), created);
+    },
+  });
+}
