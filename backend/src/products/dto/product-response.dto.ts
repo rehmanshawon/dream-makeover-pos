@@ -5,7 +5,11 @@ export class ProductResponseDto {
   name: string;
   category: ProductCategory;
   stock: number;
-  purchaseCostMinor: number;
+  /**
+   * Omitted when the caller is not an ADMIN. The field is optional to
+   * allow the service to strip it for staff users.
+   */
+  purchaseCostMinor?: number;
   sellingPriceMinor: number;
   minimumStockThreshold: number;
   createdAt: Date;

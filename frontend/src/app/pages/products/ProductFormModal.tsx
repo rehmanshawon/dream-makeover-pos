@@ -6,7 +6,10 @@ import { Modal } from '../../../ui/Modal';
 import { ApiError } from '../../../api/api-error';
 import { useCreateProduct } from '../../../api/product-hooks';
 import { parseTakaToMinor } from '../../../utils/format';
-import type { ProductCategory } from '../../../types/products';
+import type { Product, ProductCategory } from '../../../types/products';
+import { useUpdateProduct } from '../../../api/product-hooks';
+import { minorToTakaInput } from '../../../utils/format';
+
 import './ProductFormModal.css';
 
 const CATEGORY_OPTIONS = [
@@ -17,8 +20,8 @@ const CATEGORY_OPTIONS = [
 
 interface ProductFormModalProps {
   open: boolean;
-  /** Initial category. The user can change it, but it defaults here. */
   defaultCategory: ProductCategory;
+  product?: Product;
   onClose: () => void;
   onCreated?: (productId: string) => void;
 }
@@ -55,6 +58,7 @@ export function ProductFormModal({
   open,
   defaultCategory,
   onClose,
+  product,
   onCreated,
 }: ProductFormModalProps): JSX.Element {
   const [form, setForm] = useState<FormState>(() => emptyForm(defaultCategory));
@@ -63,13 +67,28 @@ export function ProductFormModal({
 
   const createMutation = useCreateProduct();
 
+  const updateMutation = useUpdateProduct();
+  const isEdit = Boolean(product);
+  const submitting = isEdit ? updateMutation.isPending : createMutation.isPending;
+
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+
+    if (product) {
+      setForm({
+        name: product.name,
+        category: product.category,
+        stock: String(product.stock),
+        purchaseCostTaka: minorToTakaInput(product.purchaseCostMinor ?? 0),
+        sellingPriceTaka: minorToTakaInput(product.sellingPriceMinor),
+        minimumStockThreshold: String(product.minimumStockThreshold),
+      });
+    } else {
       setForm(emptyForm(defaultCategory));
-      setErrors({});
-      setFormError(null);
     }
-  }, [open, defaultCategory]);
+    setErrors({});
+    setFormError(null);
+  }, [open, defaultCategory, product]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -84,8 +103,10 @@ export function ProductFormModal({
     }
 
     const stock = Number(form.stock);
-    if (!Number.isInteger(stock) || stock < 0) {
-      nextErrors.stock = 'Stock must be a non-negative integer';
+    if (!isEdit) {
+      if (!Number.isInteger(stock) || stock < 0) {
+        nextErrors.stock = 'Stock must be a non-negative integer';
+      }
     }
 
     const purchaseCostMinor = parseTakaToMinor(form.purchaseCostTaka);
@@ -109,15 +130,29 @@ export function ProductFormModal({
     }
 
     try {
-      const created = await createMutation.mutateAsync({
-        name: trimmedName,
-        category: form.category,
-        stock: stock as number,
-        purchaseCostMinor: purchaseCostMinor as number,
-        sellingPriceMinor: sellingPriceMinor as number,
-        minimumStockThreshold: minimumStockThreshold as number,
-      });
-      onCreated?.(created.id);
+      if (isEdit && product) {
+        const updated = await updateMutation.mutateAsync({
+          id: product.id,
+          payload: {
+            name: trimmedName,
+            category: form.category,
+            purchaseCostMinor: purchaseCostMinor as number,
+            sellingPriceMinor: sellingPriceMinor as number,
+            minimumStockThreshold: minimumStockThreshold as number,
+          },
+        });
+        onCreated?.(updated.id);
+      } else {
+        const created = await createMutation.mutateAsync({
+          name: trimmedName,
+          category: form.category,
+          stock: stock as number,
+          purchaseCostMinor: purchaseCostMinor as number,
+          sellingPriceMinor: sellingPriceMinor as number,
+          minimumStockThreshold: minimumStockThreshold as number,
+        });
+        onCreated?.(created.id);
+      }
       onClose();
     } catch (err) {
       if (err instanceof ApiError) {
@@ -128,12 +163,10 @@ export function ProductFormModal({
     }
   };
 
-  const submitting = createMutation.isPending;
-
   return (
     <Modal
       open={open}
-      title="New product"
+      title={isEdit ? 'Edit product' : 'New product'}
       onClose={onClose}
       size="lg"
       closeOnOverlayClick={!submitting}
@@ -158,16 +191,16 @@ export function ProductFormModal({
             }
             disabled={submitting}
           />
-
-          <Input
-            label="Stock"
-            inputMode="numeric"
-            value={form.stock}
-            onChange={(e) => setForm((s) => ({ ...s, stock: e.target.value }))}
-            {...(errors.stock ? { error: errors.stock } : {})}
-            disabled={submitting}
-          />
-
+          {!isEdit && (
+            <Input
+              label="Stock"
+              inputMode="numeric"
+              value={form.stock}
+              onChange={(e) => setForm((s) => ({ ...s, stock: e.target.value }))}
+              {...(errors.stock ? { error: errors.stock } : {})}
+              disabled={submitting}
+            />
+          )}
           <Input
             label="Minimum stock threshold"
             inputMode="numeric"
@@ -209,7 +242,7 @@ export function ProductFormModal({
             Cancel
           </Button>
           <Button type="submit" loading={submitting}>
-            Create product
+            {isEdit ? 'Save changes' : 'Create product'}
           </Button>
         </div>
       </form>

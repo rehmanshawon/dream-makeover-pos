@@ -33,3 +33,23 @@ export interface StockMovement {
   createdBy: string;
   createdAt: string;
 }
+
+export interface UpdateProductRequest {
+  name?: string;
+  category?: ProductCategory;
+  purchaseCostMinor?: number;
+  sellingPriceMinor?: number;
+  minimumStockThreshold?: number;
+}
+
+export interface StockInRequest {
+  productId: string;
+  quantity: number;
+  note?: string;
+}
+
+export interface AdjustmentRequest {
+  productId: string;
+  delta: number;
+  note: string;
+}

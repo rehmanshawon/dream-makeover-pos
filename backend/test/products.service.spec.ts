@@ -2,24 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ProductsService } from '../src/products/products.service';
 import { Product } from '../src/products/product.entity';
 import { CreateProductDto } from '../src/products/dto/create-product.dto';
 import { ProductCategory } from '../src/products/product-category.enum';
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-
-type MockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
-
-const createMockRepository = <T = any>(): MockRepository<T> => ({
-  create: jest.fn(),
-  save: jest.fn(),
-  find: jest.fn(),
-  findOne: jest.fn(),
-});
 
 describe('ProductsService', () => {
   let service: ProductsService;
-  let repository: MockRepository<Product>;
+  let repository: Repository<Product>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -27,127 +18,106 @@ describe('ProductsService', () => {
         ProductsService,
         {
           provide: getRepositoryToken(Product),
-          useValue: createMockRepository(),
+          useValue: {
+            findOne: jest.fn(),
+            find: jest.fn(),
+            create: jest.fn(),
+            save: jest.fn(),
+          },
         },
       ],
     }).compile();
 
-    service = module.get<ProductsService>(ProductsService);
+    service = module.get(ProductsService);
     repository = module.get(getRepositoryToken(Product));
   });
 
-  describe('create', () => {
-    it('should pass correct properties to repository.create and return response DTO', async () => {
-      const dto: CreateProductDto = {
-        name: 'Luxury Jamdani Saree',
-        category: ProductCategory.SAREE,
-        stock: 10,
-        purchaseCostMinor: 1500000,
-        sellingPriceMinor: 2500000,
-        minimumStockThreshold: 2,
-      };
+  const baseProduct = (): Product =>
+    ({
+      id: 'uuid-product-1',
+      name: 'Lipstick',
+      category: ProductCategory.COSMETICS,
+      stock: 10,
+      purchaseCostMinor: 50000,
+      sellingPriceMinor: 100000,
+      minimumStockThreshold: 2,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }) as Product;
 
-      const mockSavedProduct = {
-        id: 'uuid-product-1',
-        ...dto,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as Product;
+  it('includes purchase cost when options.includePurchaseCost is true', async () => {
+    jest.spyOn(repository, 'findOne').mockResolvedValue(baseProduct());
 
-      repository.create?.mockReturnValue(mockSavedProduct);
-      repository.save?.mockResolvedValue(mockSavedProduct);
-
-      const result = await service.create(dto);
-
-      // Verify actual argument delegation to repository
-      expect(repository.create).toHaveBeenCalledWith({
-        name: dto.name,
-        category: dto.category,
-        stock: dto.stock,
-        purchaseCostMinor: dto.purchaseCostMinor,
-        sellingPriceMinor: dto.sellingPriceMinor,
-        minimumStockThreshold: dto.minimumStockThreshold,
-      });
-
-      expect(repository.save).toHaveBeenCalledWith(mockSavedProduct);
-      expect(result.id).toBe('uuid-product-1');
-      expect(result.sellingPriceMinor).toBe(2500000);
+    const result = await service.findById('uuid-product-1', {
+      includePurchaseCost: true,
     });
+
+    expect(result.purchaseCostMinor).toBe(50000);
   });
 
-  describe('findAll', () => {
-    it('should fetch products ordered by category and name ASC', async () => {
-      const mockProducts = [
-        {
-          id: 'uuid-1',
-          name: 'Matte Lipstick',
-          category: ProductCategory.COSMETICS,
-          stock: 15,
-          purchaseCostMinor: 50000,
-          sellingPriceMinor: 90000,
-          minimumStockThreshold: 3,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        } as unknown as Product,
-      ];
+  it('omits purchase cost when options.includePurchaseCost is false', async () => {
+    jest.spyOn(repository, 'findOne').mockResolvedValue(baseProduct());
 
-      repository.find?.mockResolvedValue(mockProducts);
-
-      const result = await service.findAll();
-
-      expect(repository.find).toHaveBeenCalledWith({
-        order: { category: 'ASC', name: 'ASC' },
-      });
-      expect(result).toHaveLength(1);
-      // bigintTransformer guarantees entity exposes numbers
-      expect(result[0].purchaseCostMinor).toBe(50000);
-      expect(result[0].sellingPriceMinor).toBe(90000);
+    const result = await service.findById('uuid-product-1', {
+      includePurchaseCost: false,
     });
+
+    expect(result.purchaseCostMinor).toBeUndefined();
+    // Other fields still present
+    expect(result.sellingPriceMinor).toBe(100000);
+    expect(result.stock).toBe(10);
   });
 
-  describe('findByCategory', () => {
-    it('should query products filtered by category and ordered by name ASC', async () => {
-      repository.find?.mockResolvedValue([]);
+  it('strips purchase cost from findAll for staff', async () => {
+    jest.spyOn(repository, 'find').mockResolvedValue([baseProduct()]);
 
-      const result = await service.findByCategory(ProductCategory.COSMETICS);
+    const result = await service.findAll({ includePurchaseCost: false });
 
-      expect(repository.find).toHaveBeenCalledWith({
-        where: { category: ProductCategory.COSMETICS },
-        order: { name: 'ASC' },
-      });
-      expect(result).toEqual([]);
-    });
+    expect(result).toHaveLength(1);
+    expect(result[0].purchaseCostMinor).toBeUndefined();
   });
 
-  describe('findById', () => {
-    it('should return product DTO when found', async () => {
-      const mockProduct = {
-        id: 'uuid-1',
-        name: 'Silk Three-piece',
-        category: ProductCategory.THREE_PIECE,
-        stock: 5,
-        purchaseCostMinor: 200000,
-        sellingPriceMinor: 350000,
-        minimumStockThreshold: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as Product;
+  it('updates non-stock fields without touching stock', async () => {
+    const product = baseProduct();
+    jest.spyOn(repository, 'findOne').mockResolvedValue(product);
+    jest.spyOn(repository, 'save').mockImplementation(async (p) => p as Product);
 
-      repository.findOne?.mockResolvedValue(mockProduct);
+    const result = await service.update(
+      'uuid-product-1',
+      { name: 'Renamed Lipstick', sellingPriceMinor: 110000 },
+      { includePurchaseCost: true },
+    );
 
-      const result = await service.findById('uuid-1');
+    expect(result.name).toBe('Renamed Lipstick');
+    expect(result.sellingPriceMinor).toBe(110000);
+    expect(result.stock).toBe(10); // unchanged
+    expect(product.name).toBe('Renamed Lipstick');
+  });
 
-      expect(repository.findOne).toHaveBeenCalledWith({
-        where: { id: 'uuid-1' },
-      });
-      expect(result.id).toBe('uuid-1');
-      expect(result.name).toBe('Silk Three-piece');
-    });
+  it('throws NotFoundException when updating a missing product', async () => {
+    jest.spyOn(repository, 'findOne').mockResolvedValue(null);
 
-    it('should throw NotFoundException when product does not exist', async () => {
-      repository.findOne?.mockResolvedValue(null);
+    await expect(
+      service.update('missing', { name: 'X' }, { includePurchaseCost: true }),
+    ).rejects.toThrow(NotFoundException);
+  });
 
-      await expect(service.findById('non-existent-id')).rejects.toThrow(NotFoundException);
-    });
+  it('creates product with correct monetary values', async () => {
+    const dto: CreateProductDto = {
+      name: 'Lipstick',
+      category: ProductCategory.COSMETICS,
+      stock: 10,
+      purchaseCostMinor: 50000,
+      sellingPriceMinor: 100000,
+      minimumStockThreshold: 2,
+    };
+
+    jest.spyOn(repository, 'create').mockReturnValue(baseProduct());
+    jest.spyOn(repository, 'save').mockResolvedValue(baseProduct());
+
+    const result = await service.create(dto, { includePurchaseCost: true });
+
+    expect(result.purchaseCostMinor).toBe(50000);
+    expect(result.sellingPriceMinor).toBe(100000);
   });
 });

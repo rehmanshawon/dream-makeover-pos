@@ -1,5 +1,5 @@
 import { api } from './api-client';
-import type { Product, CreateProductRequest } from '../types/products';
+import type { Product, CreateProductRequest, UpdateProductRequest } from '../types/products';
 
 export const productsApi = {
   list(): Promise<Product[]> {
@@ -12,5 +12,9 @@ export const productsApi = {
 
   create(payload: CreateProductRequest): Promise<Product> {
     return api.post<Product>('/products', payload);
+  },
+
+  update(id: string, payload: UpdateProductRequest): Promise<Product> {
+    return api.patch<Product>(`/products/${id}`, payload);
   },
 };

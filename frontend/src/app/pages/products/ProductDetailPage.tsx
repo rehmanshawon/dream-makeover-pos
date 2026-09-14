@@ -11,6 +11,11 @@ import { Table, type TableColumn } from '../../../ui/Table';
 import { useAuth } from '../../auth/AuthContext';
 import { formatBdt, formatDateTime } from '../../../utils/format';
 import type { Product, StockMovement } from '../../../types/products';
+import { useState } from 'react';
+import { Button } from '../../../ui/Button';
+import { ProductFormModal } from './ProductFormModal';
+import { StockInModal } from './StockInModal';
+import { AdjustStockModal } from './AdjustStockModal';
 import './ProductDetailPage.css';
 
 type StockStatus = 'out' | 'low' | 'ok';
@@ -44,6 +49,9 @@ export function ProductDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const { isAdmin } = useAuth();
   const { data, isLoading, error } = useProduct(id);
+  const [editOpen, setEditOpen] = useState(false);
+  const [stockInOpen, setStockInOpen] = useState(false);
+  const [adjustOpen, setAdjustOpen] = useState(false);
   const history = useProductStockHistory(id);
 
   if (isLoading) {
@@ -151,6 +159,25 @@ export function ProductDetailPage(): JSX.Element {
               </div>
             )}
           </dl>
+          actions=
+          {
+            <div className="product-detail__actions">
+              <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>
+              {isAdmin && (
+                <>
+                  <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={() => setStockInOpen(true)}>
+                    Stock in
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={() => setAdjustOpen(true)}>
+                    Adjust
+                  </Button>
+                </>
+              )}
+            </div>
+          }
         </Card>
 
         <Card title="Stock history" subtitle="Every change to this product's stock">
@@ -178,6 +205,29 @@ export function ProductDetailPage(): JSX.Element {
           )}
         </Card>
       </div>
+      {isAdmin && (
+        <>
+          <ProductFormModal
+            open={editOpen}
+            defaultCategory={data.category}
+            product={data}
+            onClose={() => setEditOpen(false)}
+          />
+          <StockInModal
+            open={stockInOpen}
+            productId={data.id}
+            productName={data.name}
+            onClose={() => setStockInOpen(false)}
+          />
+          <AdjustStockModal
+            open={adjustOpen}
+            productId={data.id}
+            productName={data.name}
+            currentStock={data.stock}
+            onClose={() => setAdjustOpen(false)}
+          />
+        </>
+      )}
     </div>
   );
 }
