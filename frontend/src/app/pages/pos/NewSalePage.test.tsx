@@ -145,4 +145,102 @@ describe('NewSalePage', () => {
     const cart = screen.getByRole('complementary', { name: /cart/i });
     expect(within(cart).getByText(/change/i).parentElement).toHaveTextContent('৳0.00');
   });
+
+  it('submits the sale, shows confirmation, and clears the cart', async () => {
+    mockEndpoints();
+    renderPage();
+
+    await screen.findByText('Test Facial');
+    await userEvent.click(screen.getByText('Test Facial'));
+
+    const cashInput = screen.getByLabelText(/cash received/i);
+    await userEvent.clear(cashInput);
+    await userEvent.type(cashInput, '3000');
+
+    // Intercept the checkout request
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async (input, init) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      if (url.endsWith('/checkout')) {
+        const body = JSON.parse(init?.body as string);
+        expect(body.items).toEqual([{ itemType: 'SERVICE', itemId: 's1', quantity: 1 }]);
+        expect(body.cashReceivedMinor).toBe(300000);
+        return new Response(
+          JSON.stringify({
+            transactionId: 'tx-1',
+            invoiceId: 'DM-20260914-0001',
+            subtotalMinor: 200000,
+            discountMinor: 0,
+            totalMinor: 200000,
+            cashReceivedMinor: 300000,
+            changeMinor: 100000,
+            items: [
+              {
+                itemType: 'SERVICE',
+                itemName: 'Test Facial',
+                quantity: 1,
+                unitPriceMinor: 200000,
+                totalPriceMinor: 200000,
+              },
+            ],
+            loyaltyPointsEarned: 0,
+          }),
+          {
+            status: 201,
+            headers: { 'content-type': 'application/json' },
+          },
+        );
+      }
+      return originalFetch(input, init);
+    }) as unknown as typeof fetch;
+
+    await userEvent.click(screen.getByRole('button', { name: /complete sale/i }));
+
+    expect(await screen.findByText('Sale completed')).toBeInTheDocument();
+    expect(screen.getByText('DM-20260914-0001')).toBeInTheDocument();
+    expect(screen.getByText(/৳1,000\.00/)).toBeInTheDocument();
+
+    // Cart should be cleared
+    await userEvent.click(screen.getByRole('button', { name: /new sale/i }));
+    const cart = screen.getByRole('complementary', { name: /cart/i });
+    expect(within(cart).getByText(/no items yet/i)).toBeInTheDocument();
+  });
+
+  it('preserves the cart and shows an error on checkout failure', async () => {
+    mockEndpoints();
+    renderPage();
+
+    await screen.findByText('Test Facial');
+    await userEvent.click(screen.getByText('Test Facial'));
+
+    const cashInput = screen.getByLabelText(/cash received/i);
+    await userEvent.clear(cashInput);
+    await userEvent.type(cashInput, '3000');
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async (input, init) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      if (url.endsWith('/checkout')) {
+        return new Response(
+          JSON.stringify({
+            statusCode: 400,
+            message: 'Insufficient stock',
+          }),
+          {
+            status: 400,
+            headers: { 'content-type': 'application/json' },
+          },
+        );
+      }
+      return originalFetch(input, init);
+    }) as unknown as typeof fetch;
+
+    await userEvent.click(screen.getByRole('button', { name: /complete sale/i }));
+
+    expect(await screen.findByText(/insufficient stock/i)).toBeInTheDocument();
+
+    // Cart is preserved
+    const cart = screen.getByRole('complementary', { name: /cart/i });
+    expect(within(cart).getByText('Test Facial')).toBeInTheDocument();
+  });
 });

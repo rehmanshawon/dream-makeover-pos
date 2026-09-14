@@ -20,6 +20,8 @@ interface CartPanelProps {
   onSetDiscount: (minorUnits: number) => void;
   onSetCashReceived: (minorUnits: number) => void;
   onClearCart: () => void;
+  submissionError: string | null;
+  submitting: boolean;
   onSubmit: () => void;
 }
 
@@ -36,6 +38,8 @@ export function CartPanel({
   onSetDiscount,
   onSetCashReceived,
   onClearCart,
+  submissionError,
+  submitting,
   onSubmit,
 }: CartPanelProps): JSX.Element {
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
@@ -147,8 +151,20 @@ export function CartPanel({
         </div>
       </section>
 
+      {submissionError && (
+        <div className="cart-panel__error" role="alert">
+          {submissionError}
+        </div>
+      )}
+
       <footer className="cart-panel__footer">
-        <Button size="lg" fullWidth disabled={!canSubmit} onClick={onSubmit}>
+        <Button
+          size="lg"
+          fullWidth
+          disabled={!canSubmit || submitting}
+          loading={submitting}
+          onClick={onSubmit}
+        >
           Complete sale · {formatBdt(totals.totalMinor)}
         </Button>
       </footer>
