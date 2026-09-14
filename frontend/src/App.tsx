@@ -7,7 +7,7 @@ import { RedirectIfAuthenticated } from './app/auth/RedirectIfAuthenticated';
 import { AppLayout } from './app/layouts/AppLayout';
 import { LoginPage } from './app/pages/LoginPage';
 import { DashboardPage } from './app/pages/DashboardPage';
-import { NewSalePage } from './app/pages/NewSalePage';
+import { NewSalePage } from './app/pages/pos/NewSalePage';
 import { ParlourServicePage } from './app/pages/ParlourServicePage';
 import { CategoryProductsPage } from './app/pages/products/CategoryProductsPage';
 import { ProductDetailPage } from './app/pages/products/ProductDetailPage';

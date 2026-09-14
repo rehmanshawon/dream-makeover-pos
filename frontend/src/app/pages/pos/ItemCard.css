@@ -1,0 +1,59 @@
+.item-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-align: left;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+  cursor: pointer;
+  min-height: 92px;
+}
+
+.item-card:hover:not(.item-card--disabled) {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.item-card:active:not(.item-card--disabled) {
+  transform: translateY(0);
+}
+
+.item-card--disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  background: var(--color-surface-muted);
+}
+
+.item-card__name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-tight);
+}
+
+.item-card__subtitle {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.item-card__price {
+  margin-top: auto;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-accent-hover);
+  font-size: var(--font-size-md);
+}
+
+.item-card__badge {
+  font-size: var(--font-size-xs);
+  color: var(--color-danger);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}

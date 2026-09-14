@@ -1,0 +1,62 @@
+.customer-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.customer-picker__loading {
+  padding: var(--space-6);
+  display: flex;
+  justify-content: center;
+}
+
+.customer-picker__error {
+  padding: var(--space-3);
+  background: var(--color-danger-soft);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+}
+
+.customer-picker__list {
+  display: flex;
+  flex-direction: column;
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.customer-picker__option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  transition: background var(--transition-fast);
+}
+
+.customer-picker__option:hover {
+  background: var(--color-surface-muted);
+}
+
+.customer-picker__option:last-child {
+  border-bottom: none;
+}
+
+.customer-picker__name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+.customer-picker__meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.customer-picker__actions {
+  display: flex;
+  justify-content: flex-end;
+}
