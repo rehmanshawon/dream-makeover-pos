@@ -2,7 +2,6 @@ import { DataSource } from 'typeorm';
 import { describe, beforeAll, afterAll, beforeEach, it, expect } from '@jest/globals';
 import { Customer } from '../src/customers/customer.entity';
 import { Product } from '../src/products/product.entity';
-import { SalonService } from '../src/services/service.entity';
 import { Transaction } from '../src/transactions/transaction.entity';
 import { TransactionItem } from '../src/transactions/transaction-item.entity';
 import { CustomerRewardTier } from '../src/customers/customer-reward-tier.enum';
@@ -111,7 +110,7 @@ describe('Database Integration', () => {
         transactionId: tx.id,
         productId: product.id,
         serviceId: null,
-        itemType: 'PRODUCT',
+        itemType: 'PRODUCT' as TransactionItem['itemType'],
         itemName: 'Linked Product',
         quantity: 1,
         unitPriceMinor: 80000,

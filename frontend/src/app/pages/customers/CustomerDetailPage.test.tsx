@@ -81,4 +81,60 @@ describe('CustomerDetailPage', () => {
 
     expect(await screen.findByText(/customer not found/i)).toBeInTheDocument();
   });
+
+  it('renders purchase history when transactions exist', async () => {
+    globalThis.fetch = vi.fn(async (input) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+
+      if (url.endsWith('/transactions')) {
+        return new Response(
+          JSON.stringify([
+            {
+              id: 'tx-1',
+              invoiceId: 'DM-20260914-0001',
+              createdAt: '2026-09-14T10:00:00.000Z',
+              subtotalMinor: 200000,
+              discountMinor: 0,
+              totalMinor: 200000,
+              cashier: 'admin',
+              items: [
+                {
+                  itemType: 'SERVICE',
+                  itemName: 'Facial',
+                  quantity: 1,
+                  unitPriceMinor: 200000,
+                  totalPriceMinor: 200000,
+                },
+              ],
+            },
+          ]),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          },
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          id: 'c1',
+          fullName: 'Alice Rahman',
+          phoneNumber: '01700000000',
+          rewardTier: 'Gold',
+          rewardPoints: 250,
+          lifetimeSpendMinor: 500000,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        },
+      );
+    }) as unknown as typeof fetch;
+
+    renderPage();
+
+    expect(await screen.findByText('DM-20260914-0001')).toBeInTheDocument();
+  });
 });

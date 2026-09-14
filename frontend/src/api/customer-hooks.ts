@@ -6,7 +6,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 import { customersApi } from './customers';
-import type { Customer, CreateCustomerRequest } from '../types/customers';
+import type { Customer, CreateCustomerRequest, UpdateCustomerRequest } from '../types/customers';
 
 export const customerKeys = {
   all: ['customers'] as const,
@@ -39,6 +39,22 @@ export function useCreateCustomer(): UseMutationResult<Customer, Error, CreateCu
       void queryClient.invalidateQueries({ queryKey: customerKeys.all });
       // Seed the detail cache so navigating to the new customer is instant.
       queryClient.setQueryData(customerKeys.detail(created.id), created);
+    },
+  });
+}
+
+export function useUpdateCustomer(): UseMutationResult<
+  Customer,
+  Error,
+  { id: string; payload: UpdateCustomerRequest }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }) => customersApi.update(id, payload),
+    onSuccess: (updated) => {
+      void queryClient.invalidateQueries({ queryKey: customerKeys.all });
+      queryClient.setQueryData(customerKeys.detail(updated.id), updated);
     },
   });
 }

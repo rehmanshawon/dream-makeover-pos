@@ -8,6 +8,11 @@ import { EmptyState } from '../../../ui/EmptyState';
 import { Spinner } from '../../../ui/Spinner';
 import { formatBdt, formatDateTime } from '../../../utils/format';
 import type { CustomerRewardTier } from '../../../types/customers';
+import { useState } from 'react';
+import { Button } from '../../../ui/Button';
+import { useAuth } from '../../auth/AuthContext';
+import { CustomerFormModal } from './CustomerFormModal';
+import { CustomerHistoryTable } from './CustomerHistoryTable';
 import './CustomerDetailPage.css';
 
 const TIER_VARIANT: Record<CustomerRewardTier, BadgeVariant> = {
@@ -20,6 +25,8 @@ const TIER_VARIANT: Record<CustomerRewardTier, BadgeVariant> = {
 export function CustomerDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useCustomer(id);
+  const { isAdmin } = useAuth();
+  const [editOpen, setEditOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -64,7 +71,16 @@ export function CustomerDetailPage(): JSX.Element {
         <Card
           title={data.fullName}
           subtitle={`Customer since ${formatDateTime(data.createdAt)}`}
-          actions={<Badge variant={TIER_VARIANT[data.rewardTier]}>{data.rewardTier}</Badge>}
+          actions={
+            <div className="customer-detail__actions">
+              <Badge variant={TIER_VARIANT[data.rewardTier]}>{data.rewardTier}</Badge>
+              {isAdmin && (
+                <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
+                  Edit
+                </Button>
+              )}
+            </div>
+          }
         >
           <dl className="customer-detail__facts">
             <div className="customer-detail__fact">
@@ -83,11 +99,11 @@ export function CustomerDetailPage(): JSX.Element {
         </Card>
 
         <Card title="Purchase history" subtitle="Recent activity">
-          <EmptyState
-            title="No purchases yet"
-            description="Transaction history will appear here once the customer makes a purchase."
-          />
+          <CustomerHistoryTable customerId={data.id} />
         </Card>
+        {isAdmin && (
+          <CustomerFormModal open={editOpen} customer={data} onClose={() => setEditOpen(false)} />
+        )}
       </div>
     </div>
   );

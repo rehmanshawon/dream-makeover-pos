@@ -128,7 +128,7 @@ export function CustomersPage(): JSX.Element {
       <CustomerFormModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onCreated={(id) => navigate(`/customers/${id}`)}
+        onSaved={(customer) => navigate(`/customers/${customer.id}`)}
       />
     </div>
   );

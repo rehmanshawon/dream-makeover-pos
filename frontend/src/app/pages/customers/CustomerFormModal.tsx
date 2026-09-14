@@ -3,13 +3,15 @@ import { Button } from '../../../ui/Button';
 import { Input } from '../../../ui/Input';
 import { Modal } from '../../../ui/Modal';
 import { ApiError } from '../../../api/api-error';
-import { useCreateCustomer } from '../../../api/customer-hooks';
+import { useCreateCustomer, useUpdateCustomer } from '../../../api/customer-hooks';
 import './CustomerFormModal.css';
+import { Customer } from '@/types/customers';
 
 interface CustomerFormModalProps {
   open: boolean;
+  customer?: Customer;
   onClose: () => void;
-  onCreated?: (customerId: string) => void;
+  onSaved?: (customer: Customer) => void;
 }
 
 interface FormState {
@@ -21,8 +23,9 @@ const EMPTY_FORM: FormState = { fullName: '', phoneNumber: '' };
 
 export function CustomerFormModal({
   open,
+  customer,
   onClose,
-  onCreated,
+  onSaved,
 }: CustomerFormModalProps): JSX.Element {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<Partial<FormState>>({});
@@ -30,13 +33,24 @@ export function CustomerFormModal({
 
   const createMutation = useCreateCustomer();
 
+  const updateMutation = useUpdateCustomer();
+  const isEdit = Boolean(customer);
+  const submitting = isEdit ? updateMutation.isPending : createMutation.isPending;
+
   useEffect(() => {
-    if (!open) {
+    if (!open) return;
+
+    if (customer) {
+      setForm({
+        fullName: customer.fullName,
+        phoneNumber: customer.phoneNumber,
+      });
+    } else {
       setForm(EMPTY_FORM);
-      setFieldErrors({});
-      setFormError(null);
     }
-  }, [open]);
+    setFieldErrors({});
+    setFormError(null);
+  }, [open, customer]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -59,11 +73,22 @@ export function CustomerFormModal({
     }
 
     try {
-      const created = await createMutation.mutateAsync({
-        fullName: trimmedName,
-        phoneNumber: trimmedPhone,
-      });
-      onCreated?.(created.id);
+      let saved: Customer;
+      if (isEdit && customer) {
+        saved = await updateMutation.mutateAsync({
+          id: customer.id,
+          payload: {
+            fullName: trimmedName,
+            phoneNumber: trimmedPhone,
+          },
+        });
+      } else {
+        saved = await createMutation.mutateAsync({
+          fullName: trimmedName,
+          phoneNumber: trimmedPhone,
+        });
+      }
+      onSaved?.(saved);
       onClose();
     } catch (err) {
       if (err instanceof ApiError) {
@@ -78,10 +103,13 @@ export function CustomerFormModal({
     }
   };
 
-  const submitting = createMutation.isPending;
-
   return (
-    <Modal open={open} title="New customer" onClose={onClose} closeOnOverlayClick={!submitting}>
+    <Modal
+      open={open}
+      title={isEdit ? 'Edit customer' : 'New customer'}
+      onClose={onClose}
+      closeOnOverlayClick={!submitting}
+    >
       <form onSubmit={handleSubmit} className="customer-form" noValidate>
         <Input
           label="Full name"
@@ -113,7 +141,7 @@ export function CustomerFormModal({
             Cancel
           </Button>
           <Button type="submit" loading={submitting}>
-            Create customer
+            {isEdit ? 'Save changes' : 'Create customer'}
           </Button>
         </div>
       </form>

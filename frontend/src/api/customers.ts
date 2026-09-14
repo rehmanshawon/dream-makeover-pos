@@ -1,5 +1,6 @@
 import { api } from './api-client';
-import type { Customer, CreateCustomerRequest } from '../types/customers';
+import type { Customer, CreateCustomerRequest, UpdateCustomerRequest } from '../types/customers';
+import type { CustomerTransaction } from '../types/customer-transactions';
 
 export const customersApi = {
   /**
@@ -30,5 +31,13 @@ export const customersApi = {
    */
   create(payload: CreateCustomerRequest): Promise<Customer> {
     return api.post<Customer>('/customers', payload);
+  },
+
+  update(id: string, payload: UpdateCustomerRequest): Promise<Customer> {
+    return api.patch<Customer>(`/customers/${id}`, payload);
+  },
+
+  transactions(id: string): Promise<CustomerTransaction[]> {
+    return api.get<CustomerTransaction[]>(`/customers/${id}/transactions`);
   },
 };

@@ -153,7 +153,10 @@ describe('Financial Summary (integration)', () => {
     );
 
     // Perform a checkout via API
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const today = [now.getFullYear(), now.getMonth() + 1, now.getDate()]
+      .map((part) => String(part).padStart(2, '0'))
+      .join('-'); // Align with local calendar date
 
     const checkoutResponse = await request(app.getHttpServer())
       .post('/checkout')

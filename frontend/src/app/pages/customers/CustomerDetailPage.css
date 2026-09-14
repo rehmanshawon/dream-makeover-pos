@@ -60,3 +60,10 @@
   font-weight: var(--font-weight-medium);
   margin: 0;
 }
+
+.customer-detail__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}

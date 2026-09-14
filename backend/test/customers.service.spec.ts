@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { CustomersService } from '../src/customers/customers.service';
 import { Customer } from '../src/customers/customer.entity';
 import { CreateCustomerDto } from '../src/customers/dto/create-customer.dto';
 import { CustomerRewardTier } from '../src/customers/customer-reward-tier.enum';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { ConflictException } from '@nestjs/common';
 
 describe('CustomersService', () => {
   let service: CustomersService;
@@ -23,6 +24,10 @@ describe('CustomersService', () => {
             create: jest.fn(),
             save: jest.fn(),
           },
+        },
+        {
+          provide: DataSource,
+          useValue: {},
         },
       ],
     }).compile();
@@ -166,5 +171,50 @@ describe('CustomersService', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('uuid-1');
+  });
+
+  it('updates fullName only when phoneNumber is not provided', async () => {
+    const existing = {
+      id: 'uuid-1',
+      fullName: 'Old Name',
+      phoneNumber: '01700000000',
+      rewardTier: CustomerRewardTier.SILVER,
+      rewardPoints: 0,
+      lifetimeSpendMinor: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Customer;
+
+    jest.spyOn(repository, 'findOne').mockResolvedValue(existing);
+    jest.spyOn(repository, 'save').mockImplementation(async (c) => c as Customer);
+
+    const result = await service.update('uuid-1', { fullName: 'New Name' });
+
+    expect(result.fullName).toBe('New Name');
+    expect(result.phoneNumber).toBe('01700000000');
+  });
+
+  it('rejects a phoneNumber that belongs to another customer', async () => {
+    const existing = {
+      id: 'uuid-1',
+      fullName: 'Old Name',
+      phoneNumber: '01700000000',
+      rewardTier: CustomerRewardTier.SILVER,
+      rewardPoints: 0,
+      lifetimeSpendMinor: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Customer;
+
+    const other = {
+      id: 'uuid-2',
+      phoneNumber: '01800000000',
+    } as Customer;
+
+    jest.spyOn(repository, 'findOne').mockResolvedValueOnce(existing).mockResolvedValueOnce(other);
+
+    await expect(service.update('uuid-1', { phoneNumber: '01800000000' })).rejects.toThrow(
+      ConflictException,
+    );
   });
 });

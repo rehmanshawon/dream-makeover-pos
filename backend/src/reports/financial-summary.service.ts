@@ -124,37 +124,41 @@ export class FinancialSummaryService {
     const transactionRepo = this.dataSource.getRepository(Transaction);
     const itemRepo = this.dataSource.getRepository(TransactionItem);
 
-    // Sum total per item type.
-    // We sum the total_price_minor column because that reflects what was
-    // charged for each line before discount (which is applied at the
-    // transaction level in this system).
-    const rows: Array<{ itemType: TransactionItemType; total: string | number | null }> =
-      await itemRepo
-        .createQueryBuilder('item')
-        .innerJoin(Transaction, 'tx', 'tx.id = item.transaction_id')
-        .select('item.item_type', 'itemType')
-        .addSelect('SUM(item.total_price_minor)', 'total')
-        .where('tx.created_at >= :from AND tx.created_at < :toPlusOne', {
-          from: `${range.from} 00:00:00`,
-          toPlusOne: this.nextDay(range.to),
-        })
-        .groupBy('item.item_type')
-        .getRawMany();
+    // Sum each item type explicitly. This avoids relying on database-driver
+    // casing/alias behavior when mapping grouped enum values from raw rows.
+    const itemTotals: {
+      product: string | number | null;
+      service: string | number | null;
+      package: string | number | null;
+    } = (await itemRepo
+      .createQueryBuilder('item')
+      .innerJoin(Transaction, 'tx', 'tx.id = item.transaction_id')
+      .select(
+        'COALESCE(SUM(CASE WHEN item.item_type = :productType THEN item.total_price_minor ELSE 0 END), 0)',
+        'product',
+      )
+      .addSelect(
+        'COALESCE(SUM(CASE WHEN item.item_type = :serviceType THEN item.total_price_minor ELSE 0 END), 0)',
+        'service',
+      )
+      .addSelect(
+        'COALESCE(SUM(CASE WHEN item.item_type = :packageType THEN item.total_price_minor ELSE 0 END), 0)',
+        'package',
+      )
+      .where('tx.created_at >= :from AND tx.created_at < :toPlusOne', {
+        from: `${range.from} 00:00:00`,
+        toPlusOne: this.nextDay(range.to),
+      })
+      .setParameters({
+        productType: TransactionItemType.PRODUCT,
+        serviceType: TransactionItemType.SERVICE,
+        packageType: TransactionItemType.PACKAGE,
+      })
+      .getRawOne()) ?? { product: null, service: null, package: null };
 
-    let productSalesMinor = 0;
-    let serviceSalesMinor = 0;
-    let packageSalesMinor = 0;
-
-    for (const row of rows) {
-      const value = row.total === null ? 0 : Number(row.total);
-      if (row.itemType === TransactionItemType.PRODUCT) {
-        productSalesMinor = value;
-      } else if (row.itemType === TransactionItemType.SERVICE) {
-        serviceSalesMinor = value;
-      } else if (row.itemType === TransactionItemType.PACKAGE) {
-        packageSalesMinor = value;
-      }
-    }
+    const productSalesMinor = Number(itemTotals?.product ?? 0);
+    const serviceSalesMinor = Number(itemTotals?.service ?? 0);
+    const packageSalesMinor = Number(itemTotals?.package ?? 0);
 
     // Subtract discounts proportionally from revenue so the reported
     // revenue equals what customers actually paid.

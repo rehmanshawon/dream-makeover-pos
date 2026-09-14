@@ -15,3 +15,8 @@ export interface CreateCustomerRequest {
   fullName: string;
   phoneNumber: string;
 }
+
+export interface UpdateCustomerRequest {
+  fullName?: string;
+  phoneNumber?: string;
+}
