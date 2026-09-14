@@ -65,7 +65,7 @@ export function App(): JSX.Element {
             <Route path="cosmetics" element={<CategoryProductsPage slug="cosmetics" />} />
             <Route path="shari" element={<CategoryProductsPage slug="shari" />} />
             <Route path="three-piece" element={<CategoryProductsPage slug="three-piece" />} />
-            <Route path="product/:id" element={<ProductDetailPage />} />
+            <Route path="products/:id" element={<ProductDetailPage />} />
             <Route path="stock" element={<StockPage />} />
             <Route path="packages" element={<PackagesPage />} />
             <Route path="customers" element={<CustomersPage />} />

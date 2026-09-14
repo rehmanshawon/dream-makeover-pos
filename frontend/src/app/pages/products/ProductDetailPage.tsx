@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import { useState, type JSX } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useProduct } from '../../../api/product-hooks';
 import { useProductStockHistory } from '../../../api/inventory-hooks';
@@ -11,7 +11,6 @@ import { Table, type TableColumn } from '../../../ui/Table';
 import { useAuth } from '../../auth/AuthContext';
 import { formatBdt, formatDateTime } from '../../../utils/format';
 import type { Product, StockMovement } from '../../../types/products';
-import { useState } from 'react';
 import { Button } from '../../../ui/Button';
 import { ProductFormModal } from './ProductFormModal';
 import { StockInModal } from './StockInModal';
@@ -133,7 +132,24 @@ export function ProductDetailPage(): JSX.Element {
         <Card
           title={data.name}
           subtitle={data.category}
-          actions={<Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>}
+          actions={
+            <div className="product-detail__actions">
+              <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>
+              {isAdmin && (
+                <>
+                  <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={() => setStockInOpen(true)}>
+                    Stock in
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={() => setAdjustOpen(true)}>
+                    Adjust
+                  </Button>
+                </>
+              )}
+            </div>
+          }
         >
           <dl className="product-detail__facts">
             <div className="product-detail__fact">
@@ -155,29 +171,10 @@ export function ProductDetailPage(): JSX.Element {
             {isAdmin && (
               <div className="product-detail__fact">
                 <dt>Purchase cost</dt>
-                <dd>{formatBdt(data.purchaseCostMinor)}</dd>
+                <dd>{formatBdt(data.purchaseCostMinor ?? 0)}</dd>
               </div>
             )}
           </dl>
-          actions=
-          {
-            <div className="product-detail__actions">
-              <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>
-              {isAdmin && (
-                <>
-                  <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
-                    Edit
-                  </Button>
-                  <Button size="sm" variant="secondary" onClick={() => setStockInOpen(true)}>
-                    Stock in
-                  </Button>
-                  <Button size="sm" variant="secondary" onClick={() => setAdjustOpen(true)}>
-                    Adjust
-                  </Button>
-                </>
-              )}
-            </div>
-          }
         </Card>
 
         <Card title="Stock history" subtitle="Every change to this product's stock">
