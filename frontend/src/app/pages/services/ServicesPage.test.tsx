@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, within as rtlWithin } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { renderWithProviders } from '../../../test/render-with-providers';
@@ -143,4 +143,92 @@ describe('ServicesPage', () => {
 
     expect(await screen.findByText(/no services yet/i)).toBeInTheDocument();
   });
+
+  it('shows the Edit and Deactivate buttons to admins', async () => {
+    mockServices();
+    renderPage(ADMIN);
+
+    await screen.findByText('Bridal Facial');
+    expect(screen.getAllByRole('button', { name: /^edit$/i })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /^deactivate$/i })).toHaveLength(2);
+  });
+
+  it('does not show action buttons to staff', async () => {
+    mockServices();
+    renderPage(STAFF);
+
+    await screen.findByText('Bridal Facial');
+    expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^deactivate$/i })).not.toBeInTheDocument();
+  });
+
+  it('opens the edit modal with prefilled values', async () => {
+    mockServices();
+    renderPage(ADMIN);
+
+    await screen.findByText('Bridal Facial');
+    const editButtons = screen.getAllByRole('button', { name: /^edit$/i });
+    await userEvent.click(editButtons[0]!);
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('heading', { name: /edit service/i })).toBeInTheDocument();
+    expect(within(dialog).getByDisplayValue('Bridal Facial')).toBeInTheDocument();
+  });
+
+  it('submits a PATCH and updates the row when saving an edit', async () => {
+    const originalFetch = globalThis.fetch;
+    let services = [...SERVICES];
+    let patchCalled = false;
+
+    globalThis.fetch = vi.fn(async (input, init) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      const method = init?.method ?? 'GET';
+
+      if (method === 'PATCH' && url.includes('/services/s1')) {
+        patchCalled = true;
+        const body = JSON.parse(init?.body as string);
+        const updatedService = {
+          ...services.find((service) => service.id === 's1')!,
+          ...body,
+          name: 'Bridal Facial Deluxe',
+        };
+        services = services.map((service) =>
+          service.id === updatedService.id ? updatedService : service,
+        );
+        return new Response(JSON.stringify(updatedService), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+
+      if (url.includes('/services')) {
+        return new Response(JSON.stringify(services), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+
+      return originalFetch(input, init);
+    }) as unknown as typeof fetch;
+
+    renderPage(ADMIN);
+
+    await screen.findByText('Bridal Facial');
+    const editButtons = screen.getAllByRole('button', { name: /^edit$/i });
+    await userEvent.click(editButtons[0]!);
+
+    const nameInput = screen.getByLabelText(/^name$/i);
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, 'Bridal Facial Deluxe');
+
+    await userEvent.click(screen.getByRole('button', { name: /save changes/i }));
+
+    expect(patchCalled).toBe(true);
+
+    // Verify that the row has been updated
+    await screen.findByText('Bridal Facial Deluxe');
+  });
 });
+function within(dialog: HTMLElement) {
+  return rtlWithin(dialog);
+}

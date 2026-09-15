@@ -6,7 +6,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 import { salonServicesApi } from './salon-services';
-import type { SalonService, CreateServiceRequest } from '../types/services';
+import type { SalonService, CreateServiceRequest, UpdateServiceRequest } from '../types/services';
 
 export const salonServiceKeys = {
   all: ['salon-services'] as const,
@@ -37,6 +37,22 @@ export function useCreateService(): UseMutationResult<SalonService, Error, Creat
     onSuccess: (created) => {
       void queryClient.invalidateQueries({ queryKey: salonServiceKeys.all });
       queryClient.setQueryData(salonServiceKeys.detail(created.id), created);
+    },
+  });
+}
+
+export function useUpdateService(): UseMutationResult<
+  SalonService,
+  Error,
+  { id: string; payload: UpdateServiceRequest }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }) => salonServicesApi.update(id, payload),
+    onSuccess: (updated) => {
+      void queryClient.invalidateQueries({ queryKey: salonServiceKeys.all });
+      queryClient.setQueryData(salonServiceKeys.detail(updated.id), updated);
     },
   });
 }

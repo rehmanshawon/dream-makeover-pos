@@ -24,3 +24,10 @@
 .service-cell__name {
   font-weight: var(--font-weight-medium);
 }
+
+.services-page__row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  justify-content: flex-end;
+}

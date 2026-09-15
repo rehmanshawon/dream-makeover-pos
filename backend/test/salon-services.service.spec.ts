@@ -164,4 +164,55 @@ describe('SalonServicesService', () => {
       await expect(service.findById('invalid-id')).rejects.toThrow(NotFoundException);
     });
   });
+
+  it('updates only the provided fields', async () => {
+    const existing = {
+      id: 's1',
+      name: 'Bridal Facial',
+      priceMinor: 350000,
+      durationMinutes: 60,
+      rewardPointWeight: 1,
+      active: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as SalonService;
+
+    jest.spyOn(repository, 'findOne').mockResolvedValue(existing);
+    jest.spyOn(repository, 'save').mockImplementation(async (s) => s as SalonService);
+
+    const result = await service.update('s1', { priceMinor: 400000 });
+
+    expect(result.priceMinor).toBe(400000);
+    expect(result.name).toBe('Bridal Facial');
+    expect(result.active).toBe(true);
+    expect(repository.save).toHaveBeenCalledWith(existing);
+  });
+
+  it('deactivates a service when active is false', async () => {
+    const existing = {
+      id: 's1',
+      name: 'Bridal Facial',
+      priceMinor: 350000,
+      durationMinutes: 60,
+      rewardPointWeight: 1,
+      active: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as SalonService;
+
+    jest.spyOn(repository, 'findOne').mockResolvedValue(existing);
+    jest.spyOn(repository, 'save').mockImplementation(async (s) => s as SalonService);
+
+    const result = await service.update('s1', { active: false });
+
+    expect(result.active).toBe(false);
+    expect(result.priceMinor).toBe(350000);
+    expect(repository.save).toHaveBeenCalledWith(existing);
+  });
+
+  it('throws NotFoundException when updating a missing service', async () => {
+    jest.spyOn(repository, 'findOne').mockResolvedValue(null);
+
+    await expect(service.update('missing', { name: 'X' })).rejects.toThrow(NotFoundException);
+  });
 });

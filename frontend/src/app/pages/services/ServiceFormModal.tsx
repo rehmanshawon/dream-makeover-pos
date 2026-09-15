@@ -1,16 +1,18 @@
 import { useEffect, useState, type FormEvent, type JSX } from 'react';
 import { ApiError } from '../../../api/api-error';
-import { useCreateService } from '../../../api/salon-service-hooks';
+import { useCreateService, useUpdateService } from '../../../api/salon-service-hooks';
 import { Button } from '../../../ui/Button';
 import { Input } from '../../../ui/Input';
 import { Modal } from '../../../ui/Modal';
-import { parseTakaToMinor } from '../../../utils/format';
+import { minorToTakaInput, parseTakaToMinor } from '../../../utils/format';
+import type { SalonService } from '../../../types/services';
 import './ServiceFormModal.css';
 
 interface ServiceFormModalProps {
   open: boolean;
+  service?: SalonService;
   onClose: () => void;
-  onCreated?: (serviceId: string) => void;
+  onSaved?: (serviceId: string) => void;
 }
 
 interface FormState {
@@ -34,20 +36,35 @@ const EMPTY_FORM: FormState = {
   rewardPointWeight: '1',
 };
 
-export function ServiceFormModal({ open, onClose, onCreated }: ServiceFormModalProps): JSX.Element {
+function formFromService(service: SalonService): FormState {
+  return {
+    name: service.name,
+    priceTaka: minorToTakaInput(service.priceMinor),
+    durationMinutes: String(service.durationMinutes),
+    rewardPointWeight: String(service.rewardPointWeight),
+  };
+}
+
+export function ServiceFormModal({
+  open,
+  service,
+  onClose,
+  onSaved,
+}: ServiceFormModalProps): JSX.Element {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
 
+  const isEdit = Boolean(service);
   const createMutation = useCreateService();
+  const updateMutation = useUpdateService();
 
   useEffect(() => {
-    if (open) {
-      setForm(EMPTY_FORM);
-      setErrors({});
-      setFormError(null);
-    }
-  }, [open]);
+    if (!open) return;
+    setForm(service ? formFromService(service) : EMPTY_FORM);
+    setErrors({});
+    setFormError(null);
+  }, [open, service]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -81,15 +98,27 @@ export function ServiceFormModal({ open, onClose, onCreated }: ServiceFormModalP
       return;
     }
 
+    const payload = {
+      name: trimmedName,
+      priceMinor: priceMinor as number,
+      durationMinutes: duration as number,
+      rewardPointWeight: rewardWeight as number,
+    };
+
     try {
-      const created = await createMutation.mutateAsync({
-        name: trimmedName,
-        priceMinor: priceMinor as number,
-        durationMinutes: duration as number,
-        rewardPointWeight: rewardWeight as number,
-        active: true,
-      });
-      onCreated?.(created.id);
+      if (isEdit && service) {
+        const updated = await updateMutation.mutateAsync({
+          id: service.id,
+          payload,
+        });
+        onSaved?.(updated.id);
+      } else {
+        const created = await createMutation.mutateAsync({
+          ...payload,
+          active: true,
+        });
+        onSaved?.(created.id);
+      }
       onClose();
     } catch (err) {
       if (err instanceof ApiError) {
@@ -100,12 +129,12 @@ export function ServiceFormModal({ open, onClose, onCreated }: ServiceFormModalP
     }
   };
 
-  const submitting = createMutation.isPending;
+  const submitting = isEdit ? updateMutation.isPending : createMutation.isPending;
 
   return (
     <Modal
       open={open}
-      title="New service"
+      title={isEdit ? 'Edit service' : 'New service'}
       onClose={onClose}
       size="md"
       closeOnOverlayClick={!submitting}
@@ -162,7 +191,7 @@ export function ServiceFormModal({ open, onClose, onCreated }: ServiceFormModalP
             Cancel
           </Button>
           <Button type="submit" loading={submitting}>
-            Create service
+            {isEdit ? 'Save changes' : 'Create service'}
           </Button>
         </div>
       </form>

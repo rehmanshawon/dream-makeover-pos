@@ -1,5 +1,5 @@
 import { api } from './api-client';
-import type { SalonService, CreateServiceRequest } from '../types/services';
+import type { SalonService, CreateServiceRequest, UpdateServiceRequest } from '../types/services';
 
 export const salonServicesApi = {
   list(activeOnly = false): Promise<SalonService[]> {
@@ -13,5 +13,9 @@ export const salonServicesApi = {
 
   create(payload: CreateServiceRequest): Promise<SalonService> {
     return api.post<SalonService>('/services', payload);
+  },
+
+  update(id: string, payload: UpdateServiceRequest): Promise<SalonService> {
+    return api.patch<SalonService>(`/services/${id}`, payload);
   },
 };

@@ -6,7 +6,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
-
+import { Patch } from '@nestjs/common';
+import { UpdateServiceDto } from './dto/update-service.dto';
 @Controller('services')
 export class SalonServicesController {
   constructor(private readonly salonServicesService: SalonServicesService) {}
@@ -31,5 +32,15 @@ export class SalonServicesController {
   @UseGuards(JwtAuthGuard)
   async findById(@Param('id') id: string): Promise<ServiceResponseDto> {
     return this.salonServicesService.findById(id);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateServiceDto,
+  ): Promise<ServiceResponseDto> {
+    return this.salonServicesService.update(id, dto);
   }
 }

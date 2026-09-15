@@ -1,5 +1,5 @@
 import { useMemo, useState, type JSX } from 'react';
-import { useSalonServices } from '../../../api/salon-service-hooks';
+import { useSalonServices, useUpdateService } from '../../../api/salon-service-hooks';
 import { ApiError } from '../../../api/api-error';
 import { Badge } from '../../../ui/Badge';
 import { Button } from '../../../ui/Button';
@@ -17,8 +17,12 @@ import './ServicesPage.css';
 export function ServicesPage(): JSX.Element {
   const { isAdmin } = useAuth();
   const { data, isLoading, error } = useSalonServices(false);
+  const updateMutation = useUpdateService();
+
   const [search, setSearch] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingService, setEditingService] = useState<SalonService | undefined>(undefined);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     if (!data) return [];
@@ -26,6 +30,22 @@ export function ServicesPage(): JSX.Element {
     if (!q) return data;
     return data.filter((s) => s.name.toLowerCase().includes(q));
   }, [data, search]);
+
+  const handleToggleActive = async (service: SalonService): Promise<void> => {
+    setActionError(null);
+    try {
+      await updateMutation.mutateAsync({
+        id: service.id,
+        payload: { active: !service.active },
+      });
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setActionError(err.message);
+      } else {
+        setActionError('Unable to update the service. Please try again.');
+      }
+    }
+  };
 
   const columns: TableColumn<SalonService>[] = [
     {
@@ -60,13 +80,36 @@ export function ServicesPage(): JSX.Element {
     },
   ];
 
+  if (isAdmin) {
+    columns.push({
+      key: 'actions',
+      header: '',
+      align: 'right',
+      render: (s) => (
+        <div className="services-page__row-actions">
+          <Button size="sm" variant="secondary" onClick={() => setEditingService(s)}>
+            Edit
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => handleToggleActive(s)}
+            disabled={updateMutation.isPending}
+          >
+            {s.active ? 'Deactivate' : 'Activate'}
+          </Button>
+        </div>
+      ),
+    });
+  }
+
   return (
     <div className="services-page">
       <Card
         title="Parlour services"
         subtitle="Salon treatments offered to customers"
         actions={
-          isAdmin ? <Button onClick={() => setModalOpen(true)}>New service</Button> : undefined
+          isAdmin ? <Button onClick={() => setCreateOpen(true)}>New service</Button> : undefined
         }
       >
         <div className="services-page__toolbar">
@@ -76,6 +119,12 @@ export function ServicesPage(): JSX.Element {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+
+        {actionError && (
+          <div className="services-page__error" role="alert">
+            {actionError}
+          </div>
+        )}
 
         {isLoading && (
           <div className="services-page__loading">
@@ -98,7 +147,7 @@ export function ServicesPage(): JSX.Element {
                 : 'Ask an administrator to add services.'
             }
             action={
-              isAdmin ? <Button onClick={() => setModalOpen(true)}>Add service</Button> : undefined
+              isAdmin ? <Button onClick={() => setCreateOpen(true)}>Add service</Button> : undefined
             }
           />
         )}
@@ -112,7 +161,16 @@ export function ServicesPage(): JSX.Element {
         )}
       </Card>
 
-      {isAdmin && <ServiceFormModal open={modalOpen} onClose={() => setModalOpen(false)} />}
+      {isAdmin && (
+        <>
+          <ServiceFormModal open={createOpen} onClose={() => setCreateOpen(false)} />
+          <ServiceFormModal
+            open={editingService !== undefined}
+            {...(editingService ? { service: editingService } : {})}
+            onClose={() => setEditingService(undefined)}
+          />
+        </>
+      )}
     </div>
   );
 }

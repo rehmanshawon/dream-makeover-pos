@@ -16,3 +16,11 @@ export interface CreateServiceRequest {
   rewardPointWeight: number;
   active?: boolean;
 }
+
+export interface UpdateServiceRequest {
+  name?: string;
+  priceMinor?: number;
+  durationMinutes?: number;
+  rewardPointWeight?: number;
+  active?: boolean;
+}
