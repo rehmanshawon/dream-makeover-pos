@@ -5,6 +5,8 @@ import { Route, Routes } from 'react-router-dom';
 import { renderWithProviders } from '../../../test/render-with-providers';
 import { NewSalePage } from './NewSalePage';
 import type { AuthenticatedUser } from '../../../types/auth';
+import { MockReceiptPrinter } from './receipt/printer/mock-receipt-printer';
+import { setReceiptPrinter, resetReceiptPrinter } from './receipt/printer/printer-provider';
 
 const ADMIN: AuthenticatedUser = {
   id: '1',
@@ -50,6 +52,7 @@ describe('NewSalePage', () => {
   afterEach(() => {
     globalThis.fetch = originalFetch;
     vi.restoreAllMocks();
+    resetReceiptPrinter();
   });
 
   function mockEndpoints(): void {
@@ -242,5 +245,115 @@ describe('NewSalePage', () => {
     // Cart is preserved
     const cart = screen.getByRole('complementary', { name: /cart/i });
     expect(within(cart).getByText('Test Facial')).toBeInTheDocument();
+  });
+
+  it('prints a receipt after a successful sale', async () => {
+    mockEndpoints();
+    const printer = new MockReceiptPrinter();
+
+    renderPage();
+    setReceiptPrinter(printer);
+
+    await screen.findByText('Test Facial');
+    await userEvent.click(screen.getByText('Test Facial'));
+
+    const cashInput = screen.getByLabelText(/cash received/i);
+    await userEvent.clear(cashInput);
+    await userEvent.type(cashInput, '3000');
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async (input, init) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      if (url.endsWith('/checkout')) {
+        return new Response(
+          JSON.stringify({
+            transactionId: 'tx-1',
+            invoiceId: 'DM-20260915-0001',
+            subtotalMinor: 200000,
+            discountMinor: 0,
+            totalMinor: 200000,
+            cashReceivedMinor: 300000,
+            changeMinor: 100000,
+            cashier: 'admin',
+            items: [
+              {
+                itemType: 'SERVICE',
+                itemName: 'Test Facial',
+                quantity: 1,
+                unitPriceMinor: 200000,
+                totalPriceMinor: 200000,
+              },
+            ],
+            loyaltyPointsEarned: 0,
+            customer: null,
+          }),
+          { status: 201, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      return originalFetch(input, init);
+    }) as unknown as typeof fetch;
+
+    await userEvent.click(screen.getByRole('button', { name: /complete sale/i }));
+    await screen.findByText('Sale completed');
+
+    await userEvent.click(screen.getByRole('button', { name: /print receipt/i }));
+
+    // Wait for the print to settle
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(printer.printed).toHaveLength(1);
+    const lines = printer.printed[0]!;
+    expect(lines.some((l) => l.includes('DM-20260915-0001'))).toBe(true);
+    expect(lines.some((l) => l.includes('Test Facial'))).toBe(true);
+  });
+
+  it('shows a print error when printing fails', async () => {
+    mockEndpoints();
+    const printer = new MockReceiptPrinter();
+    printer.failWith = new Error('Printer is offline');
+
+    renderPage();
+    setReceiptPrinter(printer);
+
+    await screen.findByText('Test Facial');
+    await userEvent.click(screen.getByText('Test Facial'));
+
+    const cashInput = screen.getByLabelText(/cash received/i);
+    await userEvent.clear(cashInput);
+    await userEvent.type(cashInput, '3000');
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async (input, init) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      if (url.endsWith('/checkout')) {
+        return new Response(
+          JSON.stringify({
+            transactionId: 'tx-1',
+            invoiceId: 'DM-20260915-0002',
+            subtotalMinor: 200000,
+            discountMinor: 0,
+            totalMinor: 200000,
+            cashReceivedMinor: 300000,
+            changeMinor: 100000,
+            cashier: 'admin',
+            items: [],
+            loyaltyPointsEarned: 0,
+            customer: null,
+          }),
+          { status: 201, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      return originalFetch(input, init);
+    }) as unknown as typeof fetch;
+
+    await userEvent.click(screen.getByRole('button', { name: /complete sale/i }));
+    await screen.findByText('Sale completed');
+
+    await userEvent.click(screen.getByRole('button', { name: /print receipt/i }));
+
+    expect(await screen.findByText(/printer is offline/i)).toBeInTheDocument();
+
+    // Modal remains open so the user can retry
+    expect(screen.getByText('Sale completed')).toBeInTheDocument();
   });
 });

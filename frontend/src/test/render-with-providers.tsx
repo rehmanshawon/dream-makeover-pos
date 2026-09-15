@@ -6,7 +6,7 @@ import { AuthProvider } from '../app/auth/AuthContext';
 import { authStore } from '../app/auth/auth-store';
 import { resetTokenProvider } from '../api/token-provider';
 import type { AuthenticatedUser } from '../types/auth';
-
+import { resetReceiptPrinter } from '../app/pages/pos/receipt/printer/printer-provider';
 interface RenderOptions {
   route?: string;
   user?: AuthenticatedUser | null;
@@ -32,6 +32,7 @@ export function renderWithProviders(ui: ReactNode, options: RenderOptions = {}):
   const { route = '/', user = null, token } = options;
 
   resetTokenProvider();
+  resetReceiptPrinter();
   authStore.clear();
   if (user) {
     authStore.setSession(user, token ?? 'test-token');

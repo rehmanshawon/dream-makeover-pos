@@ -8,12 +8,18 @@ import './SaleConfirmationModal.css';
 interface SaleConfirmationModalProps {
   open: boolean;
   response: CheckoutResponse | null;
+  printing: boolean;
+  printError: string | null;
+  onPrint: () => void;
   onClose: () => void;
 }
 
 export function SaleConfirmationModal({
   open,
   response,
+  printing,
+  printError,
+  onPrint,
   onClose,
 }: SaleConfirmationModalProps): JSX.Element {
   if (!response) {
@@ -32,9 +38,11 @@ export function SaleConfirmationModal({
         <div className="sale-confirmation__check" aria-hidden="true">
           ✓
         </div>
+
         {response.customer && (
           <p className="sale-confirmation__customer">{response.customer.name}</p>
         )}
+
         <dl className="sale-confirmation__facts">
           <div className="sale-confirmation__fact">
             <dt>Invoice</dt>
@@ -73,8 +81,23 @@ export function SaleConfirmationModal({
           </div>
         )}
 
+        {printError && (
+          <div className="sale-confirmation__print-error" role="alert">
+            {printError}
+          </div>
+        )}
+
         <div className="sale-confirmation__actions">
-          <Button size="lg" fullWidth onClick={onClose}>
+          <Button
+            variant="secondary"
+            size="lg"
+            onClick={onPrint}
+            loading={printing}
+            disabled={printing}
+          >
+            Print receipt
+          </Button>
+          <Button size="lg" onClick={onClose} disabled={printing}>
             New sale
           </Button>
         </div>

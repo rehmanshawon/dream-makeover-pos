@@ -1,29 +1,25 @@
 import { useState, type JSX } from 'react';
 import { ApiError } from '../../../api/api-error';
 import { useCheckout } from '../../../api/checkout-hooks';
+import { BUSINESS_INFO } from '../../../config/business';
 import type { CheckoutResponse } from '../../../types/checkout';
 import { CatalogPanel } from './CatalogPanel';
 import { CartPanel } from './CartPanel';
 import { SaleConfirmationModal } from './SaleConfirmationModal';
 import { useCart } from './use-cart';
 import { buildCheckoutRequest } from './checkout-mapper';
+import { buildReceiptData } from './receipt/build-receipt-data';
+import { formatReceipt } from './receipt/receipt-formatter';
+import { getReceiptPrinter } from './receipt/printer/printer-provider';
 import './NewSalePage.css';
 
-/**
- * Point-of-sale screen.
- *
- * Left panel: catalog of items available for sale.
- * Right panel: the current cart.
- *
- * The "Complete sale" button submits the cart to the backend, shows a
- * confirmation, and clears the cart. On error, the cart is preserved so
- * the cashier can fix the issue and retry.
- */
 export function NewSalePage(): JSX.Element {
   const cart = useCart();
   const checkout = useCheckout();
   const [confirmation, setConfirmation] = useState<CheckoutResponse | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [printing, setPrinting] = useState(false);
+  const [printError, setPrintError] = useState<string | null>(null);
 
   const handleSubmit = async (): Promise<void> => {
     setSubmissionError(null);
@@ -42,9 +38,8 @@ export function NewSalePage(): JSX.Element {
 
     try {
       const response = await checkout.mutateAsync(request);
-      // Show the confirmation first so the modal has its own copy of the
-      // response, then clear the cart.
       setConfirmation(response);
+      setPrintError(null);
       cart.clear();
     } catch (err) {
       if (err instanceof ApiError) {
@@ -55,8 +50,28 @@ export function NewSalePage(): JSX.Element {
     }
   };
 
+  const handlePrint = async (): Promise<void> => {
+    if (!confirmation) return;
+
+    setPrinting(true);
+    setPrintError(null);
+
+    try {
+      const data = buildReceiptData(confirmation, BUSINESS_INFO);
+      const lines = formatReceipt(data);
+      const printer = getReceiptPrinter();
+      await printer.print(lines);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to print receipt.';
+      setPrintError(message);
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   const handleCloseConfirmation = (): void => {
     setConfirmation(null);
+    setPrintError(null);
   };
 
   return (
@@ -85,6 +100,9 @@ export function NewSalePage(): JSX.Element {
       <SaleConfirmationModal
         open={confirmation !== null}
         response={confirmation}
+        printing={printing}
+        printError={printError}
+        onPrint={handlePrint}
         onClose={handleCloseConfirmation}
       />
     </div>
