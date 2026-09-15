@@ -1,9 +1,17 @@
 import { api } from './api-client';
-import type { SalonService } from '../types/services';
+import type { SalonService, CreateServiceRequest } from '../types/services';
 
 export const salonServicesApi = {
-  list(activeOnly = true): Promise<SalonService[]> {
+  list(activeOnly = false): Promise<SalonService[]> {
     const query = activeOnly ? '?activeOnly=true' : '';
     return api.get<SalonService[]>(`/services${query}`);
+  },
+
+  getById(id: string): Promise<SalonService> {
+    return api.get<SalonService>(`/services/${id}`);
+  },
+
+  create(payload: CreateServiceRequest): Promise<SalonService> {
+    return api.post<SalonService>('/services', payload);
   },
 };

@@ -8,7 +8,7 @@ import { AppLayout } from './app/layouts/AppLayout';
 import { LoginPage } from './app/pages/LoginPage';
 import { DashboardPage } from './app/pages/DashboardPage';
 import { NewSalePage } from './app/pages/pos/NewSalePage';
-import { ParlourServicePage } from './app/pages/ParlourServicePage';
+import { ServicesPage } from './app/pages/services/ServicesPage';
 import { CategoryProductsPage } from './app/pages/products/CategoryProductsPage';
 import { ProductDetailPage } from './app/pages/products/ProductDetailPage';
 import { StockPage } from './app/pages/StockPage';
@@ -61,7 +61,7 @@ export function App(): JSX.Element {
               }
             />
             <Route path="pos" element={<NewSalePage />} />
-            <Route path="parlour" element={<ParlourServicePage />} />
+            <Route path="parlour" element={<ServicesPage />} />
             <Route path="cosmetics" element={<CategoryProductsPage slug="cosmetics" />} />
             <Route path="shari" element={<CategoryProductsPage slug="shari" />} />
             <Route path="three-piece" element={<CategoryProductsPage slug="three-piece" />} />

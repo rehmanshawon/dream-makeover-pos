@@ -1,0 +1,26 @@
+.services-page {
+  padding: var(--space-6);
+}
+
+.services-page__toolbar {
+  margin-bottom: var(--space-4);
+  max-width: 320px;
+}
+
+.services-page__loading {
+  padding: var(--space-8);
+  display: flex;
+  justify-content: center;
+}
+
+.services-page__error {
+  padding: var(--space-4);
+  background: var(--color-danger-soft);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+}
+
+.service-cell__name {
+  font-weight: var(--font-weight-medium);
+}

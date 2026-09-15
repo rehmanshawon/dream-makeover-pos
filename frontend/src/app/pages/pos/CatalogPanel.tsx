@@ -39,7 +39,7 @@ export function CatalogPanel({ onAdd }: CatalogPanelProps): JSX.Element {
   const [search, setSearch] = useState('');
 
   const products = useProducts();
-  const services = useSalonServices();
+  const services = useSalonServices(true);
   const packages = usePackages();
 
   const items: DisplayItem[] = useMemo(() => {
