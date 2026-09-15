@@ -12,7 +12,7 @@ import { ServicesPage } from './app/pages/services/ServicesPage';
 import { CategoryProductsPage } from './app/pages/products/CategoryProductsPage';
 import { ProductDetailPage } from './app/pages/products/ProductDetailPage';
 import { StockPage } from './app/pages/StockPage';
-import { PackagesPage } from './app/pages/PackagesPage';
+import { PackagesPage } from './app/pages/packages/PackagesPage';
 import { CustomersPage } from './app/pages/customers/CustomersPage';
 import { CustomerDetailPage } from './app/pages/customers/CustomerDetailPage';
 import { SalesReportPage } from './app/pages/SalesReportPage';

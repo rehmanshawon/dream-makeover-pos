@@ -40,7 +40,7 @@ export function CatalogPanel({ onAdd }: CatalogPanelProps): JSX.Element {
 
   const products = useProducts();
   const services = useSalonServices(true);
-  const packages = usePackages();
+  const packages = usePackages(true);
 
   const items: DisplayItem[] = useMemo(() => {
     const q = search.trim().toLowerCase();

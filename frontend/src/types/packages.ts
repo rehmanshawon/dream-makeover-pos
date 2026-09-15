@@ -1,5 +1,3 @@
-import type { ProductCategory } from './products';
-
 export type PackageItemKind = 'SERVICE' | 'PRODUCT';
 
 export interface PackageItem {
@@ -23,5 +21,15 @@ export interface Package {
   updatedAt: string;
 }
 
-// Re-export for convenience
-export type { ProductCategory };
+export interface CreatePackageItemRequest {
+  itemKind: PackageItemKind;
+  itemId: string;
+}
+
+export interface CreatePackageRequest {
+  name: string;
+  description?: string;
+  packagePriceMinor: number;
+  items: CreatePackageItemRequest[];
+  active?: boolean;
+}
