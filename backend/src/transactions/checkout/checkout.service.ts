@@ -7,7 +7,11 @@ import { Product } from '../../products/product.entity';
 import { SalonService } from '../../services/service.entity';
 import { Customer, CustomerRewardTier } from '../../customers/customer.entity';
 import { CheckoutRequestDto } from './dto/checkout-request.dto';
-import { CheckoutResponseDto, CheckoutItemResponseDto } from './dto/checkout-response.dto';
+import {
+  CheckoutResponseDto,
+  CheckoutItemResponseDto,
+  CheckoutCustomerResponseDto,
+} from './dto/checkout-response.dto';
 import { InvoiceNumberService } from '../invoice-number.service';
 import { Package } from '../../packages/package.entity';
 import { PackageItem } from '../../packages/package-item.entity';
@@ -210,7 +214,7 @@ export class CheckoutService {
       }
 
       let loyaltyPointsEarned = 0;
-      let newRewardTier: CustomerRewardTier | undefined;
+      let customerResponse: CheckoutCustomerResponseDto | null = null;
 
       if (dto.customerId) {
         const customer = await customerRepo.findOne({
@@ -224,9 +228,15 @@ export class CheckoutService {
         loyaltyPointsEarned = Math.floor(totalMinor / 10000);
         customer.rewardPoints += loyaltyPointsEarned;
         customer.rewardTier = this.calculateTier(customer.rewardPoints);
-        await customerRepo.save(customer);
+        const savedCustomer = await customerRepo.save(customer);
 
-        newRewardTier = customer.rewardTier;
+        customerResponse = {
+          id: savedCustomer.id,
+          name: savedCustomer.fullName,
+          tier: savedCustomer.rewardTier,
+          totalPointsAfterSale: savedCustomer.rewardPoints,
+          lifetimeSpendMinorAfterSale: savedCustomer.lifetimeSpendMinor,
+        };
       }
 
       return {
@@ -237,9 +247,10 @@ export class CheckoutService {
         totalMinor,
         cashReceivedMinor: dto.cashReceivedMinor,
         changeMinor,
+        cashier: cashierName,
         items: itemResponses,
         loyaltyPointsEarned,
-        ...(newRewardTier !== undefined && { newRewardTier }),
+        customer: customerResponse,
       };
     });
   }

@@ -76,3 +76,11 @@
 .sale-confirmation__actions {
   margin-top: var(--space-2);
 }
+
+.sale-confirmation__customer {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+  margin: 0;
+  text-align: center;
+}

@@ -125,6 +125,7 @@ describe('CheckoutService', () => {
     // Mock customer
     const customer = {
       id: 'c1',
+      fullName: 'Test Customer',
       rewardPoints: 0,
       lifetimeSpendMinor: 0,
       rewardTier: CustomerRewardTier.SILVER,
@@ -165,6 +166,10 @@ describe('CheckoutService', () => {
       expect.objectContaining({ lifetimeSpendMinor: 69000, rewardPoints: 6 }),
     );
     expect(result.loyaltyPointsEarned).toBe(6); // 69000 / 10000 = 6.9 -> 6
+    expect(result.cashier).toBe('admin');
+    expect(result.customer).not.toBeNull();
+    expect(result.customer?.name).toBe('Test Customer');
+    expect(result.customer?.totalPointsAfterSale).toBe(6);
   });
 
   it('should throw error for insufficient stock', async () => {
@@ -268,5 +273,30 @@ describe('CheckoutService', () => {
         itemType: TransactionItemType.PACKAGE,
       }),
     );
+  });
+
+  it('returns null customer for a guest sale', async () => {
+    const product = { id: 'p1', name: 'Lipstick', stock: 10, sellingPriceMinor: 10000 } as Product;
+    productRepo.findOne.mockResolvedValue(product);
+    productRepo.save.mockResolvedValue(product);
+
+    transactionRepo.create.mockReturnValue({} as Transaction);
+    transactionRepo.save.mockResolvedValue({
+      id: 't-2',
+      invoiceId: 'DM-20260915-0001',
+    } as Transaction);
+    itemRepo.create.mockImplementation((data) => data);
+    itemRepo.save.mockResolvedValue({} as TransactionItem);
+
+    const dto: CheckoutRequestDto = {
+      items: [{ itemType: TransactionItemType.PRODUCT, itemId: 'p1', quantity: 1 }],
+      discountMinor: 0,
+      cashReceivedMinor: 10000,
+    };
+
+    const result = await service.checkout(dto, 'admin');
+
+    expect(result.customer).toBeNull();
+    expect(result.cashier).toBe('admin');
   });
 });

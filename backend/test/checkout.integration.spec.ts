@@ -268,6 +268,9 @@ describe('Checkout (integration)', () => {
     const updated = await customerRepo.findOne({ where: { id: customer.id } });
     expect(updated?.rewardPoints).toBe(220);
     expect(updated?.rewardTier).toBe(CustomerRewardTier.GOLD);
+    expect(response.body.customer).not.toBeNull();
+    expect(response.body.customer.tier).toBe('Gold');
+    expect(response.body.customer.totalPointsAfterSale).toBe(220);
   });
 
   it('should generate a DM-format invoice ID', async () => {
@@ -401,5 +404,22 @@ describe('Checkout (integration)', () => {
     expect(items[0].packageId).toBe(bridalPackage.id);
     expect(items[0].productId).toBeNull();
     expect(items[0].serviceId).toBeNull();
+  });
+
+  it('returns null customer for a guest sale', async () => {
+    const payload = {
+      items: [{ itemType: TransactionItemType.PRODUCT, itemId: product.id, quantity: 1 }],
+      discountMinor: 0,
+      cashReceivedMinor: 200000,
+    };
+
+    const response = await request(app.getHttpServer())
+      .post('/checkout')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(payload)
+      .expect(201);
+
+    expect(response.body.customer).toBeNull();
+    expect(response.body.cashier).toBe('checkout_admin');
   });
 });

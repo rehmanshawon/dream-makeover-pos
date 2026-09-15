@@ -21,6 +21,14 @@ export interface CheckoutResponseItem {
   totalPriceMinor: number;
 }
 
+export interface CheckoutCustomer {
+  id: string;
+  name: string;
+  tier: string;
+  totalPointsAfterSale: number;
+  lifetimeSpendMinorAfterSale: number;
+}
+
 export interface CheckoutResponse {
   transactionId: string;
   invoiceId: string;
@@ -29,7 +37,8 @@ export interface CheckoutResponse {
   totalMinor: number;
   cashReceivedMinor: number;
   changeMinor: number;
+  cashier: string;
   items: CheckoutResponseItem[];
   loyaltyPointsEarned: number;
-  newRewardTier?: string;
+  customer: CheckoutCustomer | null;
 }
