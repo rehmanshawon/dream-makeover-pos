@@ -17,30 +17,52 @@ import { formatBdt, todayIso } from '../../../utils/format';
 import { formatCompactTaka, formatShortDate } from './compact-format';
 import './RevenueTrendChart.css';
 
-/**
- * Daily revenue over the last 30 days.
- *
- * The backend returns one point per day in the range, filling gaps with
- * zero. That makes the chart a straightforward pass-through of the data
- * with no client-side gap filling.
- */
-export function RevenueTrendChart(): JSX.Element {
+interface RevenueTrendChartProps {
+  /**
+   * Start of the range (YYYY-MM-DD). When omitted, the chart defaults
+   * to the last 30 days, including today.
+   */
+  from?: string;
+  /**
+   * End of the range (YYYY-MM-DD). When omitted, defaults to today.
+   */
+  to?: string;
+  /** Optional override for the card title. */
+  title?: string;
+  /** Optional override for the card subtitle. */
+  subtitle?: string;
+}
+
+function defaultRange(): { from: string; to: string } {
   const today = todayIso();
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
-  const from = `${thirtyDaysAgo.getFullYear()}-${String(thirtyDaysAgo.getMonth() + 1).padStart(
-    2,
-    '0',
-  )}-${String(thirtyDaysAgo.getDate()).padStart(2, '0')}`;
+  const start = new Date();
+  start.setDate(start.getDate() - 29);
+  const y = start.getFullYear();
+  const m = String(start.getMonth() + 1).padStart(2, '0');
+  const d = String(start.getDate()).padStart(2, '0');
+  return { from: `${y}-${m}-${d}`, to: today };
+}
+
+export function RevenueTrendChart({
+  from,
+  to,
+  title = 'Revenue trend',
+  subtitle,
+}: RevenueTrendChartProps = {}): JSX.Element {
+  const defaults = defaultRange();
+  const rangeFrom = from ?? defaults.from;
+  const rangeTo = to ?? defaults.to;
 
   const { data, isLoading, error } = useRevenueTrend({
     range: 'custom',
-    from,
-    to: today,
+    from: rangeFrom,
+    to: rangeTo,
   });
 
+  const effectiveSubtitle = subtitle ?? `Daily sales from ${rangeFrom} to ${rangeTo}`;
+
   return (
-    <Card title="Revenue trend" subtitle="Daily sales over the last 30 days">
+    <Card title={title} subtitle={effectiveSubtitle}>
       <div className="trend-chart" data-testid="trend-chart">
         {isLoading && (
           <div className="trend-chart__center">
@@ -55,10 +77,7 @@ export function RevenueTrendChart(): JSX.Element {
         )}
 
         {!isLoading && !error && data && data.points.length === 0 && (
-          <EmptyState
-            title="No revenue yet"
-            description="Sales will appear here once the salon starts making them."
-          />
+          <EmptyState title="No revenue in this range" description="Try a different date range." />
         )}
 
         {!isLoading && !error && data && data.points.length > 0 && (

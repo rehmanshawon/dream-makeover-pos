@@ -73,6 +73,38 @@ describe('ExpenseBreakdownCard', () => {
 
     renderCard();
 
-    expect(await screen.findByText(/no expenses yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no expenses in this range/i)).toBeInTheDocument();
+  });
+
+  it('uses a custom range when provided', async () => {
+    const fetchSpy = vi.fn<typeof fetch>(
+      async () =>
+        new Response(
+          JSON.stringify({
+            from: '2026-08-01',
+            to: '2026-08-31',
+            totalMinor: 0,
+            salaryPaymentsMinor: 0,
+            categories: [],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+    );
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+
+    renderWithProviders(
+      <ExpenseBreakdownCard range={{ range: 'custom', from: '2026-08-01', to: '2026-08-31' }} />,
+      { user: ADMIN, token: 'test-token' },
+    );
+
+    expect(await screen.findByText(/no expenses in this range/i)).toBeInTheDocument();
+
+    const calledUrl = String(
+      (fetchSpy.mock.calls[0]?.[0] as Request | string) instanceof Request
+        ? (fetchSpy.mock.calls[0]?.[0] as Request).url
+        : fetchSpy.mock.calls[0]?.[0],
+    );
+    expect(calledUrl).toContain('from=2026-08-01');
+    expect(calledUrl).toContain('to=2026-08-31');
   });
 });

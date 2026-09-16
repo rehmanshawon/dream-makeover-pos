@@ -5,6 +5,8 @@ import { Card } from '../../../ui/Card';
 import { EmptyState } from '../../../ui/EmptyState';
 import { Spinner } from '../../../ui/Spinner';
 import { KpiCard } from '../dashboard/KpiCard';
+import { RevenueTrendChart } from '../dashboard/RevenueTrendChart';
+import { ExpenseBreakdownCard } from '../dashboard/ExpenseBreakdownCard';
 import {
   DateRangeFilter,
   resolvePreset,
@@ -26,11 +28,11 @@ export function AccountsPage(): JSX.Element {
 
   const query = useMemo(
     () => ({
-      range: range.preset === 'custom' ? ('custom' as const) : ('custom' as const),
+      range: 'custom' as const,
       from: range.range.from,
       to: range.range.to,
     }),
-    [range.preset, range.range.from, range.range.to],
+    [range.range.from, range.range.to],
   );
 
   const { data, isLoading, error } = useFinancialSummary(query);
@@ -116,6 +118,11 @@ export function AccountsPage(): JSX.Element {
           </>
         )}
       </Card>
+
+      <section className="accounts-page__charts" aria-label="Charts">
+        <RevenueTrendChart from={range.range.from} to={range.range.to} title="Revenue trend" />
+        <ExpenseBreakdownCard range={query} title="Expense breakdown" />
+      </section>
     </div>
   );
 }

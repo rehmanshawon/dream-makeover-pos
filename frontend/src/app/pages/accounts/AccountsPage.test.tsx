@@ -51,13 +51,42 @@ describe('AccountsPage', () => {
   });
 
   function mockEndpoints(): void {
-    globalThis.fetch = vi.fn(
-      async () =>
-        new Response(JSON.stringify(summaryResponse()), {
+    globalThis.fetch = vi.fn(async (input) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+
+      if (url.includes('/reports/financial-summary')) {
+        return new Response(JSON.stringify(summaryResponse()), {
           status: 200,
           headers: { 'content-type': 'application/json' },
-        }),
-    ) as unknown as typeof fetch;
+        });
+      }
+
+      if (url.includes('/reports/revenue-trend')) {
+        return new Response(
+          JSON.stringify({
+            from: '2026-09-01',
+            to: '2026-09-30',
+            points: [{ date: '2026-09-01', revenueMinor: 500000, transactionCount: 2 }],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
+
+      if (url.includes('/reports/expense-breakdown')) {
+        return new Response(
+          JSON.stringify({
+            from: '2026-09-01',
+            to: '2026-09-30',
+            totalMinor: 3250000,
+            salaryPaymentsMinor: 3000000,
+            categories: [{ category: 'ELECTRICITY', amountMinor: 250000, count: 1 }],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
+
+      return new Response('Not found', { status: 404 });
+    }) as unknown as typeof fetch;
   }
 
   function renderPage(): void {
@@ -83,7 +112,6 @@ describe('AccountsPage', () => {
     mockEndpoints();
     renderPage();
 
-    expect(await screen.findByText(/revenue/i)).toBeInTheDocument();
     const statement = await screen.findByRole('table', { name: /profit and loss statement/i });
     expect(within(statement).getByText(/cost of goods sold/i)).toBeInTheDocument();
     expect(within(statement).getByText(/net operating result/i)).toBeInTheDocument();
@@ -109,5 +137,13 @@ describe('AccountsPage', () => {
     renderPage();
 
     expect(await screen.findByRole('group', { name: /date range presets/i })).toBeInTheDocument();
+  });
+
+  it('renders the revenue trend and expense breakdown widgets', async () => {
+    mockEndpoints();
+    renderPage();
+
+    expect(await screen.findByText(/revenue trend/i)).toBeInTheDocument();
+    expect(screen.getByText(/expense breakdown/i)).toBeInTheDocument();
   });
 });

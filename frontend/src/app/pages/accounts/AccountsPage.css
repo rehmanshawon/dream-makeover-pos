@@ -54,3 +54,16 @@
   line-height: var(--line-height-base);
   font-style: italic;
 }
+
+.accounts-page__charts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+
+@media (min-width: 1100px) {
+  .accounts-page__charts {
+    grid-template-columns: 2fr 1fr;
+    align-items: start;
+  }
+}

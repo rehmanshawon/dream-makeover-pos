@@ -3,22 +3,44 @@ import { Card } from '../../../ui/Card';
 import { Spinner } from '../../../ui/Spinner';
 import { EmptyState } from '../../../ui/EmptyState';
 import { useExpenseBreakdown } from '../../../api/report-hooks';
+import type { FinancialRangeQuery } from '../../../api/dashboard';
 import { ApiError } from '../../../api/api-error';
 import { formatBdt } from '../../../utils/format';
 import { formatCategoryLabel } from './category-labels';
 import './ExpenseBreakdownCard.css';
 
-export function ExpenseBreakdownCard(): JSX.Element {
-  const { data, isLoading, error } = useExpenseBreakdown({
-    range: 'this_month',
-  });
+interface ExpenseBreakdownCardProps {
+  /**
+   * The range to summarize. When omitted, defaults to the current month.
+   */
+  range?: FinancialRangeQuery;
+  /** Optional override for the card title. */
+  title?: string;
+  /** Optional override for the card subtitle. */
+  subtitle?: string;
+}
+
+export function ExpenseBreakdownCard({
+  range,
+  title = 'Expenses',
+  subtitle,
+}: ExpenseBreakdownCardProps = {}): JSX.Element {
+  const effectiveRange: FinancialRangeQuery = range ?? { range: 'this_month' };
+
+  const { data, isLoading, error } = useExpenseBreakdown(effectiveRange);
 
   const hasData = data && (data.salaryPaymentsMinor > 0 || data.categories.length > 0);
 
   const totalForBars = data?.categories.reduce((sum, c) => sum + c.amountMinor, 0) ?? 0;
 
+  const effectiveSubtitle =
+    subtitle ??
+    (effectiveRange.range === 'this_month'
+      ? 'This month by category'
+      : `From ${effectiveRange.from ?? '?'} to ${effectiveRange.to ?? '?'}`);
+
   return (
-    <Card title="Expenses" subtitle="This month by category">
+    <Card title={title} subtitle={effectiveSubtitle}>
       <div className="expense-breakdown">
         {isLoading && (
           <div className="expense-breakdown__center">
@@ -34,8 +56,8 @@ export function ExpenseBreakdownCard(): JSX.Element {
 
         {!isLoading && !error && !hasData && (
           <EmptyState
-            title="No expenses yet"
-            description="Expenses recorded this month will appear here."
+            title="No expenses in this range"
+            description="Expenses recorded in this period will appear here."
           />
         )}
 
