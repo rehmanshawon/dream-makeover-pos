@@ -74,3 +74,17 @@ export function parseTakaToMinor(input: string): number | null {
 export function minorToTakaInput(minorUnits: number): string {
   return (minorUnits / 100).toFixed(2);
 }
+
+/**
+ * Returns today's date as YYYY-MM-DD in the user's local timezone.
+ *
+ * Used for date-range queries. Uses local time because business days
+ * are defined in the salon's local timezone, not UTC.
+ */
+export function todayIso(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}

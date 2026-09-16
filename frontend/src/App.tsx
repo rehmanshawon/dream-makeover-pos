@@ -6,7 +6,7 @@ import { AdminRoute } from './app/auth/AdminRoute';
 import { RedirectIfAuthenticated } from './app/auth/RedirectIfAuthenticated';
 import { AppLayout } from './app/layouts/AppLayout';
 import { LoginPage } from './app/pages/LoginPage';
-import { DashboardPage } from './app/pages/DashboardPage';
+import { DashboardPage } from './app/pages/dashboard/DashboardPage';
 import { NewSalePage } from './app/pages/pos/NewSalePage';
 import { ServicesPage } from './app/pages/services/ServicesPage';
 import { CategoryProductsPage } from './app/pages/products/CategoryProductsPage';
