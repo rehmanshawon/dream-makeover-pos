@@ -45,7 +45,7 @@ export function LoginPage(): JSX.Element {
     <div className="login-page">
       <div className="login-page__panel">
         <div className="login-page__brand">
-          <span className="login-page__mark">DM</span>
+          <img src="/logo.png" alt="" className="login-page__logo" width={96} height={96} />
           <div className="login-page__brand-text">
             <h1 className="login-page__brand-name">Dream Makeover</h1>
             <p className="login-page__brand-tagline">A Luxury Beauty Salon</p>

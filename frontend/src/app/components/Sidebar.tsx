@@ -33,7 +33,7 @@ export function Sidebar(): JSX.Element {
   return (
     <aside className="sidebar" aria-label="Primary navigation">
       <div className="sidebar__brand">
-        <span className="sidebar__brand-mark">DM</span>
+        <img src="/logo.png" alt="" className="sidebar__brand-logo" width={40} height={40} />
         <div className="sidebar__brand-text">
           <span className="sidebar__brand-name">Dream Makeover</span>
           <span className="sidebar__brand-tagline">A Luxury Beauty Salon</span>

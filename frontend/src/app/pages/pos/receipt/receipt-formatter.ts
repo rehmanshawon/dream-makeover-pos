@@ -141,8 +141,10 @@ export function formatReceipt(data: ReceiptData): string[] {
   }
 
   // Footer
+  lines.push(blank());
   lines.push(center('Thank You For Visiting'));
-  lines.push(center('Please come again'));
+  lines.push(center('We look forward to seeing'));
+  lines.push(center('you again soon'));
   lines.push(divider('='));
 
   return lines;

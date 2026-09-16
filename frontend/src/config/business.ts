@@ -6,19 +6,18 @@ export interface BusinessInfo {
 }
 
 /**
- * Business identity shown on printed receipts.
+ * Business identity shown on printed receipts and in the Settings page.
  *
- * Replace the placeholder address and phone with the salon's actual
- * information. Each address line is centered on the 32-character
- * receipt. Keep lines short to avoid truncation.
+ * Address lines are rendered centered on the 32-character receipt.
+ * Keep each line under 32 characters to avoid truncation.
  */
 export const BUSINESS_INFO: BusinessInfo = {
   name: 'DREAM MAKEOVER',
   tagline: 'A Luxury Beauty Salon',
   addressLines: [
-    // TODO: Replace with the salon's actual address.
-    '123 Placeholder Road',
-    'Dhaka, Bangladesh',
+    'Shop No: 09, Ground Floor',
+    'Online Plaza, Matikata Bazar',
+    'Dhaka Cantonment, Dhaka - 1206',
   ],
-  phone: '+880 1XXX-XXXXXX',
+  phone: '01895-632484',
 };
