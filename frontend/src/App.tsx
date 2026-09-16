@@ -20,7 +20,7 @@ import { SalesReportPage } from './app/pages/sales-report/SalesReportPage';
 import { AccountsPage } from './app/pages/accounts/AccountsPage';
 import { StaffPage } from './app/pages/staff/StaffPage';
 import { EmployeeDetailPage } from './app/pages/staff/EmployeeDetailPage';
-import { ExpenditurePage } from './app/pages/ExpenditurePage';
+import { ExpenditurePage } from './app/pages/expenditure/ExpenditurePage';
 import { SettingsPage } from './app/pages/SettingsPage';
 
 /**
