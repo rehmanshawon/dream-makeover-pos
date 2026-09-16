@@ -1,0 +1,33 @@
+.employee-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.employee-form__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .employee-form__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.employee-form__error {
+  padding: var(--space-3);
+  background: var(--color-danger-soft);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+}
+
+.employee-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
