@@ -16,7 +16,7 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsEnum(ProductCategory)
-  category?: ProductCategory;
+  category?: string;
 
   @IsOptional()
   @IsInt()

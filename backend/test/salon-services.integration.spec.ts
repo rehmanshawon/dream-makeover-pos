@@ -9,7 +9,11 @@ import { AppModule } from '../src/app.module';
 import { User } from '../src/users/user.entity';
 import { UserRole } from '../src/users/user-role.enum';
 import { SalonService } from '../src/services/service.entity';
-import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
+import {
+  createTestDataSource,
+  TEST_SERVICE_CATEGORY_ID,
+  truncateAllTables,
+} from './helpers/test-data-source';
 
 describe('Salon services (integration)', () => {
   let app: INestApplication;
@@ -86,6 +90,7 @@ describe('Salon services (integration)', () => {
     const service = await repo.save(
       repo.create({
         name: 'Integration Service',
+        categoryId: TEST_SERVICE_CATEGORY_ID,
         priceMinor: 200000,
         durationMinutes: 45,
         rewardPointWeight: 1,

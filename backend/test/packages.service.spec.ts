@@ -9,7 +9,6 @@ import { PackageItemKind } from '../src/packages/package-item-kind.enum';
 import { Product } from '../src/products/product.entity';
 import { SalonService } from '../src/services/service.entity';
 import { CreatePackageDto } from '../src/packages/dto/create-package.dto';
-import { ProductCategory } from '../src/products/product-category.enum';
 
 describe('PackagesService (unit)', () => {
   let service: PackagesService;
@@ -76,7 +75,7 @@ describe('PackagesService (unit)', () => {
     ({
       id,
       name: `Product ${id}`,
-      category: ProductCategory.COSMETICS,
+      categoryId: '11111111-1111-4111-8111-111111111111',
       stock: 10,
       purchaseCostMinor: 0,
       sellingPriceMinor: priceMinor,

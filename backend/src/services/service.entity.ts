@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -15,16 +16,23 @@ export class SalonService {
   @Column({ type: 'varchar', length: 150 })
   name: string;
 
+  @Index('idx_services_category')
+  @Column({ name: 'category_id', type: 'char', length: 36 })
+  categoryId: string;
+
   @Column({
     name: 'price_minor',
     type: 'bigint',
     unsigned: true,
-    default: 0,
     transformer: bigintTransformer,
   })
-  priceMinor: number = 0;
+  priceMinor: number;
 
-  @Column({ name: 'duration_minutes', type: 'int', unsigned: true })
+  @Column({
+    name: 'duration_minutes',
+    type: 'int',
+    unsigned: true,
+  })
   durationMinutes: number;
 
   @Column({

@@ -1,9 +1,7 @@
-import { ProductCategory } from '../../products/product-category.enum';
-
 export class LowStockProductDto {
   id: string;
   name: string;
-  category: ProductCategory;
+  category: string;
   stock: number;
   minimumStockThreshold: number;
   sellingPriceMinor: number;

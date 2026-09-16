@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ReportsModule } from './reports/reports.module';
+import { CategoriesModule } from './categories/categories.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { databaseConfig } from './config/database.config';
 import { CustomersModule } from './customers/customers.module';
@@ -30,6 +31,7 @@ import { ExpensesModule } from './expenses/expenses.module';
     SalaryPaymentsModule,
     ExpensesModule,
     ReportsModule,
+    CategoriesModule,
   ],
 })
 export class AppModule {}

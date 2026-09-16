@@ -5,7 +5,10 @@ import { NotFoundException } from '@nestjs/common';
 import { SalonServicesService } from '../src/services/salon-services.service';
 import { SalonService } from '../src/services/service.entity';
 import { CreateServiceDto } from '../src/services/dto/create-service.dto';
+import { CategoriesService } from '../src/categories/categories.service';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+
+const SERVICE_CATEGORY_ID = '22222222-2222-4222-8222-222222222222';
 
 type MockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
 
@@ -28,6 +31,20 @@ describe('SalonServicesService', () => {
           provide: getRepositoryToken(SalonService),
           useValue: createMockRepository(),
         },
+        {
+          provide: CategoriesService,
+          useValue: {
+            findBySlug: jest.fn().mockResolvedValue({
+              id: SERVICE_CATEGORY_ID,
+              name: 'Services',
+            }),
+            loadByIds: jest
+              .fn()
+              .mockResolvedValue(
+                new Map([[SERVICE_CATEGORY_ID, { id: SERVICE_CATEGORY_ID, name: 'Services' }]]),
+              ),
+          },
+        },
       ],
     }).compile();
 
@@ -47,6 +64,7 @@ describe('SalonServicesService', () => {
       const mockSavedService = {
         id: 'uuid-service-1',
         ...dto,
+        categoryId: SERVICE_CATEGORY_ID,
         active: true,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -60,6 +78,7 @@ describe('SalonServicesService', () => {
       // Verifies that dto.active ?? true evaluates correctly and passes to TypeORM
       expect(repository.create).toHaveBeenCalledWith({
         name: dto.name,
+        categoryId: SERVICE_CATEGORY_ID,
         priceMinor: dto.priceMinor,
         durationMinutes: dto.durationMinutes,
         rewardPointWeight: dto.rewardPointWeight,
@@ -82,6 +101,7 @@ describe('SalonServicesService', () => {
       const mockSavedService = {
         id: 'uuid-service-2',
         ...dto,
+        categoryId: SERVICE_CATEGORY_ID,
         createdAt: new Date(),
         updatedAt: new Date(),
       } as SalonService;
@@ -101,6 +121,7 @@ describe('SalonServicesService', () => {
         {
           id: 'uuid-1',
           name: 'Bridal Facial',
+          categoryId: SERVICE_CATEGORY_ID,
           priceMinor: 100000,
           durationMinutes: 60,
           rewardPointWeight: 1,
@@ -141,6 +162,7 @@ describe('SalonServicesService', () => {
       const mockService = {
         id: 'uuid-1',
         name: 'Pedicure',
+        categoryId: SERVICE_CATEGORY_ID,
         priceMinor: 150000,
         durationMinutes: 45,
         rewardPointWeight: 1,
@@ -169,6 +191,7 @@ describe('SalonServicesService', () => {
     const existing = {
       id: 's1',
       name: 'Bridal Facial',
+      categoryId: SERVICE_CATEGORY_ID,
       priceMinor: 350000,
       durationMinutes: 60,
       rewardPointWeight: 1,
@@ -192,6 +215,7 @@ describe('SalonServicesService', () => {
     const existing = {
       id: 's1',
       name: 'Bridal Facial',
+      categoryId: SERVICE_CATEGORY_ID,
       priceMinor: 350000,
       durationMinutes: 60,
       rewardPointWeight: 1,

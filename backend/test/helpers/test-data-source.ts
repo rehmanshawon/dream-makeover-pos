@@ -12,6 +12,11 @@ import { StockMovement } from '../../src/inventory/stock-movement.entity';
 import { Employee } from '../../src/employees/employee.entity';
 import { SalaryPayment } from '../../src/salary-payments/salary-payment.entity';
 import { Expense } from '../../src/expenses/expense.entity';
+import { Category } from '../../src/categories/category.entity';
+import { CategoryKind } from '../../src/categories/category-kind.enum';
+
+export const TEST_PRODUCT_CATEGORY_ID = '11111111-1111-4111-8111-111111111111';
+export const TEST_SERVICE_CATEGORY_ID = '22222222-2222-4222-8222-222222222222';
 const TEST_TABLES = [
   'transaction_items',
   'transactions',
@@ -25,6 +30,7 @@ const TEST_TABLES = [
   'salary_payments',
   'employees',
   'expenses',
+  'categories',
 ];
 
 /**
@@ -70,6 +76,7 @@ export async function createTestDataSource(): Promise<DataSource> {
       Employee,
       SalaryPayment,
       Expense,
+      Category,
     ],
     synchronize: false,
     dropSchema: false,
@@ -79,14 +86,33 @@ export async function createTestDataSource(): Promise<DataSource> {
   await dataSource.initialize();
   await dropAllTables(dataSource);
   await dataSource.synchronize(); // Rebuild the schema after dropping all tables
+  await seedDefaultCategories(dataSource);
+  // Add foreign keys that synchronize does not emit because we
+  // declare foreign keys as scalar columns.
   await dataSource.query(`
-    ALTER TABLE package_items
-    ADD CONSTRAINT chk_package_items_kind CHECK (
-      (item_kind = 'SERVICE' AND service_id IS NOT NULL AND product_id IS NULL)
-      OR
-      (item_kind = 'PRODUCT' AND product_id IS NOT NULL AND service_id IS NULL)
-    )
-  `);
+  ALTER TABLE categories
+    ADD CONSTRAINT fk_categories_parent
+    FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE RESTRICT
+`);
+  await dataSource.query(`
+  ALTER TABLE products
+    ADD CONSTRAINT fk_products_category
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT
+`);
+  await dataSource.query(`
+  ALTER TABLE services
+    ADD CONSTRAINT fk_services_category
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT
+`);
+  // Existing CHECK constraint for package_items
+  await dataSource.query(`
+  ALTER TABLE package_items
+  ADD CONSTRAINT chk_package_items_kind CHECK (
+    (item_kind = 'SERVICE' AND service_id IS NOT NULL AND product_id IS NULL)
+    OR
+    (item_kind = 'PRODUCT' AND product_id IS NOT NULL AND service_id IS NULL)
+  )
+`);
   return dataSource;
 }
 
@@ -101,6 +127,24 @@ export async function truncateAllTables(dataSource: DataSource): Promise<void> {
     await dataSource.query(`TRUNCATE TABLE \`${table}\``);
   }
   await dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
+  await seedDefaultCategories(dataSource);
+}
+
+async function seedDefaultCategories(dataSource: DataSource): Promise<void> {
+  await dataSource.getRepository(Category).save([
+    {
+      id: TEST_PRODUCT_CATEGORY_ID,
+      name: 'Cosmetics',
+      slug: 'cosmetics',
+      kind: CategoryKind.PRODUCT,
+    },
+    {
+      id: TEST_SERVICE_CATEGORY_ID,
+      name: 'Services',
+      slug: 'services',
+      kind: CategoryKind.SERVICE,
+    },
+  ]);
 }
 
 /**

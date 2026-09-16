@@ -3,7 +3,6 @@ import { ProductsService, type ProductResponseOptions } from './products.service
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductResponseDto } from './dto/product-response.dto';
-import { ProductCategory } from './product-category.enum';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -39,7 +38,7 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard)
   async findAll(
     @Req() req: { user: JwtPayload },
-    @Query('category') category?: ProductCategory,
+    @Query('category') category?: string,
   ): Promise<ProductResponseDto[]> {
     const options = optionsFor(req.user);
     if (category) {

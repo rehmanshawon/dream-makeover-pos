@@ -9,7 +9,6 @@ import { AppModule } from '../src/app.module';
 import { User } from '../src/users/user.entity';
 import { UserRole } from '../src/users/user-role.enum';
 import { Product } from '../src/products/product.entity';
-import { ProductCategory } from '../src/products/product-category.enum';
 import { SalonService } from '../src/services/service.entity';
 import { Customer } from '../src/customers/customer.entity';
 import { Employee } from '../src/employees/employee.entity';
@@ -21,7 +20,12 @@ import { Expense } from '../src/expenses/expense.entity';
 import { ExpenseCategory } from '../src/expenses/expense-category.enum';
 import { Transaction } from '../src/transactions/transaction.entity';
 import { TransactionItemType } from '../src/transactions/transaction-item.entity';
-import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
+import {
+  createTestDataSource,
+  TEST_PRODUCT_CATEGORY_ID,
+  TEST_SERVICE_CATEGORY_ID,
+  truncateAllTables,
+} from './helpers/test-data-source';
 
 describe('Financial Summary (integration)', () => {
   let app: INestApplication;
@@ -127,7 +131,7 @@ describe('Financial Summary (integration)', () => {
     const product = await productRepo.save(
       productRepo.create({
         name: 'Report Test Lipstick',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 20,
         purchaseCostMinor: 50000,
         sellingPriceMinor: 100000,
@@ -138,6 +142,7 @@ describe('Financial Summary (integration)', () => {
     const service = await serviceRepo.save(
       serviceRepo.create({
         name: 'Report Test Facial',
+        categoryId: TEST_SERVICE_CATEGORY_ID,
         priceMinor: 200000,
         durationMinutes: 60,
         rewardPointWeight: 1,

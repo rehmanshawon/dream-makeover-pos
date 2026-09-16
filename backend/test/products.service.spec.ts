@@ -6,7 +6,9 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ProductsService } from '../src/products/products.service';
 import { Product } from '../src/products/product.entity';
 import { CreateProductDto } from '../src/products/dto/create-product.dto';
-import { ProductCategory } from '../src/products/product-category.enum';
+import { CategoriesService } from '../src/categories/categories.service';
+
+const PRODUCT_CATEGORY_ID = '11111111-1111-4111-8111-111111111111';
 
 describe('ProductsService', () => {
   let service: ProductsService;
@@ -25,6 +27,20 @@ describe('ProductsService', () => {
             save: jest.fn(),
           },
         },
+        {
+          provide: CategoriesService,
+          useValue: {
+            findBySlug: jest.fn().mockResolvedValue({
+              id: PRODUCT_CATEGORY_ID,
+              name: 'Cosmetics',
+            }),
+            loadByIds: jest
+              .fn()
+              .mockResolvedValue(
+                new Map([[PRODUCT_CATEGORY_ID, { id: PRODUCT_CATEGORY_ID, name: 'Cosmetics' }]]),
+              ),
+          },
+        },
       ],
     }).compile();
 
@@ -36,7 +52,7 @@ describe('ProductsService', () => {
     ({
       id: 'uuid-product-1',
       name: 'Lipstick',
-      category: ProductCategory.COSMETICS,
+      categoryId: PRODUCT_CATEGORY_ID,
       stock: 10,
       purchaseCostMinor: 50000,
       sellingPriceMinor: 100000,
@@ -105,7 +121,7 @@ describe('ProductsService', () => {
   it('creates product with correct monetary values', async () => {
     const dto: CreateProductDto = {
       name: 'Lipstick',
-      category: ProductCategory.COSMETICS,
+      category: 'Cosmetics',
       stock: 10,
       purchaseCostMinor: 50000,
       sellingPriceMinor: 100000,

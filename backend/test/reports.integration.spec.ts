@@ -9,7 +9,6 @@ import { AppModule } from '../src/app.module';
 import { User } from '../src/users/user.entity';
 import { UserRole } from '../src/users/user-role.enum';
 import { Product } from '../src/products/product.entity';
-import { ProductCategory } from '../src/products/product-category.enum';
 import { SalonService } from '../src/services/service.entity';
 import { Customer } from '../src/customers/customer.entity';
 import { Expense } from '../src/expenses/expense.entity';
@@ -20,7 +19,12 @@ import { SalaryFrequency } from '../src/employees/salary-frequency.enum';
 import { SalaryPayment } from '../src/salary-payments/salary-payment.entity';
 import { SalaryPaymentType } from '../src/salary-payments/salary-payment-type.enum';
 import { PaymentMethod as SalaryMethod } from '../src/salary-payments/payment-method.enum';
-import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
+import {
+  createTestDataSource,
+  TEST_PRODUCT_CATEGORY_ID,
+  TEST_SERVICE_CATEGORY_ID,
+  truncateAllTables,
+} from './helpers/test-data-source';
 
 describe('Reports (integration)', () => {
   let app: INestApplication;
@@ -96,7 +100,7 @@ describe('Reports (integration)', () => {
     const product = await productRepo.save(
       productRepo.create({
         name: 'Reports Lipstick',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 50,
         purchaseCostMinor: 50000,
         sellingPriceMinor: 100000,
@@ -109,6 +113,7 @@ describe('Reports (integration)', () => {
     const service = await serviceRepo.save(
       serviceRepo.create({
         name: 'Reports Facial',
+        categoryId: TEST_SERVICE_CATEGORY_ID,
         priceMinor: 200000,
         durationMinutes: 60,
         rewardPointWeight: 1,
@@ -226,7 +231,7 @@ describe('Reports (integration)', () => {
     const second = await productRepo.save(
       productRepo.create({
         name: 'Second Product',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 20,
         purchaseCostMinor: 30000,
         sellingPriceMinor: 80000,

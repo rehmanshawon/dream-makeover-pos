@@ -11,10 +11,14 @@ import { PackageItem } from '../src/packages/package-item.entity';
 import { PackageItemKind } from '../src/packages/package-item-kind.enum';
 import { Product } from '../src/products/product.entity';
 import { SalonService } from '../src/services/service.entity';
-import { ProductCategory } from '../src/products/product-category.enum';
 import { User } from '../src/users/user.entity';
 import { UserRole } from '../src/users/user-role.enum';
-import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
+import {
+  createTestDataSource,
+  TEST_PRODUCT_CATEGORY_ID,
+  TEST_SERVICE_CATEGORY_ID,
+  truncateAllTables,
+} from './helpers/test-data-source';
 
 describe('Package persistence (integration)', () => {
   let dataSource: DataSource;
@@ -91,6 +95,7 @@ describe('Package persistence (integration)', () => {
     return repository.save(
       repository.create({
         name,
+        categoryId: TEST_SERVICE_CATEGORY_ID,
         priceMinor,
         durationMinutes: 60,
         rewardPointWeight: 1,
@@ -124,6 +129,7 @@ describe('Package persistence (integration)', () => {
     const service = await serviceRepo.save(
       serviceRepo.create({
         name: 'Bridal Makeup',
+        categoryId: TEST_SERVICE_CATEGORY_ID,
         priceMinor: 350000,
         durationMinutes: 60,
         rewardPointWeight: 1,
@@ -134,7 +140,7 @@ describe('Package persistence (integration)', () => {
     const product = await productRepo.save(
       productRepo.create({
         name: 'Premium Cosmetics Kit',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 10,
         purchaseCostMinor: 80000,
         sellingPriceMinor: 120000,
@@ -185,6 +191,7 @@ describe('Package persistence (integration)', () => {
     const service = await serviceRepo.save(
       serviceRepo.create({
         name: 'Test Service',
+        categoryId: TEST_SERVICE_CATEGORY_ID,
         priceMinor: 100000,
         durationMinutes: 30,
         rewardPointWeight: 1,
@@ -194,7 +201,7 @@ describe('Package persistence (integration)', () => {
     const product = await productRepo.save(
       productRepo.create({
         name: 'Test Product',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 10,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -233,6 +240,7 @@ describe('Package persistence (integration)', () => {
     const service = await serviceRepo.save(
       serviceRepo.create({
         name: 'Service Only',
+        categoryId: TEST_SERVICE_CATEGORY_ID,
         priceMinor: 100000,
         durationMinutes: 30,
         rewardPointWeight: 1,
@@ -270,6 +278,7 @@ describe('Package persistence (integration)', () => {
     const service = await serviceRepo.save(
       serviceRepo.create({
         name: 'Test Service',
+        categoryId: TEST_SERVICE_CATEGORY_ID,
         priceMinor: 100000,
         durationMinutes: 30,
         rewardPointWeight: 1,
@@ -310,6 +319,7 @@ describe('Package persistence (integration)', () => {
     const service = await serviceRepo.save(
       serviceRepo.create({
         name: 'Protected Service',
+        categoryId: TEST_SERVICE_CATEGORY_ID,
         priceMinor: 100000,
         durationMinutes: 30,
         rewardPointWeight: 1,

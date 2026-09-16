@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { Product } from '../products/product.entity';
 import { StockMovement } from './stock-movement.entity';
@@ -8,6 +8,7 @@ import { AdjustmentDto } from './dto/adjustment.dto';
 import { StockMovementResponseDto } from './dto/stock-movement-response.dto';
 import { LowStockProductDto } from './dto/low-stock-product.dto';
 import { InventoryStatsDto } from './dto/inventory-stats.dto';
+import { CategoriesService } from '../categories/categories.service';
 
 /**
  * InventoryService — the single writer for product stock.
@@ -28,7 +29,10 @@ import { InventoryStatsDto } from './dto/inventory-stats.dto';
  */
 @Injectable()
 export class InventoryService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    @Optional() private readonly categoriesService?: CategoriesService,
+  ) {}
 
   /**
    * Adds stock to a product and records a STOCK_IN movement.
@@ -101,7 +105,8 @@ export class InventoryService {
       .addOrderBy('p.name', 'ASC')
       .getMany();
 
-    return products.map((p) => this.toLowStockDto(p));
+    const categoryNames = await this.loadCategoryNames(products);
+    return products.map((p) => this.toLowStockDto(p, categoryNames.get(p.categoryId)));
   }
 
   /**
@@ -114,7 +119,8 @@ export class InventoryService {
       order: { name: 'ASC' },
     });
 
-    return products.map((p) => this.toLowStockDto(p));
+    const categoryNames = await this.loadCategoryNames(products);
+    return products.map((p) => this.toLowStockDto(p, categoryNames.get(p.categoryId)));
   }
 
   /**
@@ -141,11 +147,17 @@ export class InventoryService {
     };
   }
 
-  private toLowStockDto(product: Product): LowStockProductDto {
+  private async loadCategoryNames(products: Product[]): Promise<Map<string, string>> {
+    if (!this.categoriesService || products.length === 0) return new Map();
+    const categories = await this.categoriesService.loadByIds(products.map((p) => p.categoryId));
+    return new Map(Array.from(categories.entries()).map(([id, category]) => [id, category.name]));
+  }
+
+  private toLowStockDto(product: Product, categoryName?: string): LowStockProductDto {
     return {
       id: product.id,
       name: product.name,
-      category: product.category,
+      category: categoryName ?? product.categoryId,
       stock: product.stock,
       minimumStockThreshold: product.minimumStockThreshold,
       sellingPriceMinor: product.sellingPriceMinor,

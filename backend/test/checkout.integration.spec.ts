@@ -12,11 +12,15 @@ import * as bcrypt from 'bcryptjs';
 import { describe, beforeAll, afterAll, it, expect, beforeEach } from '@jest/globals';
 import { Customer } from '../src/customers/customer.entity';
 import { CustomerRewardTier } from '../src/customers/customer-reward-tier.enum';
-import { ProductCategory } from '../src/products/product-category.enum';
 import { SalonService } from '../src/services/service.entity';
 import { Transaction } from '../src/transactions/transaction.entity';
 import { TransactionItem, TransactionItemType } from '../src/transactions/transaction-item.entity';
-import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
+import {
+  createTestDataSource,
+  TEST_PRODUCT_CATEGORY_ID,
+  TEST_SERVICE_CATEGORY_ID,
+  truncateAllTables,
+} from './helpers/test-data-source';
 import { Package } from '../src/packages/package.entity';
 import { PackageItem } from '../src/packages/package-item.entity';
 
@@ -79,7 +83,7 @@ describe('Checkout (integration)', () => {
     product = await productRepo.save(
       productRepo.create({
         name: 'Luxury Lipstick',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 10,
         purchaseCostMinor: 80000,
         sellingPriceMinor: 120000,
@@ -91,6 +95,7 @@ describe('Checkout (integration)', () => {
     service = await serviceRepo.save(
       serviceRepo.create({
         name: 'Bridal Facial',
+        categoryId: TEST_SERVICE_CATEGORY_ID,
         priceMinor: 350000,
         durationMinutes: 60,
         rewardPointWeight: 1,
@@ -325,7 +330,7 @@ describe('Checkout (integration)', () => {
     const containedProduct = await productRepo.save(
       productRepo.create({
         name: 'Contained Cosmetics',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 10,
         purchaseCostMinor: 50000,
         sellingPriceMinor: 90000,
@@ -336,6 +341,7 @@ describe('Checkout (integration)', () => {
     const containedService = await serviceRepo.save(
       serviceRepo.create({
         name: 'Contained Facial',
+        categoryId: TEST_SERVICE_CATEGORY_ID,
         priceMinor: 200000,
         durationMinutes: 45,
         rewardPointWeight: 1,

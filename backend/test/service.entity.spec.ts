@@ -4,6 +4,8 @@ import { describe, expect, it } from '@jest/globals';
 describe('SalonService entity', () => {
   it('should have a UUID primary key', () => {
     const service = new SalonService();
+    service.categoryId = '22222222-2222-4222-8222-222222222222';
+    expect(service.categoryId).toBe('22222222-2222-4222-8222-222222222222');
     expect(service.id).toBeUndefined();
   });
 

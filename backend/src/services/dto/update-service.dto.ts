@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsOptional, IsString, Length, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, IsUUID, Length, Min } from 'class-validator';
 
 /**
  * Partial update for a salon service.
@@ -14,6 +14,10 @@ export class UpdateServiceDto {
   @IsString()
   @Length(2, 150)
   name?: string;
+
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
 
   @IsOptional()
   @IsInt()

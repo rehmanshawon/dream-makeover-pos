@@ -1,5 +1,4 @@
-import { IsEnum, IsInt, IsNotEmpty, IsString, Length, Min } from 'class-validator';
-import { ProductCategory } from '../product-category.enum';
+import { IsInt, IsNotEmpty, IsString, Length, Min } from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
@@ -7,8 +6,13 @@ export class CreateProductDto {
   @Length(2, 150)
   name: string;
 
-  @IsEnum(ProductCategory)
-  category: ProductCategory;
+  /**
+   * Category name or slug. The backend resolves this to a category id
+   * of kind PRODUCT.
+   */
+  @IsString()
+  @IsNotEmpty()
+  category: string;
 
   @IsInt()
   @Min(0)

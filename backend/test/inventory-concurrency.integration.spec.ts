@@ -1,10 +1,13 @@
 import { DataSource } from 'typeorm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { Product } from '../src/products/product.entity';
-import { ProductCategory } from '../src/products/product-category.enum';
 import { StockMovement } from '../src/inventory/stock-movement.entity';
 import { InventoryService } from '../src/inventory/inventory.service';
-import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
+import {
+  createTestDataSource,
+  TEST_PRODUCT_CATEGORY_ID,
+  truncateAllTables,
+} from './helpers/test-data-source';
 
 describe('Inventory concurrency (integration)', () => {
   let dataSource: DataSource;
@@ -28,7 +31,7 @@ describe('Inventory concurrency (integration)', () => {
     const product = await productRepo.save(
       productRepo.create({
         name: 'Concurrent Test Product',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 10,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -62,7 +65,7 @@ describe('Inventory concurrency (integration)', () => {
     const product = await productRepo.save(
       productRepo.create({
         name: 'Fragile Concurrent Product',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 5,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -100,7 +103,7 @@ describe('Inventory concurrency (integration)', () => {
     const product = await productRepo.save(
       productRepo.create({
         name: 'Ledger Sync Product',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 100,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,

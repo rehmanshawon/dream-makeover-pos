@@ -1,10 +1,10 @@
 import { Product } from '../src/products/product.entity';
-//import { ProductCategory } from '../src/products/product-category.enum';
 import { describe, expect, it } from '@jest/globals';
 
 describe('Product entity', () => {
   it('should initialize with default stock values', () => {
     const product = new Product();
+    product.categoryId = '11111111-1111-4111-8111-111111111111';
 
     // Verifies that default values are applied upon instantiation
     expect(product.stock).toBe(0);

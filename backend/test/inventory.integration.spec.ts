@@ -1,11 +1,14 @@
 import { DataSource } from 'typeorm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { Product } from '../src/products/product.entity';
-import { ProductCategory } from '../src/products/product-category.enum';
 import { StockMovement } from '../src/inventory/stock-movement.entity';
 import { StockMovementReason } from '../src/inventory/stock-movement-reason.enum';
 import { InventoryService } from '../src/inventory/inventory.service';
-import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
+import {
+  createTestDataSource,
+  TEST_PRODUCT_CATEGORY_ID,
+  truncateAllTables,
+} from './helpers/test-data-source';
 
 describe('Inventory (integration)', () => {
   let dataSource: DataSource;
@@ -29,7 +32,7 @@ describe('Inventory (integration)', () => {
     const product = await productRepo.save(
       productRepo.create({
         name: 'Test Lipstick',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 5,
         purchaseCostMinor: 80000,
         sellingPriceMinor: 120000,
@@ -55,7 +58,7 @@ describe('Inventory (integration)', () => {
     const product = await productRepo.save(
       productRepo.create({
         name: 'Adjust Me',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 10,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -80,7 +83,7 @@ describe('Inventory (integration)', () => {
     const product = await productRepo.save(
       productRepo.create({
         name: 'Fragile',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 2,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -105,7 +108,7 @@ describe('Inventory (integration)', () => {
     const product = await productRepo.save(
       productRepo.create({
         name: 'History',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 0,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -129,7 +132,7 @@ describe('Inventory (integration)', () => {
     await productRepo.save([
       productRepo.create({
         name: 'Plenty',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 20,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -137,7 +140,7 @@ describe('Inventory (integration)', () => {
       }),
       productRepo.create({
         name: 'Almost Gone',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 3,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -145,7 +148,7 @@ describe('Inventory (integration)', () => {
       }),
       productRepo.create({
         name: 'At Threshold',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 5,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -153,7 +156,7 @@ describe('Inventory (integration)', () => {
       }),
       productRepo.create({
         name: 'Empty',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 0,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -173,7 +176,7 @@ describe('Inventory (integration)', () => {
     await productRepo.save([
       productRepo.create({
         name: 'Available',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 5,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -181,7 +184,7 @@ describe('Inventory (integration)', () => {
       }),
       productRepo.create({
         name: 'Sold Out',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 0,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -201,7 +204,7 @@ describe('Inventory (integration)', () => {
     await productRepo.save([
       productRepo.create({
         name: 'Healthy',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 50,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -209,7 +212,7 @@ describe('Inventory (integration)', () => {
       }),
       productRepo.create({
         name: 'Low',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 3,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,
@@ -217,7 +220,7 @@ describe('Inventory (integration)', () => {
       }),
       productRepo.create({
         name: 'Empty',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 0,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 20000,

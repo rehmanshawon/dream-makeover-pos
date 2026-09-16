@@ -6,7 +6,6 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ProductCategory } from './product-category.enum';
 import { bigintTransformer } from '../common/transformers/bigint.transformer';
 
 @Entity('products')
@@ -18,13 +17,9 @@ export class Product {
   name: string;
 
   @Index('idx_products_category')
-  @Column({
-    type: 'enum',
-    enum: ProductCategory,
-  })
-  category: ProductCategory;
+  @Column({ name: 'category_id', type: 'char', length: 36 })
+  categoryId: string;
 
-  // Added property initializers (= 0) so pure unit tests see default values
   @Column({ type: 'int', unsigned: true, default: 0 })
   stock: number = 0;
 
@@ -41,10 +36,9 @@ export class Product {
     name: 'selling_price_minor',
     type: 'bigint',
     unsigned: true,
-    default: 0,
     transformer: bigintTransformer,
   })
-  sellingPriceMinor: number = 0;
+  sellingPriceMinor: number;
 
   @Column({
     name: 'minimum_stock_threshold',
@@ -59,21 +53,4 @@ export class Product {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-
-  // Domain behavior method suitable for unit testing
-  decrementStock(quantity: number): void {
-    if (quantity <= 0) {
-      throw new Error('Quantity must be greater than zero');
-    }
-    if (this.stock < quantity) {
-      throw new Error('Insufficient stock');
-    }
-    this.stock -= quantity;
-  }
-
-  isLowStock(): boolean {
-    return this.stock <= this.minimumStockThreshold;
-  }
 }
-
-export { ProductCategory };

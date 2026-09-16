@@ -5,8 +5,11 @@ import { Product } from '../src/products/product.entity';
 import { Transaction } from '../src/transactions/transaction.entity';
 import { TransactionItem } from '../src/transactions/transaction-item.entity';
 import { CustomerRewardTier } from '../src/customers/customer-reward-tier.enum';
-import { ProductCategory } from '../src/products/product-category.enum';
-import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
+import {
+  createTestDataSource,
+  TEST_PRODUCT_CATEGORY_ID,
+  truncateAllTables,
+} from './helpers/test-data-source';
 
 describe('Database Integration', () => {
   let dataSource: DataSource;
@@ -48,7 +51,7 @@ describe('Database Integration', () => {
     const saved = await repo.save(
       repo.create({
         name: 'Integration Lipstick',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 10,
         purchaseCostMinor: 80000,
         sellingPriceMinor: 120000,
@@ -84,7 +87,7 @@ describe('Database Integration', () => {
     const product = await productRepo.save(
       productRepo.create({
         name: 'Linked Product',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 10,
         purchaseCostMinor: 50000,
         sellingPriceMinor: 80000,

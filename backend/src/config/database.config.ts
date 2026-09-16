@@ -12,6 +12,7 @@ import { StockMovement } from '../inventory/stock-movement.entity';
 import { Employee } from '../employees/employee.entity';
 import { SalaryPayment } from '../salary-payments/salary-payment.entity';
 import { Expense } from '../expenses/expense.entity';
+import { Category } from '../categories/category.entity';
 const env = process.env;
 
 export const databaseConfig: TypeOrmModuleOptions = {
@@ -34,6 +35,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
     Employee,
     SalaryPayment,
     Expense,
+    Category,
   ],
   synchronize: false,
   logging: env.NODE_ENV === 'development',

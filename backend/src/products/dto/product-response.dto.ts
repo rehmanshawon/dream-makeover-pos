@@ -1,14 +1,10 @@
-import { ProductCategory } from '../product-category.enum';
-
 export class ProductResponseDto {
   id: string;
   name: string;
-  category: ProductCategory;
+  categoryId: string;
+  /** The category name. Kept as a string for backward compatibility. */
+  category: string;
   stock: number;
-  /**
-   * Omitted when the caller is not an ADMIN. The field is optional to
-   * allow the service to strip it for staff users.
-   */
   purchaseCostMinor?: number;
   sellingPriceMinor: number;
   minimumStockThreshold: number;

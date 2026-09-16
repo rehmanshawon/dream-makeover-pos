@@ -10,9 +10,12 @@ import { User } from '../src/users/user.entity';
 import { UserRole } from '../src/users/user-role.enum';
 import { Customer } from '../src/customers/customer.entity';
 import { Product } from '../src/products/product.entity';
-import { ProductCategory } from '../src/products/product-category.enum';
 import { TransactionItemType } from '../src/transactions/transaction-item.entity';
-import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
+import {
+  createTestDataSource,
+  TEST_PRODUCT_CATEGORY_ID,
+  truncateAllTables,
+} from './helpers/test-data-source';
 
 describe('Customers (integration)', () => {
   let app: INestApplication;
@@ -170,7 +173,7 @@ describe('Customers (integration)', () => {
     const product = await productRepo.save(
       productRepo.create({
         name: 'History Product',
-        category: ProductCategory.COSMETICS,
+        categoryId: TEST_PRODUCT_CATEGORY_ID,
         stock: 10,
         purchaseCostMinor: 50000,
         sellingPriceMinor: 100000,

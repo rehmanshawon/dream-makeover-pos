@@ -1,10 +1,27 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, Length, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Length,
+  Min,
+} from 'class-validator';
 
 export class CreateServiceDto {
   @IsString()
   @IsNotEmpty()
   @Length(2, 150)
   name: string;
+
+  /**
+   * Category id. Defaults to the "Services" category when omitted, so
+   * the existing frontend continues to work unchanged.
+   */
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
 
   @IsInt()
   @Min(1)
