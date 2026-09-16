@@ -1,18 +1,12 @@
 import type { JSX } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Icon } from './Icon';
+import { CatalogNav } from './CatalogNav';
 import { NAV_ITEMS, NAV_GROUP_LABELS, type NavGroup } from '../nav-items';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from '../../ui/Button';
 import './Sidebar.css';
 
-/**
- * Primary navigation. Renders the logo, grouped links, and a footer with
- * the authenticated user.
- *
- * Links marked adminOnly are hidden from staff users. This is a UX
- * convenience; the server enforces real authorization.
- */
 export function Sidebar(): JSX.Element {
   const { user, isAdmin, logout } = useAuth();
 
@@ -20,15 +14,12 @@ export function Sidebar(): JSX.Element {
 
   const groupedItems: Record<NavGroup, typeof visibleItems> = {
     main: [],
-    catalog: [],
     operations: [],
     admin: [],
   };
   for (const item of visibleItems) {
     groupedItems[item.group].push(item);
   }
-
-  const groupOrder: NavGroup[] = ['main', 'catalog', 'operations', 'admin'];
 
   return (
     <aside className="sidebar" aria-label="Primary navigation">
@@ -41,34 +32,71 @@ export function Sidebar(): JSX.Element {
       </div>
 
       <nav className="sidebar__nav">
-        {groupOrder.map((group) => {
-          const items = groupedItems[group];
-          if (items.length === 0) return null;
+        {groupedItems.main.length > 0 && (
+          <div className="sidebar__group">
+            <ul className="sidebar__list">
+              {groupedItems.main.map((item) => (
+                <li key={item.path}>
+                  <NavLink
+                    to={item.path}
+                    end={item.path === '/'}
+                    className={({ isActive }) =>
+                      'sidebar__link' + (isActive ? ' sidebar__link--active' : '')
+                    }
+                  >
+                    <Icon name={item.icon} />
+                    <span className="sidebar__link-label">{item.label}</span>
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-          const label = NAV_GROUP_LABELS[group];
+        {/* Catalog is dynamic — inserted between main and operations */}
+        <CatalogNav />
 
-          return (
-            <div key={group} className="sidebar__group">
-              {label && <div className="sidebar__group-label">{label}</div>}
-              <ul className="sidebar__list">
-                {items.map((item) => (
-                  <li key={item.path}>
-                    <NavLink
-                      to={item.path}
-                      end={item.path === '/'}
-                      className={({ isActive }) =>
-                        'sidebar__link' + (isActive ? ' sidebar__link--active' : '')
-                      }
-                    >
-                      <Icon name={item.icon} />
-                      <span className="sidebar__link-label">{item.label}</span>
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
+        {groupedItems.operations.length > 0 && (
+          <div className="sidebar__group">
+            <div className="sidebar__group-label">{NAV_GROUP_LABELS.operations}</div>
+            <ul className="sidebar__list">
+              {groupedItems.operations.map((item) => (
+                <li key={item.path}>
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      'sidebar__link' + (isActive ? ' sidebar__link--active' : '')
+                    }
+                  >
+                    <Icon name={item.icon} />
+                    <span className="sidebar__link-label">{item.label}</span>
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {groupedItems.admin.length > 0 && (
+          <div className="sidebar__group">
+            <div className="sidebar__group-label">{NAV_GROUP_LABELS.admin}</div>
+            <ul className="sidebar__list">
+              {groupedItems.admin.map((item) => (
+                <li key={item.path}>
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      'sidebar__link' + (isActive ? ' sidebar__link--active' : '')
+                    }
+                  >
+                    <Icon name={item.icon} />
+                    <span className="sidebar__link-label">{item.label}</span>
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </nav>
 
       <div className="sidebar__footer">

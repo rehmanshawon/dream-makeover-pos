@@ -11,6 +11,7 @@ import './ServiceFormModal.css';
 interface ServiceFormModalProps {
   open: boolean;
   service?: SalonService;
+  categoryId?: string;
   onClose: () => void;
   onSaved?: (serviceId: string) => void;
 }
@@ -48,6 +49,7 @@ function formFromService(service: SalonService): FormState {
 export function ServiceFormModal({
   open,
   service,
+  categoryId,
   onClose,
   onSaved,
 }: ServiceFormModalProps): JSX.Element {
@@ -116,6 +118,7 @@ export function ServiceFormModal({
         const created = await createMutation.mutateAsync({
           ...payload,
           active: true,
+          ...(categoryId ? { categoryId } : {}),
         });
         onSaved?.(created.id);
       }

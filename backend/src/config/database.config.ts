@@ -13,6 +13,7 @@ import { Employee } from '../employees/employee.entity';
 import { SalaryPayment } from '../salary-payments/salary-payment.entity';
 import { Expense } from '../expenses/expense.entity';
 import { Category } from '../categories/category.entity';
+import { migrations } from '../database/migrations';
 const env = process.env;
 
 export const databaseConfig: TypeOrmModuleOptions = {
@@ -37,6 +38,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     Expense,
     Category,
   ],
+  migrations,
+  migrationsRun: true,
   synchronize: false,
   logging: env.NODE_ENV === 'development',
 };

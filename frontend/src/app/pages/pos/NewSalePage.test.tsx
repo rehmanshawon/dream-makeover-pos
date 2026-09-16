@@ -19,6 +19,7 @@ const PRODUCTS = [
   {
     id: 'p1',
     name: 'Test Lipstick',
+    categoryId: 'product-category-1',
     category: 'Cosmetics',
     stock: 10,
     purchaseCostMinor: 80000,
@@ -33,12 +34,41 @@ const SERVICES = [
   {
     id: 's1',
     name: 'Test Facial',
+    categoryId: 'service-category-1',
+    category: 'Services',
     priceMinor: 200000,
     durationMinutes: 60,
     rewardPointWeight: 1,
     active: true,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+];
+
+const CATEGORY_TREE = [
+  {
+    id: 'service-category-1',
+    name: 'Services',
+    slug: 'services',
+    kind: 'SERVICE',
+    parentId: null,
+    displayOrder: 0,
+    active: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    children: [],
+  },
+  {
+    id: 'product-category-1',
+    name: 'Cosmetics',
+    slug: 'cosmetics',
+    kind: 'PRODUCT',
+    parentId: null,
+    displayOrder: 0,
+    active: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    children: [],
   },
 ];
 
@@ -58,6 +88,12 @@ describe('NewSalePage', () => {
   function mockEndpoints(): void {
     globalThis.fetch = vi.fn(async (input) => {
       const url = typeof input === 'string' ? input : (input as Request).url;
+      if (url.includes('/categories/tree')) {
+        return new Response(JSON.stringify(CATEGORY_TREE), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
       if (url.includes('/services')) {
         return new Response(JSON.stringify(SERVICES), {
           status: 200,

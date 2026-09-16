@@ -6,7 +6,7 @@ import { Modal } from '../../../ui/Modal';
 import { ApiError } from '../../../api/api-error';
 import { useCreateProduct } from '../../../api/product-hooks';
 import { parseTakaToMinor } from '../../../utils/format';
-import type { Product, ProductCategory } from '../../../types/products';
+import type { Product } from '../../../types/products';
 import { useUpdateProduct } from '../../../api/product-hooks';
 import { minorToTakaInput } from '../../../utils/format';
 
@@ -20,7 +20,7 @@ const CATEGORY_OPTIONS = [
 
 interface ProductFormModalProps {
   open: boolean;
-  defaultCategory: ProductCategory;
+  defaultCategory: string;
   product?: Product;
   onClose: () => void;
   onCreated?: (productId: string) => void;
@@ -28,14 +28,14 @@ interface ProductFormModalProps {
 
 interface FormState {
   name: string;
-  category: ProductCategory;
+  category: string;
   stock: string;
   purchaseCostTaka: string;
   sellingPriceTaka: string;
   minimumStockThreshold: string;
 }
 
-function emptyForm(category: ProductCategory): FormState {
+function emptyForm(category: string): FormState {
   return {
     name: '',
     category,
@@ -186,9 +186,7 @@ export function ProductFormModal({
             label="Category"
             options={CATEGORY_OPTIONS}
             value={form.category}
-            onChange={(e) =>
-              setForm((s) => ({ ...s, category: e.target.value as ProductCategory }))
-            }
+            onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))}
             disabled={submitting}
           />
           {!isEdit && (

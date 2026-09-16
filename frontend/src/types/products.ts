@@ -3,7 +3,8 @@ export type ProductCategory = 'Cosmetics' | 'Saree' | 'Three-piece';
 export interface Product {
   id: string;
   name: string;
-  category: ProductCategory;
+  categoryId: string;
+  category: string;
   stock: number;
   purchaseCostMinor: number;
   sellingPriceMinor: number;
@@ -14,7 +15,7 @@ export interface Product {
 
 export interface CreateProductRequest {
   name: string;
-  category: ProductCategory;
+  category: string;
   stock: number;
   purchaseCostMinor: number;
   sellingPriceMinor: number;
@@ -36,7 +37,7 @@ export interface StockMovement {
 
 export interface UpdateProductRequest {
   name?: string;
-  category?: ProductCategory;
+  category?: string;
   purchaseCostMinor?: number;
   sellingPriceMinor?: number;
   minimumStockThreshold?: number;

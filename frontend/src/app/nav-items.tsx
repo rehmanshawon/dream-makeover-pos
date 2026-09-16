@@ -1,39 +1,18 @@
 import type { IconName } from './components/Icon';
 
-export type NavGroup = 'main' | 'catalog' | 'operations' | 'admin';
+export type NavGroup = 'main' | 'operations' | 'admin';
 
 export interface NavItem {
   path: string;
   label: string;
   icon: IconName;
   group: NavGroup;
-  /**
-   * When true, the item is hidden from staff users. This is a UX
-   * convenience only. Server-side RBAC is authoritative.
-   */
   adminOnly: boolean;
 }
 
 export const NAV_ITEMS: NavItem[] = [
   { path: '/', label: 'Dashboard', icon: 'dashboard', group: 'main', adminOnly: true },
   { path: '/pos', label: 'New Sale', icon: 'pos', group: 'main', adminOnly: false },
-
-  {
-    path: '/parlour',
-    label: 'Parlour Service',
-    icon: 'sparkles',
-    group: 'catalog',
-    adminOnly: false,
-  },
-  { path: '/cosmetics', label: 'Cosmetics', icon: 'lipstick', group: 'catalog', adminOnly: false },
-  { path: '/shari', label: 'Shari', icon: 'saree', group: 'catalog', adminOnly: false },
-  {
-    path: '/three-piece',
-    label: 'Three-piece',
-    icon: 'three-piece',
-    group: 'catalog',
-    adminOnly: false,
-  },
 
   {
     path: '/stock',
@@ -78,7 +57,6 @@ export const NAV_ITEMS: NavItem[] = [
 
 export const NAV_GROUP_LABELS: Record<NavGroup, string> = {
   main: '',
-  catalog: 'Catalog',
   operations: 'Operations',
   admin: 'Administration',
 };

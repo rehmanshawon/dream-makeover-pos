@@ -9,7 +9,7 @@ import { LoginPage } from './app/pages/LoginPage';
 import { DashboardPage } from './app/pages/dashboard/DashboardPage';
 import { NewSalePage } from './app/pages/pos/NewSalePage';
 import { ServicesPage } from './app/pages/services/ServicesPage';
-import { CategoryProductsPage } from './app/pages/products/CategoryProductsPage';
+import { CatalogPage } from './app/pages/catalog/CatalogPage';
 import { ProductDetailPage } from './app/pages/products/ProductDetailPage';
 import { StockPage } from './app/pages/stock/StockPage';
 import { PackagesPage } from './app/pages/packages/PackagesPage';
@@ -64,9 +64,10 @@ export function App(): JSX.Element {
             />
             <Route path="pos" element={<NewSalePage />} />
             <Route path="parlour" element={<ServicesPage />} />
-            <Route path="cosmetics" element={<CategoryProductsPage slug="cosmetics" />} />
-            <Route path="shari" element={<CategoryProductsPage slug="shari" />} />
-            <Route path="three-piece" element={<CategoryProductsPage slug="three-piece" />} />
+            <Route path="catalog/:slug" element={<CatalogPage />} />
+            <Route path="cosmetics" element={<CatalogPage />} />
+            <Route path="shari" element={<CatalogPage />} />
+            <Route path="three-piece" element={<CatalogPage />} />
             <Route path="products/:id" element={<ProductDetailPage />} />
             <Route path="stock" element={<StockPage />} />
             <Route path="packages" element={<PackagesPage />} />

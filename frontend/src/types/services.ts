@@ -1,6 +1,8 @@
 export interface SalonService {
   id: string;
   name: string;
+  categoryId: string;
+  category: string;
   priceMinor: number;
   durationMinutes: number;
   rewardPointWeight: number;
@@ -11,6 +13,7 @@ export interface SalonService {
 
 export interface CreateServiceRequest {
   name: string;
+  categoryId?: string;
   priceMinor: number;
   durationMinutes: number;
   rewardPointWeight: number;
@@ -19,6 +22,7 @@ export interface CreateServiceRequest {
 
 export interface UpdateServiceRequest {
   name?: string;
+  categoryId?: string;
   priceMinor?: number;
   durationMinutes?: number;
   rewardPointWeight?: number;

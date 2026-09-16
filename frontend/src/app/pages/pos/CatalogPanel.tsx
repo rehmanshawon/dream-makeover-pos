@@ -2,23 +2,13 @@ import { useMemo, useState, type JSX } from 'react';
 import { useProducts } from '../../../api/product-hooks';
 import { useSalonServices } from '../../../api/salon-service-hooks';
 import { usePackages } from '../../../api/package-hooks';
+import { useCategoryTree } from '../../../api/category-hooks';
 import { Input } from '../../../ui/Input';
 import { Spinner } from '../../../ui/Spinner';
 import { EmptyState } from '../../../ui/EmptyState';
 import { ItemCard } from './ItemCard';
 import type { CartItemKind } from './use-cart';
-import type { ProductCategory } from '../../../types/products';
 import './CatalogPanel.css';
-
-type Tab = 'SERVICE' | ProductCategory | 'PACKAGE';
-
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'SERVICE', label: 'Parlour Service' },
-  { key: 'Cosmetics', label: 'Cosmetics' },
-  { key: 'Saree', label: 'Shari' },
-  { key: 'Three-piece', label: 'Three-piece' },
-  { key: 'PACKAGE', label: 'Packages' },
-];
 
 interface CatalogPanelProps {
   onAdd: (item: { kind: CartItemKind; id: string; name: string; unitPriceMinor: number }) => void;
@@ -35,31 +25,27 @@ interface DisplayItem {
 }
 
 export function CatalogPanel({ onAdd }: CatalogPanelProps): JSX.Element {
-  const [activeTab, setActiveTab] = useState<Tab>('SERVICE');
+  const [activeTab, setActiveTab] = useState<string>('');
   const [search, setSearch] = useState('');
 
   const products = useProducts();
   const services = useSalonServices(true);
   const packages = usePackages(true);
+  const categories = useCategoryTree();
+
+  const topLevelCategories = useMemo(() => {
+    return (categories.data ?? []).filter((c) => c.active);
+  }, [categories.data]);
+
+  const effectiveTab = useMemo(() => {
+    if (activeTab) return activeTab;
+    return topLevelCategories[0]?.id ?? 'PACKAGE';
+  }, [activeTab, topLevelCategories]);
 
   const items: DisplayItem[] = useMemo(() => {
     const q = search.trim().toLowerCase();
 
-    if (activeTab === 'SERVICE') {
-      return (services.data ?? [])
-        .filter((s) => s.active)
-        .filter((s) => (q ? s.name.toLowerCase().includes(q) : true))
-        .map((s) => ({
-          id: s.id,
-          name: s.name,
-          priceMinor: s.priceMinor,
-          kind: 'SERVICE' as const,
-          disabled: false,
-          subtitle: `${s.durationMinutes} min`,
-        }));
-    }
-
-    if (activeTab === 'PACKAGE') {
+    if (effectiveTab === 'PACKAGE') {
       return (packages.data ?? [])
         .filter((p) => p.active)
         .filter((p) => (q ? p.name.toLowerCase().includes(q) : true))
@@ -73,9 +59,38 @@ export function CatalogPanel({ onAdd }: CatalogPanelProps): JSX.Element {
         }));
     }
 
-    // Product category
+    const category = topLevelCategories.find((c) => c.id === effectiveTab);
+    if (!category) return [];
+
+    const descendantIds = new Set<string>([category.id]);
+    const walk = (nodes: typeof topLevelCategories): void => {
+      for (const n of nodes) {
+        if (n.id === category.id) {
+          collectChildren(n, descendantIds);
+        } else {
+          walk(n.children);
+        }
+      }
+    };
+    walk(topLevelCategories);
+
+    if (category.kind === 'SERVICE') {
+      return (services.data ?? [])
+        .filter((s) => s.active)
+        .filter((s) => descendantIds.has(s.categoryId))
+        .filter((s) => (q ? s.name.toLowerCase().includes(q) : true))
+        .map((s) => ({
+          id: s.id,
+          name: s.name,
+          priceMinor: s.priceMinor,
+          kind: 'SERVICE' as const,
+          disabled: false,
+          subtitle: `${s.durationMinutes} min`,
+        }));
+    }
+
     return (products.data ?? [])
-      .filter((p) => p.category === activeTab)
+      .filter((p) => descendantIds.has(p.categoryId))
       .filter((p) => (q ? p.name.toLowerCase().includes(q) : true))
       .map((p) => {
         const outOfStock = p.stock <= 0;
@@ -85,31 +100,40 @@ export function CatalogPanel({ onAdd }: CatalogPanelProps): JSX.Element {
           priceMinor: p.sellingPriceMinor,
           kind: 'PRODUCT' as const,
           disabled: outOfStock,
-          subtitle: `${p.stock} in stock`,
           ...(outOfStock ? { disabledReason: 'Out of stock' } : {}),
+          subtitle: `${p.stock} in stock`,
         };
       });
-  }, [activeTab, search, products.data, services.data, packages.data]);
+  }, [effectiveTab, search, products.data, services.data, packages.data, topLevelCategories]);
 
-  const anyLoading = products.isLoading || services.isLoading || packages.isLoading;
-
-  const anyError = products.error || services.error || packages.error;
+  const anyLoading =
+    products.isLoading || services.isLoading || packages.isLoading || categories.isLoading;
+  const anyError = products.error || services.error || packages.error || categories.error;
 
   return (
     <div className="catalog-panel">
       <div className="catalog-panel__tabs">
-        {TABS.map((tab) => (
+        {topLevelCategories.map((c) => (
           <button
-            key={tab.key}
+            key={c.id}
             type="button"
             className={`catalog-panel__tab${
-              activeTab === tab.key ? ' catalog-panel__tab--active' : ''
+              effectiveTab === c.id ? ' catalog-panel__tab--active' : ''
             }`}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => setActiveTab(c.id)}
           >
-            {tab.label}
+            {c.name}
           </button>
         ))}
+        <button
+          type="button"
+          className={`catalog-panel__tab${
+            effectiveTab === 'PACKAGE' ? ' catalog-panel__tab--active' : ''
+          }`}
+          onClick={() => setActiveTab('PACKAGE')}
+        >
+          Packages
+        </button>
       </div>
 
       <div className="catalog-panel__search">
@@ -151,8 +175,8 @@ export function CatalogPanel({ onAdd }: CatalogPanelProps): JSX.Element {
                 key={`${item.kind}:${item.id}`}
                 name={item.name}
                 priceMinor={item.priceMinor}
-                disabled={item.disabled}
                 {...(item.subtitle !== undefined ? { subtitle: item.subtitle } : {})}
+                disabled={item.disabled}
                 {...(item.disabledReason !== undefined
                   ? { disabledReason: item.disabledReason }
                   : {})}
@@ -171,4 +195,14 @@ export function CatalogPanel({ onAdd }: CatalogPanelProps): JSX.Element {
       </div>
     </div>
   );
+}
+
+function collectChildren(
+  node: { id: string; children: { id: string; children: unknown[] }[] },
+  acc: Set<string>,
+): void {
+  for (const child of node.children) {
+    acc.add(child.id);
+    collectChildren(child as never, acc);
+  }
 }

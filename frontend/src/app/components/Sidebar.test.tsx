@@ -50,7 +50,7 @@ describe('Sidebar', () => {
   it('shows staff-visible navigation links to staff', () => {
     renderSidebar(STAFF);
     expect(screen.getByRole('link', { name: /^new sale$/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /^parlour service$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^stock \/ inventory$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /^customers$/i })).toBeInTheDocument();
   });
 

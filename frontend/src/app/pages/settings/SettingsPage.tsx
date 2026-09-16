@@ -1,13 +1,15 @@
 import { useState, type JSX } from 'react';
 import { UsersSection } from './UsersSection';
+import { CategoriesSection } from './CategoriesSection';
 import { SecuritySection } from './SecuritySection';
 import { BusinessInfoSection } from './BusinessInfoSection';
 import './SettingsPage.css';
 
-type SettingsTab = 'users' | 'security' | 'business';
+type SettingsTab = 'users' | 'categories' | 'security' | 'business';
 
 const TABS: { key: SettingsTab; label: string }[] = [
   { key: 'users', label: 'Users' },
+  { key: 'categories', label: 'Categories' },
   { key: 'security', label: 'Security' },
   { key: 'business', label: 'Business info' },
 ];
@@ -34,6 +36,7 @@ export function SettingsPage(): JSX.Element {
 
       <div className="settings-page__content">
         {tab === 'users' && <UsersSection />}
+        {tab === 'categories' && <CategoriesSection />}
         {tab === 'security' && <SecuritySection />}
         {tab === 'business' && <BusinessInfoSection />}
       </div>
