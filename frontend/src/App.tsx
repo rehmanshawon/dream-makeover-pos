@@ -11,7 +11,7 @@ import { NewSalePage } from './app/pages/pos/NewSalePage';
 import { ServicesPage } from './app/pages/services/ServicesPage';
 import { CategoryProductsPage } from './app/pages/products/CategoryProductsPage';
 import { ProductDetailPage } from './app/pages/products/ProductDetailPage';
-import { StockPage } from './app/pages/StockPage';
+import { StockPage } from './app/pages/stock/StockPage';
 import { PackagesPage } from './app/pages/packages/PackagesPage';
 import { PackageDetailPage } from './app/pages/packages/PackageDetailPage';
 import { CustomersPage } from './app/pages/customers/CustomersPage';
