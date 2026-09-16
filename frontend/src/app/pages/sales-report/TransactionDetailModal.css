@@ -1,0 +1,103 @@
+.txn-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.txn-detail__center {
+  padding: var(--space-8);
+  display: flex;
+  justify-content: center;
+}
+
+.txn-detail__error {
+  padding: var(--space-4);
+  background: var(--color-danger-soft);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+}
+
+.txn-detail__facts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md);
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .txn-detail__facts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.txn-detail__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.txn-detail__fact dt {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-text-muted);
+}
+
+.txn-detail__fact dd {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+}
+
+.txn-detail__invoice {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs) !important;
+}
+
+.txn-detail__totals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin: 0;
+}
+
+.txn-detail__total-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+}
+
+.txn-detail__total-row dt {
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.txn-detail__total-row dd {
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+}
+
+.txn-detail__total-row--grand {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.txn-detail__total-row--grand dt,
+.txn-detail__total-row--grand dd {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.txn-detail__actions {
+  display: flex;
+  justify-content: flex-end;
+}

@@ -16,7 +16,7 @@ import { PackagesPage } from './app/pages/packages/PackagesPage';
 import { PackageDetailPage } from './app/pages/packages/PackageDetailPage';
 import { CustomersPage } from './app/pages/customers/CustomersPage';
 import { CustomerDetailPage } from './app/pages/customers/CustomerDetailPage';
-import { SalesReportPage } from './app/pages/SalesReportPage';
+import { SalesReportPage } from './app/pages/sales-report/SalesReportPage';
 import { AccountsPage } from './app/pages/AccountsPage';
 import { StaffPage } from './app/pages/StaffPage';
 import { ExpenditurePage } from './app/pages/ExpenditurePage';
