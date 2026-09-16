@@ -1,0 +1,53 @@
+.payment-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.payment-history__center {
+  padding: var(--space-6);
+  display: flex;
+  justify-content: center;
+}
+
+.payment-history__error {
+  padding: var(--space-4);
+  background: var(--color-danger-soft);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+}
+
+.payment-history__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md);
+  margin: 0;
+}
+
+.payment-history__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.payment-history__stat dt {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-text-muted);
+}
+
+.payment-history__stat dd {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0;
+  color: var(--color-text);
+}
+
+.payment-history__amount {
+  font-weight: var(--font-weight-semibold);
+}

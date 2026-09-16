@@ -75,4 +75,70 @@ describe('EmployeeDetailPage', () => {
 
     expect(await screen.findByText(/employee not found/i)).toBeInTheDocument();
   });
+
+  it('renders the salary history section', async () => {
+    globalThis.fetch = vi.fn(async (input) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      if (url.includes('/salary-payments')) {
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response(
+        JSON.stringify({
+          id: 'e1',
+          fullName: 'Rina Akter',
+          role: 'Senior Stylist',
+          salaryMinor: 3500000,
+          salaryFrequency: 'MONTHLY',
+          joinDate: '2025-06-15',
+          status: 'ACTIVE',
+          phone: '01711111111',
+          note: null,
+          createdAt: '2025-06-15T00:00:00.000Z',
+          updatedAt: '2025-06-15T00:00:00.000Z',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    }) as unknown as typeof fetch;
+
+    renderPage();
+
+    expect(await screen.findByText(/salary history/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no payments recorded yet/i)).toBeInTheDocument();
+  });
+
+  it('shows the record payment button to admins', async () => {
+    globalThis.fetch = vi.fn(async (input) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      if (url.includes('/salary-payments')) {
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response(
+        JSON.stringify({
+          id: 'e1',
+          fullName: 'Rina Akter',
+          role: 'Senior Stylist',
+          salaryMinor: 3500000,
+          salaryFrequency: 'MONTHLY',
+          joinDate: '2025-06-15',
+          status: 'ACTIVE',
+          phone: '01711111111',
+          note: null,
+          createdAt: '2025-06-15T00:00:00.000Z',
+          updatedAt: '2025-06-15T00:00:00.000Z',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    }) as unknown as typeof fetch;
+
+    renderPage();
+
+    await screen.findByRole('heading', { name: 'Rina Akter' });
+    expect(screen.getByRole('button', { name: /record payment/i })).toBeInTheDocument();
+  });
 });

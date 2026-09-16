@@ -10,6 +10,8 @@ import { Spinner } from '../../../ui/Spinner';
 import { useAuth } from '../../auth/AuthContext';
 import { formatBdt, formatDate, formatDateTime } from '../../../utils/format';
 import { EmployeeFormModal } from './EmployeeFormModal';
+import { SalaryPaymentFormModal } from './SalaryPaymentFormModal';
+import { SalaryPaymentHistory } from './SalaryPaymentHistory';
 import './EmployeeDetailPage.css';
 
 export function EmployeeDetailPage(): JSX.Element {
@@ -17,6 +19,7 @@ export function EmployeeDetailPage(): JSX.Element {
   const { isAdmin } = useAuth();
   const { data, isLoading, error } = useEmployee(id);
   const [editOpen, setEditOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -107,16 +110,30 @@ export function EmployeeDetailPage(): JSX.Element {
           )}
         </Card>
 
-        <Card title="Salary history" subtitle="Payments will appear here">
-          <EmptyState
-            title="No payments recorded yet"
-            description="Salary payments will be listed here once they are recorded."
-          />
+        <Card
+          title="Salary history"
+          subtitle="Payments recorded for this employee"
+          actions={
+            isAdmin ? (
+              <Button size="sm" onClick={() => setPaymentOpen(true)}>
+                Record payment
+              </Button>
+            ) : undefined
+          }
+        >
+          <SalaryPaymentHistory employeeId={data.id} />
         </Card>
       </div>
 
       {isAdmin && (
-        <EmployeeFormModal open={editOpen} employee={data} onClose={() => setEditOpen(false)} />
+        <>
+          <EmployeeFormModal open={editOpen} employee={data} onClose={() => setEditOpen(false)} />
+          <SalaryPaymentFormModal
+            open={paymentOpen}
+            employee={data}
+            onClose={() => setPaymentOpen(false)}
+          />
+        </>
       )}
     </div>
   );

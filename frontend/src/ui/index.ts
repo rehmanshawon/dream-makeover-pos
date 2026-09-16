@@ -27,3 +27,6 @@ export type { EmptyStateProps } from './EmptyState';
 
 export { Spinner } from './Spinner';
 export type { SpinnerProps } from './Spinner';
+
+export { ConfirmDialog } from './ConfirmDialog';
+export type { ConfirmVariant } from './ConfirmDialog';
