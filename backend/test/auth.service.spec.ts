@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
-import { UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from '../src/auth/auth.service';
 import { UsersService } from '../src/users/users.service';
 import { User } from '../src/users/user.entity';
@@ -103,5 +103,79 @@ describe('AuthService', () => {
     await expect(service.login({ username: 'admin', password: 'secret123' })).rejects.toThrow(
       UnauthorizedException,
     );
+  });
+});
+
+describe('changePassword', () => {
+  let usersService: UsersService;
+  let service: AuthService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        AuthService,
+        {
+          provide: UsersService,
+          useValue: {
+            findByIdRaw: jest.fn(),
+            verifyPassword: jest.fn(),
+            setPassword: jest.fn(),
+          },
+        },
+        { provide: JwtService, useValue: { signAsync: jest.fn() } },
+      ],
+    }).compile();
+
+    service = module.get(AuthService);
+    usersService = module.get(UsersService);
+  });
+
+  it('changes password when current is correct and new differs', async () => {
+    (usersService.findByIdRaw as jest.Mock).mockResolvedValue({
+      id: 'u1',
+      passwordHash: 'old-hash',
+    });
+    (usersService.verifyPassword as jest.Mock)
+      .mockResolvedValueOnce(true) // current matches
+      .mockResolvedValueOnce(false); // new != current
+
+    await service.changePassword('u1', {
+      currentPassword: 'old-pass',
+      newPassword: 'new-pass-12345',
+    });
+
+    expect(usersService.setPassword).toHaveBeenCalledWith('u1', 'new-pass-12345');
+  });
+
+  it('rejects when current password is wrong', async () => {
+    (usersService.findByIdRaw as jest.Mock).mockResolvedValue({
+      id: 'u1',
+      passwordHash: 'old-hash',
+    });
+    (usersService.verifyPassword as jest.Mock).mockResolvedValueOnce(false);
+
+    await expect(
+      service.changePassword('u1', {
+        currentPassword: 'wrong',
+        newPassword: 'new-pass-12345',
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('rejects when new password matches current', async () => {
+    (usersService.findByIdRaw as jest.Mock).mockResolvedValue({
+      id: 'u1',
+      passwordHash: 'old-hash',
+    });
+    (usersService.verifyPassword as jest.Mock)
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(true);
+
+    await expect(
+      service.changePassword('u1', {
+        currentPassword: 'old-pass',
+        newPassword: 'old-pass',
+      }),
+    ).rejects.toThrow(BadRequestException);
   });
 });

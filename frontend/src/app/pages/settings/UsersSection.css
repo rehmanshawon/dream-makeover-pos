@@ -1,0 +1,31 @@
+.users-section__toolbar {
+  margin-bottom: var(--space-4);
+  max-width: 360px;
+}
+
+.users-section__center {
+  padding: var(--space-8);
+  display: flex;
+  justify-content: center;
+}
+
+.users-section__error {
+  padding: var(--space-4);
+  background: var(--color-danger-soft);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+  margin-bottom: var(--space-3);
+}
+
+.users-section__username {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
+
+.users-section__row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  justify-content: flex-end;
+}

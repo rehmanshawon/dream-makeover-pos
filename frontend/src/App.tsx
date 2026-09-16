@@ -21,7 +21,7 @@ import { AccountsPage } from './app/pages/accounts/AccountsPage';
 import { StaffPage } from './app/pages/staff/StaffPage';
 import { EmployeeDetailPage } from './app/pages/staff/EmployeeDetailPage';
 import { ExpenditurePage } from './app/pages/expenditure/ExpenditurePage';
-import { SettingsPage } from './app/pages/SettingsPage';
+import { SettingsPage } from './app/pages/settings/SettingsPage';
 
 /**
  * Top-level application. Provides auth context and routing.

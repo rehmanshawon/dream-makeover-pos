@@ -7,6 +7,7 @@ import { User } from '../src/users/user.entity';
 import { CreateUserDto } from '../src/users/dto/create-user.dto';
 import { UserRole } from '../src/users/user-role.enum';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { NotFoundException } from '@nestjs/common';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -68,5 +69,50 @@ describe('UsersService', () => {
     const hash = await bcrypt.hash('secret123', 10);
     const result = await service.verifyPassword('wrong-password', hash);
     expect(result).toBe(false);
+  });
+
+  it('updates displayName', async () => {
+    const user = {
+      id: 'u1',
+      username: 'admin',
+      displayName: 'Old Name',
+      role: UserRole.ADMIN,
+      active: true,
+    } as User;
+
+    jest.spyOn(repository, 'findOne').mockResolvedValue(user);
+    jest.spyOn(repository, 'save').mockImplementation(async (u) => u as User);
+
+    const result = await service.update('u1', 'u2', {
+      displayName: 'New Name',
+    });
+
+    expect(result.displayName).toBe('New Name');
+  });
+
+  it('rejects self-deactivation', async () => {
+    const user = { id: 'u1', role: UserRole.ADMIN, active: true } as User;
+    jest.spyOn(repository, 'findOne').mockResolvedValue(user);
+
+    await expect(service.update('u1', 'u1', { active: false })).rejects.toThrow(
+      'You cannot deactivate your own account',
+    );
+  });
+
+  it('rejects self role change', async () => {
+    const user = { id: 'u1', role: UserRole.ADMIN, active: true } as User;
+    jest.spyOn(repository, 'findOne').mockResolvedValue(user);
+
+    await expect(service.update('u1', 'u1', { role: UserRole.STAFF })).rejects.toThrow(
+      'You cannot change your own role',
+    );
+  });
+
+  it('throws NotFoundException when target user does not exist', async () => {
+    jest.spyOn(repository, 'findOne').mockResolvedValue(null);
+
+    await expect(service.update('missing', 'u2', { displayName: 'X' })).rejects.toThrow(
+      NotFoundException,
+    );
   });
 });
