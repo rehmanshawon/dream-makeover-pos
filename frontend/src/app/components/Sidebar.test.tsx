@@ -5,7 +5,7 @@ import type { AuthenticatedUser } from '../auth/AuthContext';
 import { renderWithProviders } from '../../test/render-with-providers';
 
 function renderSidebar(user: AuthenticatedUser | null): void {
-  renderWithProviders(<Sidebar />, { user });
+  renderWithProviders(<Sidebar />, { user, token: user ? 'test-token' : null });
 }
 
 const ADMIN: AuthenticatedUser = {
