@@ -13,6 +13,7 @@ import { CategoryProductsPage } from './app/pages/products/CategoryProductsPage'
 import { ProductDetailPage } from './app/pages/products/ProductDetailPage';
 import { StockPage } from './app/pages/StockPage';
 import { PackagesPage } from './app/pages/packages/PackagesPage';
+import { PackageDetailPage } from './app/pages/packages/PackageDetailPage';
 import { CustomersPage } from './app/pages/customers/CustomersPage';
 import { CustomerDetailPage } from './app/pages/customers/CustomerDetailPage';
 import { SalesReportPage } from './app/pages/SalesReportPage';
@@ -68,6 +69,7 @@ export function App(): JSX.Element {
             <Route path="products/:id" element={<ProductDetailPage />} />
             <Route path="stock" element={<StockPage />} />
             <Route path="packages" element={<PackagesPage />} />
+            <Route path="packages/:id" element={<PackageDetailPage />} />
             <Route path="customers" element={<CustomersPage />} />
             <Route path="customers/:id" element={<CustomerDetailPage />} />
             <Route

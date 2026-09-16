@@ -12,6 +12,7 @@ import { Product } from '../products/product.entity';
 import { SalonService } from '../services/service.entity';
 import { CreatePackageDto, CreatePackageItemDto } from './dto/create-package.dto';
 import { PackageItemResponseDto, PackageResponseDto } from './dto/package-response.dto';
+import { UpdatePackageDto } from './dto/update-package.dto';
 
 interface ResolvedItem {
   kind: PackageItemKind;
@@ -226,6 +227,112 @@ export class PackagesService {
     }
 
     return names;
+  }
+
+  /**
+   * Partially updates a package.
+   *
+   * If `items` is provided, the package's composition is replaced
+   * entirely and normal price and savings are recomputed from current
+   * component prices. If omitted, the composition is preserved.
+   *
+   * All writes happen inside a single database transaction.
+   *
+   * @throws NotFoundException if the package does not exist
+   * @throws BadRequestException if the new composition is invalid or if
+   *   the package price exceeds the computed normal price
+   * @throws ConflictException if the new name duplicates another package
+   */
+  async update(id: string, dto: UpdatePackageDto): Promise<PackageResponseDto> {
+    return await this.dataSource.transaction(async (manager) => {
+      const packageRepo = manager.getRepository(Package);
+      const itemRepo = manager.getRepository(PackageItem);
+      const productRepo = manager.getRepository(Product);
+      const serviceRepo = manager.getRepository(SalonService);
+
+      const existing = await packageRepo.findOne({ where: { id } });
+      if (!existing) {
+        throw new NotFoundException('Package not found');
+      }
+
+      // Check name conflict if name is being changed
+      if (dto.name !== undefined && dto.name !== existing.name) {
+        const duplicate = await packageRepo.findOne({
+          where: { name: dto.name },
+        });
+        if (duplicate && duplicate.id !== existing.id) {
+          throw new ConflictException('A package with this name already exists');
+        }
+      }
+
+      let newNormalPriceMinor = existing.normalPriceMinor;
+      let resolvedItems: ResolvedItem[] | null = null;
+
+      // If items are being changed, resolve them and recompute the normal price
+      if (dto.items !== undefined) {
+        if (dto.items.length === 0) {
+          throw new BadRequestException('A package must contain at least one item');
+        }
+
+        resolvedItems = await this.resolveItems(dto.items, productRepo, serviceRepo);
+
+        newNormalPriceMinor = resolvedItems.reduce((sum, item) => sum + item.snapshotPriceMinor, 0);
+
+        if (newNormalPriceMinor <= 0) {
+          throw new BadRequestException('Computed normal price must be positive');
+        }
+      }
+
+      // Determine the final package price
+      const newPackagePriceMinor =
+        dto.packagePriceMinor !== undefined ? dto.packagePriceMinor : existing.packagePriceMinor;
+
+      if (newPackagePriceMinor > newNormalPriceMinor) {
+        throw new BadRequestException(
+          'Package price cannot exceed the normal price of its components',
+        );
+      }
+
+      const newSavingsMinor = newNormalPriceMinor - newPackagePriceMinor;
+
+      // Replace items if provided
+      let savedItems: PackageItem[];
+      if (resolvedItems !== null) {
+        await itemRepo.delete({ packageId: existing.id });
+
+        const itemEntities = resolvedItems.map((resolved) =>
+          itemRepo.create({
+            packageId: existing.id,
+            itemKind: resolved.kind,
+            serviceId: resolved.serviceId,
+            productId: resolved.productId,
+            snapshotPriceMinor: resolved.snapshotPriceMinor,
+          }),
+        );
+
+        savedItems = await itemRepo.save(itemEntities);
+      } else {
+        savedItems = await itemRepo.find({ where: { packageId: existing.id } });
+      }
+
+      // Update package fields
+      if (dto.name !== undefined) existing.name = dto.name;
+      if (dto.description !== undefined) existing.description = dto.description;
+      if (dto.active !== undefined) existing.active = dto.active;
+      existing.packagePriceMinor = newPackagePriceMinor;
+      existing.normalPriceMinor = newNormalPriceMinor;
+      existing.savingsMinor = newSavingsMinor;
+
+      const savedPackage = await packageRepo.save(existing);
+
+      // Build response
+      if (resolvedItems !== null) {
+        return this.toResponseDto(savedPackage, savedItems, resolvedItems);
+      }
+
+      const hydrated = await this.hydrateItemNames(savedItems);
+      return this.toResponseDto(savedPackage, savedItems, hydrated);
+    });
   }
 
   private toResponseDto(

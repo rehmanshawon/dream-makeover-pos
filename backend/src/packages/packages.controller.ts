@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { PackagesService } from './packages.service';
 import { CreatePackageDto } from './dto/create-package.dto';
+import { UpdatePackageDto } from './dto/update-package.dto';
 import { PackageResponseDto } from './dto/package-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -31,5 +32,15 @@ export class PackagesController {
   @UseGuards(JwtAuthGuard)
   async findById(@Param('id') id: string): Promise<PackageResponseDto> {
     return this.packagesService.findById(id);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdatePackageDto,
+  ): Promise<PackageResponseDto> {
+    return this.packagesService.update(id, dto);
   }
 }

@@ -1,5 +1,5 @@
 import { api } from './api-client';
-import type { Package, CreatePackageRequest } from '../types/packages';
+import type { Package, CreatePackageRequest, UpdatePackageRequest } from '../types/packages';
 
 export const packagesApi = {
   list(activeOnly = false): Promise<Package[]> {
@@ -13,5 +13,9 @@ export const packagesApi = {
 
   create(payload: CreatePackageRequest): Promise<Package> {
     return api.post<Package>('/packages', payload);
+  },
+
+  update(id: string, payload: UpdatePackageRequest): Promise<Package> {
+    return api.patch<Package>(`/packages/${id}`, payload);
   },
 };

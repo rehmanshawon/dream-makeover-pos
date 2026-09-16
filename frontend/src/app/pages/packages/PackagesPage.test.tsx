@@ -158,4 +158,22 @@ describe('PackagesPage', () => {
 
     expect(await screen.findByText(/no packages yet/i)).toBeInTheDocument();
   });
+
+  it('shows Edit and Deactivate buttons to admins', async () => {
+    mockPackages();
+    renderPage(ADMIN);
+
+    await screen.findByText('Bridal Package');
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^deactivate$/i })).toBeInTheDocument();
+  });
+
+  it('hides action buttons from staff', async () => {
+    mockPackages();
+    renderPage(STAFF);
+
+    await screen.findByText('Bridal Package');
+    expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^deactivate$/i })).not.toBeInTheDocument();
+  });
 });

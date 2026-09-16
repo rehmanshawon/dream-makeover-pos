@@ -6,7 +6,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 import { packagesApi } from './packages';
-import type { Package, CreatePackageRequest } from '../types/packages';
+import type { Package, CreatePackageRequest, UpdatePackageRequest } from '../types/packages';
 
 export const packageKeys = {
   all: ['packages'] as const,
@@ -37,6 +37,22 @@ export function useCreatePackage(): UseMutationResult<Package, Error, CreatePack
     onSuccess: (created) => {
       void queryClient.invalidateQueries({ queryKey: packageKeys.all });
       queryClient.setQueryData(packageKeys.detail(created.id), created);
+    },
+  });
+}
+
+export function useUpdatePackage(): UseMutationResult<
+  Package,
+  Error,
+  { id: string; payload: UpdatePackageRequest }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }) => packagesApi.update(id, payload),
+    onSuccess: (updated) => {
+      void queryClient.invalidateQueries({ queryKey: packageKeys.all });
+      queryClient.setQueryData(packageKeys.detail(updated.id), updated);
     },
   });
 }

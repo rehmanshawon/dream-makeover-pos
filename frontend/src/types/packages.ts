@@ -33,3 +33,11 @@ export interface CreatePackageRequest {
   items: CreatePackageItemRequest[];
   active?: boolean;
 }
+
+export interface UpdatePackageRequest {
+  name?: string;
+  description?: string;
+  packagePriceMinor?: number;
+  active?: boolean;
+  items?: CreatePackageItemRequest[];
+}

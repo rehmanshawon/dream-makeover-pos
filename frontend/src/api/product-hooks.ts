@@ -7,6 +7,10 @@ import {
 } from '@tanstack/react-query';
 import { productsApi } from './products';
 import type { Product, CreateProductRequest, UpdateProductRequest } from '../types/products';
+import type { Package } from '../types/packages';
+import { packageKeys } from './package-hooks';
+import { packagesApi } from './packages';
+import { UpdatePackageRequest } from '@/types/packages';
 
 export const productKeys = {
   all: ['products'] as const,
@@ -53,6 +57,22 @@ export function useUpdateProduct(): UseMutationResult<
     onSuccess: (updated) => {
       void queryClient.invalidateQueries({ queryKey: productKeys.all });
       queryClient.setQueryData(productKeys.detail(updated.id), updated);
+    },
+  });
+}
+
+export function useUpdatePackage(): UseMutationResult<
+  Package,
+  Error,
+  { id: string; payload: UpdatePackageRequest }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }) => packagesApi.update(id, payload),
+    onSuccess: (updated) => {
+      void queryClient.invalidateQueries({ queryKey: packageKeys.all });
+      queryClient.setQueryData(packageKeys.detail(updated.id), updated);
     },
   });
 }

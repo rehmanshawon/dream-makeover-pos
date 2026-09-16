@@ -33,3 +33,10 @@
   color: var(--color-success);
   font-weight: var(--font-weight-medium);
 }
+
+.packages-page__row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  justify-content: flex-end;
+}

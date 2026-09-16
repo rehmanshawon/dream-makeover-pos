@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { PackagesService } from '../src/packages/packages.service';
@@ -29,6 +29,7 @@ describe('PackagesService (unit)', () => {
       find: jest.fn(),
       create: jest.fn((data) => ({ ...data, id: `item-${Math.random()}` })),
       save: jest.fn(async (data) => data),
+      delete: jest.fn(async (data) => data),
     };
     productRepo = { findOne: jest.fn() };
     serviceRepo = { findOne: jest.fn() };
@@ -191,5 +192,96 @@ describe('PackagesService (unit)', () => {
 
     expect(result.normalPriceMinor).toBe(470000);
     expect(result.savingsMinor).toBe(70000);
+  });
+
+  it('updates only the name when items are omitted', async () => {
+    packageRepo.findOne.mockResolvedValue({
+      id: 'pkg-1',
+      name: 'Old Name',
+      description: null,
+      normalPriceMinor: 570000,
+      packagePriceMinor: 499900,
+      savingsMinor: 70100,
+      active: true,
+    });
+    itemRepo.find.mockResolvedValue([]);
+    packageRepo.save.mockImplementation(async (p) => p as Package);
+
+    const result = await service.update('pkg-1', { name: 'New Name' });
+
+    expect(result.name).toBe('New Name');
+    expect(result.normalPriceMinor).toBe(570000);
+    expect(result.packagePriceMinor).toBe(499900);
+    expect(result.savingsMinor).toBe(70100);
+  });
+
+  it('recomputes normal price and savings when items change', async () => {
+    packageRepo.findOne.mockResolvedValue({
+      id: 'pkg-1',
+      name: 'Bridal Package',
+      description: null,
+      normalPriceMinor: 570000,
+      packagePriceMinor: 499900,
+      savingsMinor: 70100,
+      active: true,
+    });
+    serviceRepo.findOne
+      .mockResolvedValueOnce(serviceFixture('s1', 400000))
+      .mockResolvedValueOnce(serviceFixture('s2', 300000));
+    itemRepo.delete.mockResolvedValue({});
+    itemRepo.create.mockImplementation((data) => ({ ...data, id: 'new-item' }));
+    itemRepo.save.mockImplementation(async (items) => items);
+    packageRepo.save.mockImplementation(async (p) => p as Package);
+
+    const result = await service.update('pkg-1', {
+      items: [
+        { itemKind: PackageItemKind.SERVICE, itemId: 's1' },
+        { itemKind: PackageItemKind.SERVICE, itemId: 's2' },
+      ],
+    });
+
+    expect(result.normalPriceMinor).toBe(700000);
+    expect(result.packagePriceMinor).toBe(499900);
+    expect(result.savingsMinor).toBe(200100);
+  });
+
+  it('rejects a package price greater than the new normal price', async () => {
+    packageRepo.findOne.mockResolvedValue({
+      id: 'pkg-1',
+      name: 'Bridal Package',
+      normalPriceMinor: 570000,
+      packagePriceMinor: 499900,
+      savingsMinor: 70100,
+      active: true,
+    });
+    serviceRepo.findOne.mockResolvedValueOnce(serviceFixture('s1', 100000));
+
+    await expect(
+      service.update('pkg-1', {
+        items: [{ itemKind: PackageItemKind.SERVICE, itemId: 's1' }],
+        packagePriceMinor: 200000,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('rejects a name change that duplicates another package', async () => {
+    packageRepo.findOne
+      .mockResolvedValueOnce({
+        id: 'pkg-1',
+        name: 'Original',
+        normalPriceMinor: 100000,
+        packagePriceMinor: 90000,
+        savingsMinor: 10000,
+        active: true,
+      })
+      .mockResolvedValueOnce({ id: 'pkg-2', name: 'Taken' });
+
+    await expect(service.update('pkg-1', { name: 'Taken' })).rejects.toThrow(ConflictException);
+  });
+
+  it('throws NotFoundException when updating a missing package', async () => {
+    packageRepo.findOne.mockResolvedValue(null);
+
+    await expect(service.update('missing', { name: 'X' })).rejects.toThrow(NotFoundException);
   });
 });
