@@ -53,4 +53,15 @@ export class Product {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  decrementStock(quantity: number): void {
+    if (quantity > this.stock) {
+      throw new Error('Insufficient stock');
+    }
+    this.stock -= quantity;
+  }
+
+  isLowStock(): boolean {
+    return this.stock <= this.minimumStockThreshold;
+  }
 }
