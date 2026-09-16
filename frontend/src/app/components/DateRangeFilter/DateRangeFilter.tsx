@@ -9,9 +9,14 @@ export interface DateRange {
   to: string;
 }
 
+export interface DateRangeValue {
+  preset: RangePreset;
+  range: DateRange;
+}
+
 interface DateRangeFilterProps {
-  value: { preset: RangePreset; range: DateRange };
-  onChange: (value: { preset: RangePreset; range: DateRange }) => void;
+  value: DateRangeValue;
+  onChange: (value: DateRangeValue) => void;
 }
 
 function isoDate(d: Date): string {

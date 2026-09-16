@@ -17,7 +17,7 @@ import { PackageDetailPage } from './app/pages/packages/PackageDetailPage';
 import { CustomersPage } from './app/pages/customers/CustomersPage';
 import { CustomerDetailPage } from './app/pages/customers/CustomerDetailPage';
 import { SalesReportPage } from './app/pages/sales-report/SalesReportPage';
-import { AccountsPage } from './app/pages/AccountsPage';
+import { AccountsPage } from './app/pages/accounts/AccountsPage';
 import { StaffPage } from './app/pages/StaffPage';
 import { ExpenditurePage } from './app/pages/ExpenditurePage';
 import { SettingsPage } from './app/pages/SettingsPage';
