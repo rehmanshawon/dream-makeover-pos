@@ -2,8 +2,15 @@ import { useMemo, type JSX } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { useFinancialSummary } from '../../../api/dashboard-hooks';
 import { useCustomers } from '../../../api/customer-hooks';
+import { useTopProducts, useTopServices } from '../../../api/report-hooks';
 import { formatBdt, todayIso } from '../../../utils/format';
+import { Card } from '../../../ui/Card';
+import { Spinner } from '../../../ui/Spinner';
+import { ApiError } from '../../../api/api-error';
 import { KpiCard } from './KpiCard';
+import { RevenueTrendChart } from './RevenueTrendChart';
+import { TopItemsList } from './TopItemsList';
+import { ExpenseBreakdownCard } from './ExpenseBreakdownCard';
 import './DashboardPage.css';
 
 export function DashboardPage(): JSX.Element {
@@ -20,6 +27,9 @@ export function DashboardPage(): JSX.Element {
   const monthSummary = useFinancialSummary({ range: 'this_month' });
 
   const customers = useCustomers();
+
+  const topProducts = useTopProducts({ range: 'this_month' }, 5);
+  const topServices = useTopServices({ range: 'this_month' }, 5);
 
   const customerCount = customers.data?.length ?? 0;
 
@@ -101,6 +111,60 @@ export function DashboardPage(): JSX.Element {
             loading={monthSummary.isLoading}
           />
         </div>
+      </section>
+
+      <section className="dashboard__section" aria-label="Trend">
+        <RevenueTrendChart />
+      </section>
+
+      <section className="dashboard__section" aria-label="Best sellers">
+        <div className="dashboard__grid dashboard__grid--two">
+          <Card title="Top products" subtitle="Best selling this month">
+            {topProducts.isLoading && (
+              <div className="dashboard__center">
+                <Spinner label="Loading top products" />
+              </div>
+            )}
+            {topProducts.error && (
+              <div className="dashboard__error" role="alert">
+                {topProducts.error instanceof ApiError
+                  ? topProducts.error.message
+                  : 'Unable to load top products.'}
+              </div>
+            )}
+            {!topProducts.isLoading && !topProducts.error && topProducts.data && (
+              <TopItemsList
+                items={topProducts.data.items}
+                emptyMessage="No product sales this month yet."
+              />
+            )}
+          </Card>
+
+          <Card title="Top services" subtitle="Best booked this month">
+            {topServices.isLoading && (
+              <div className="dashboard__center">
+                <Spinner label="Loading top services" />
+              </div>
+            )}
+            {topServices.error && (
+              <div className="dashboard__error" role="alert">
+                {topServices.error instanceof ApiError
+                  ? topServices.error.message
+                  : 'Unable to load top services.'}
+              </div>
+            )}
+            {!topServices.isLoading && !topServices.error && topServices.data && (
+              <TopItemsList
+                items={topServices.data.items}
+                emptyMessage="No service bookings this month yet."
+              />
+            )}
+          </Card>
+        </div>
+      </section>
+
+      <section className="dashboard__section" aria-label="Expenses">
+        <ExpenseBreakdownCard />
       </section>
     </div>
   );

@@ -82,7 +82,6 @@ describe('DashboardPage', () => {
       const url = typeof input === 'string' ? input : (input as Request).url;
 
       if (url.includes('/reports/financial-summary')) {
-        // Distinguish the two calls by the range parameter
         if (url.includes('range=this_month')) {
           return new Response(JSON.stringify(monthlySummaryResponse()), {
             status: 200,
@@ -93,6 +92,40 @@ describe('DashboardPage', () => {
           status: 200,
           headers: { 'content-type': 'application/json' },
         });
+      }
+
+      if (url.includes('/reports/revenue-trend')) {
+        return new Response(JSON.stringify({ from: '2026-09-01', to: '2026-09-30', points: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+
+      if (url.includes('/reports/top-products')) {
+        return new Response(JSON.stringify({ from: '2026-09-01', to: '2026-09-30', items: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+
+      if (url.includes('/reports/top-services')) {
+        return new Response(JSON.stringify({ from: '2026-09-01', to: '2026-09-30', items: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+
+      if (url.includes('/reports/expense-breakdown')) {
+        return new Response(
+          JSON.stringify({
+            from: '2026-09-01',
+            to: '2026-09-30',
+            totalMinor: 0,
+            salaryPaymentsMinor: 0,
+            categories: [],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
       }
 
       if (url.includes('/customers')) {

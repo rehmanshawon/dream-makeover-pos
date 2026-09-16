@@ -48,4 +48,9 @@ describe('App', () => {
     renderApp();
     expect(screen.getByRole('heading', { name: /^today$/i, level: 3 })).toBeInTheDocument();
   });
+
+  it('renders the trend chart and top items sections', () => {
+    renderApp();
+    expect(screen.getByRole('heading', { name: /^revenue trend$/i, level: 3 })).toBeInTheDocument();
+  });
 });
