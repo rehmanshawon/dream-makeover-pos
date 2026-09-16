@@ -5,37 +5,54 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '../app/auth/AuthContext';
 import { authStore } from '../app/auth/auth-store';
 import { resetTokenProvider } from '../api/token-provider';
-import type { AuthenticatedUser } from '../types/auth';
 import { resetReceiptPrinter } from '../app/pages/pos/receipt/printer/printer-provider';
+import type { AuthenticatedUser } from '../types/auth';
+
 interface RenderOptions {
   route?: string;
   user?: AuthenticatedUser | null;
   token?: string | null;
 }
 
+/**
+ * Creates a fresh QueryClient for each test.
+ *
+ * Retries are disabled so failed queries surface immediately, and the
+ * cache is discarded after each test to prevent cross-test pollution.
+ */
 function createTestQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
-      queries: { retry: false, gcTime: 0 },
-      mutations: { retry: false },
+      queries: {
+        retry: false,
+        gcTime: 0,
+        staleTime: 0,
+      },
+      mutations: {
+        retry: false,
+      },
     },
   });
 }
 
 /**
- * Renders a tree inside all application providers for testing.
+ * Renders a React tree wrapped in all providers the app uses:
+ * - QueryClientProvider (React Query)
+ * - MemoryRouter (React Router)
+ * - AuthProvider (authentication)
  *
- * Resets the auth store and token provider on every call so that tests
- * do not leak state into each other.
+ * Also resets the module-level singletons (token provider and printer)
+ * so state cannot leak between tests.
  */
 export function renderWithProviders(ui: ReactNode, options: RenderOptions = {}): RenderResult {
-  const { route = '/', user = null, token } = options;
+  const { route = '/', user = null, token = null } = options;
 
   resetTokenProvider();
   resetReceiptPrinter();
+
   authStore.clear();
-  if (user) {
-    authStore.setSession(user, token ?? 'test-token');
+  if (user && token) {
+    authStore.setSession(user, token);
   }
 
   const queryClient = createTestQueryClient();
