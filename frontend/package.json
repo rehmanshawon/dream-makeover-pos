@@ -12,6 +12,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@point-of-sale/receipt-printer-encoder": "^4.0.0",
+    "@point-of-sale/webbluetooth-receipt-printer": "^2.0.0",
     "@tanstack/react-query": "^5.102.8",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

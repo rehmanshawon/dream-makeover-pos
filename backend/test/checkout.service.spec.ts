@@ -32,7 +32,7 @@ describe('CheckoutService', () => {
 
   beforeEach(async () => {
     const mockManager = {
-      getRepository: jest.fn((entity) => {
+      getRepository: jest.fn((entity: any) => {
         if (entity === Product) return productRepo;
         if (entity === SalonService) return serviceRepo;
         if (entity === Customer) return customerRepo;
@@ -45,7 +45,7 @@ describe('CheckoutService', () => {
     };
 
     dataSource = {
-      transaction: jest.fn((callback) => callback(mockManager)),
+      transaction: jest.fn((callback: any) => callback(mockManager)),
     } as any;
 
     productRepo = {
@@ -79,11 +79,11 @@ describe('CheckoutService', () => {
     };
 
     invoiceNumberService = {
-      next: jest.fn().mockResolvedValue('DM-20260911-0001'),
+      next: jest.fn<() => Promise<string>>().mockResolvedValue('DM-20260911-0001'),
     } as unknown as InvoiceNumberService;
 
     inventoryService = {
-      applyMovement: jest.fn().mockImplementation(async (_manager, input) => ({
+      applyMovement: jest.fn().mockImplementation(async (_manager: any, input: any) => ({
         id: 'movement-1',
         productId: input.productId,
         delta: input.delta,
@@ -138,7 +138,7 @@ describe('CheckoutService', () => {
     transactionRepo.create.mockReturnValue({} as Transaction);
     transactionRepo.save.mockResolvedValue(savedTransaction);
 
-    itemRepo.create.mockImplementation((data) => data);
+    itemRepo.create.mockImplementation((data: any) => data);
     itemRepo.save.mockResolvedValue({} as TransactionItem);
 
     const dto: CheckoutRequestDto = {
@@ -237,14 +237,14 @@ describe('CheckoutService', () => {
     packageRepo.findOne.mockResolvedValue(pkg);
     packageItemRepo.find.mockResolvedValue([component]);
     productRepo.findOne.mockResolvedValue(containedProduct);
-    productRepo.save.mockImplementation(async (p) => p);
+    productRepo.save.mockImplementation(async (p: any) => p);
 
     transactionRepo.create.mockReturnValue({} as Transaction);
     transactionRepo.save.mockResolvedValue({
       id: 't-1',
       invoiceId: 'DM-20260912-0001',
     } as Transaction);
-    itemRepo.create.mockImplementation((data) => data);
+    itemRepo.create.mockImplementation((data: any) => data);
     itemRepo.save.mockResolvedValue({} as TransactionItem);
 
     const dto: CheckoutRequestDto = {
@@ -285,7 +285,7 @@ describe('CheckoutService', () => {
       id: 't-2',
       invoiceId: 'DM-20260915-0001',
     } as Transaction);
-    itemRepo.create.mockImplementation((data) => data);
+    itemRepo.create.mockImplementation((data: any) => data);
     itemRepo.save.mockResolvedValue({} as TransactionItem);
 
     const dto: CheckoutRequestDto = {

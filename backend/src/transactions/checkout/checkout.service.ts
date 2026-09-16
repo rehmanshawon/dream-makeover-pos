@@ -177,7 +177,9 @@ export class CheckoutService {
         throw new BadRequestException('Discount cannot exceed subtotal');
       }
 
-      const totalMinor = subtotalMinor - dto.discountMinor;
+      const vatRatePercent = dto.vatRatePercent ?? 0;
+      const vatMinor = Math.round((subtotalMinor * vatRatePercent) / 100);
+      const totalMinor = subtotalMinor + vatMinor - dto.discountMinor;
       if (dto.cashReceivedMinor < totalMinor) {
         throw new BadRequestException('Insufficient cash received');
       }
@@ -190,6 +192,8 @@ export class CheckoutService {
         customerId: dto.customerId ?? null,
         subtotalMinor,
         discountMinor: dto.discountMinor,
+        vatRatePercent,
+        vatMinor,
         totalMinor,
         cashReceivedMinor: dto.cashReceivedMinor,
         changeMinor,
@@ -233,6 +237,7 @@ export class CheckoutService {
         customerResponse = {
           id: savedCustomer.id,
           name: savedCustomer.fullName,
+          phoneNumber: savedCustomer.phoneNumber,
           tier: savedCustomer.rewardTier,
           totalPointsAfterSale: savedCustomer.rewardPoints,
           lifetimeSpendMinorAfterSale: savedCustomer.lifetimeSpendMinor,
@@ -244,6 +249,8 @@ export class CheckoutService {
         invoiceId: savedTransaction.invoiceId,
         subtotalMinor,
         discountMinor: dto.discountMinor,
+        vatRatePercent,
+        vatMinor,
         totalMinor,
         cashReceivedMinor: dto.cashReceivedMinor,
         changeMinor,

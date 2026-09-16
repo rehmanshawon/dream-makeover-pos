@@ -47,6 +47,25 @@ export class Transaction {
   discountMinor: number = 0;
 
   @Column({
+    name: 'vat_rate_percent',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    unsigned: true,
+    default: 0,
+  })
+  vatRatePercent: number = 0;
+
+  @Column({
+    name: 'vat_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
+  vatMinor: number = 0;
+
+  @Column({
     name: 'total_minor',
     type: 'bigint',
     unsigned: true,

@@ -22,6 +22,8 @@ const ITEMS: CartItem[] = [
 const TOTALS: CartTotals = {
   subtotalMinor: 440000,
   discountMinor: 10000,
+  vatRatePercent: 0,
+  vatMinor: 0,
   totalMinor: 430000,
   cashReceivedMinor: 500000,
   changeMinor: 70000,

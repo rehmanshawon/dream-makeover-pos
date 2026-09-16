@@ -1,158 +1,256 @@
 import type { ReceiptData } from './receipt-types';
-
-export const RECEIPT_WIDTH = 32;
+import type { ReceiptLine } from './printer/receipt-printer';
 
 /**
- * Formats a decimal amount for the receipt.
- *
- * Uses plain decimal notation (no thousand separators) because space on
- * a 32-character thermal receipt is scarce and separators consume width
- * unnecessarily.
- *
- * Example: 570000 → "5700.00"
+ * Physical line width for 80mm thermal printers at the standard font.
+ * Every character-aligned row in this file is padded to this width.
  */
+export const RECEIPT_WIDTH = 48;
+
+// -----------------------------------------------------------------------------
+// Primitive helpers
+// -----------------------------------------------------------------------------
+
 function formatMoney(minor: number): string {
   return (minor / 100).toFixed(2);
 }
 
 function truncate(text: string, max: number): string {
   if (text.length <= max) return text;
-  return text.slice(0, max - 1) + '\u2026'; // ellipsis
+  return text.slice(0, max - 1) + '\u2026';
 }
 
-function center(text: string, width = RECEIPT_WIDTH): string {
-  const safe = truncate(text, width);
-  const totalPad = width - safe.length;
-  const leftPad = Math.floor(totalPad / 2);
-  return ' '.repeat(leftPad) + safe;
+function rightAlign(text: string, width: number): string {
+  return truncate(text, width).padStart(width);
 }
 
-function leftRight(left: string, right: string, width = RECEIPT_WIDTH): string {
-  const rightLen = right.length;
-  const maxLeft = width - rightLen - 1;
-
-  if (maxLeft <= 0) {
-    // Not enough room; keep the right side and truncate the left.
-    return ' ' + right;
-  }
-
-  const safeLeft = truncate(left, maxLeft);
-  const gap = width - safeLeft.length - rightLen;
-  return safeLeft + ' '.repeat(gap) + right;
+function leftAlign(text: string, width: number): string {
+  return truncate(text, width).padEnd(width);
 }
 
 function divider(char = '-'): string {
   return char.repeat(RECEIPT_WIDTH);
 }
 
-function blank(): string {
-  return '';
-}
-
-/**
- * Formats a Date string as "DD/MM/YYYY HH:mm" using local time.
- *
- * Example: "2026-09-15T08:30:00.000Z" → "15/09/2026 14:30" (in UTC+6)
- */
-function formatDateTime(iso: string): string {
+function formatDate(iso: string): string {
   const d = new Date(iso);
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
   const hh = String(d.getHours()).padStart(2, '0');
   const min = String(d.getMinutes()).padStart(2, '0');
-  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+  return `${hh}:${min}`;
 }
 
-/**
- * Formats a receipt into an array of lines, each at most 32 characters.
- *
- * The output is ready for an 80mm thermal printer. It can be displayed
- * as-is in a monospace preview, printed as text, or converted to
- * ESC/POS bytes by a printer adapter.
- */
-export function formatReceipt(data: ReceiptData): string[] {
-  const lines: string[] = [];
+// -----------------------------------------------------------------------------
+// Row builders (fixed-width monospace rows)
+// -----------------------------------------------------------------------------
 
-  // Business header
-  lines.push(divider('='));
-  lines.push(center(data.business.name));
+function labelValue(label: string, value: string): string {
+  const labelWidth = 16;
+  const padded = truncate(label, labelWidth).padEnd(labelWidth);
+  const prefix = `${padded} : `;
+  const remaining = RECEIPT_WIDTH - prefix.length;
+  return prefix + truncate(value, remaining);
+}
+
+function itemRow(
+  serial: string,
+  item: string,
+  quantity: string,
+  rate: string,
+  amount: string,
+): string {
+  const sl = leftAlign(serial, 3);
+  const name = leftAlign(item, 20);
+  const qty = rightAlign(quantity, 4);
+  const r = rightAlign(rate, 9);
+  const a = rightAlign(amount, 9);
+  const full = `${sl} ${name} ${qty} ${r} ${a}`;
+  return full.slice(0, RECEIPT_WIDTH).padEnd(RECEIPT_WIDTH);
+}
+
+function itemHeaderRow(): string {
+  return itemRow('SL', 'Service/Product', 'Qty', 'Rate(৳)', 'Amount(৳)');
+}
+
+function totalRow(label: string, value: string): string {
+  const labelWidth = 16;
+  const valueWidth = 12;
+  const rightBlock = `${truncate(label, labelWidth).padStart(labelWidth)} : ${rightAlign(
+    value,
+    valueWidth,
+  )}`;
+  return truncate(rightBlock, RECEIPT_WIDTH).padStart(RECEIPT_WIDTH);
+}
+
+// -----------------------------------------------------------------------------
+// Line constructors
+// -----------------------------------------------------------------------------
+
+function text(
+  value: string,
+  opts: Omit<Extract<ReceiptLine, { type: 'text' }>, 'type' | 'text'> = {},
+): ReceiptLine {
+  return { type: 'text', text: value, ...opts };
+}
+
+// -----------------------------------------------------------------------------
+// Main formatter
+// -----------------------------------------------------------------------------
+
+/**
+ * Formats a receipt as a structured line stream.
+ *
+ * Layout, top to bottom:
+ *   1. Logo, CASH RECEIPT title, business name, tagline, address, phone
+ *   2. Divider
+ *   3. Transaction header (label-value pairs)
+ *   4. Divider
+ *   5. Item table (header row + item rows)
+ *   6. Divider
+ *   7. Totals (with Total Amount emphasized as inverse)
+ *   8. Divider
+ *   9. Footer info (payment method, staff, remarks)
+ *   10. Loyalty (when applicable)
+ *   11. Thank-you footer
+ */
+export function formatReceipt(data: ReceiptData): ReceiptLine[] {
+  const lines: ReceiptLine[] = [];
+
+  // ---------------------------------------------------------------------------
+  // 1. Header
+  // ---------------------------------------------------------------------------
+  lines.push({
+    type: 'image',
+    src: '/logo.png',
+    maxWidthDots: 192,
+  });
+
+  lines.push(text('CASH RECEIPT', { align: 'center', bold: true, large: true }));
+  lines.push(text(''));
+  lines.push(
+    text(data.business.name.toUpperCase(), {
+      align: 'center',
+      bold: true,
+    }),
+  );
   if (data.business.tagline) {
-    lines.push(center(data.business.tagline));
+    lines.push(text(`\u2014 ${data.business.tagline} \u2014`, { align: 'center' }));
   }
-  for (const line of data.business.addressLines) {
-    lines.push(center(line));
+  lines.push(text(''));
+  for (const addressLine of data.business.addressLines) {
+    lines.push(text(addressLine, { align: 'center' }));
   }
   if (data.business.phone) {
-    lines.push(center(data.business.phone));
+    lines.push(text(data.business.phone, { align: 'center' }));
   }
-  lines.push(divider('='));
-  lines.push(blank());
+  lines.push(text(divider()));
 
-  // Transaction header
-  lines.push(`Invoice: ${data.invoiceId}`);
-  lines.push(`Date:    ${formatDateTime(data.createdAt)}`);
-  lines.push(`Cashier: ${data.cashier}`);
+  // ---------------------------------------------------------------------------
+  // 2. Transaction header
+  // ---------------------------------------------------------------------------
+  lines.push(text(labelValue('Invoice No', data.invoiceId)));
+  lines.push(text(labelValue('Date', formatDate(data.createdAt))));
+  lines.push(text(labelValue('Time', formatTime(data.createdAt))));
+
   if (data.customer) {
-    lines.push(`Customer: ${truncate(data.customer.name, RECEIPT_WIDTH - 10)}`);
-    lines.push(`Tier:     ${data.customer.tier}`);
+    lines.push(text(labelValue('Customer Name', data.customer.name)));
+    const phone = (data.customer as { phone?: string | null }).phone;
+    if (phone) {
+      lines.push(text(labelValue('Mobile No', phone)));
+    }
   } else {
-    lines.push('Customer: Guest');
+    lines.push(text(labelValue('Customer Name', 'Guest')));
   }
-  lines.push(divider());
-  lines.push(blank());
+  lines.push(text(divider()));
 
-  // Items
-  lines.push('Item                    Total');
-  lines.push(divider());
+  // ---------------------------------------------------------------------------
+  // 3. Item table
+  // ---------------------------------------------------------------------------
+  lines.push(text(itemHeaderRow(), { bold: true }));
+  lines.push(text(divider()));
 
   if (data.items.length === 0) {
-    lines.push(center('(no items)'));
+    lines.push(text('(no items)', { align: 'center' }));
   } else {
-    for (const item of data.items) {
-      lines.push(truncate(item.name, RECEIPT_WIDTH));
-      const qtyLine = `  ${item.quantity} x ${formatMoney(item.unitPriceMinor)}`;
-      const totalLine = formatMoney(item.totalPriceMinor);
-      lines.push(leftRight(qtyLine, totalLine));
+    for (const [index, item] of data.items.entries()) {
+      lines.push(
+        text(
+          itemRow(
+            String(index + 1),
+            item.name,
+            String(item.quantity),
+            formatMoney(item.unitPriceMinor),
+            formatMoney(item.totalPriceMinor),
+          ),
+        ),
+      );
     }
   }
+  lines.push(text(divider()));
 
-  lines.push(divider());
-  lines.push(blank());
+  // ---------------------------------------------------------------------------
+  // 4. Totals
+  // ---------------------------------------------------------------------------
+  lines.push(text(totalRow('Subtotal', formatMoney(data.subtotalMinor))));
 
-  // Totals
-  lines.push(leftRight('Subtotal', formatMoney(data.subtotalMinor)));
   if (data.discountMinor > 0) {
-    lines.push(leftRight('Discount', `-${formatMoney(data.discountMinor)}`));
+    lines.push(text(totalRow('Discount', formatMoney(data.discountMinor))));
   }
-  lines.push(leftRight('TOTAL', formatMoney(data.totalMinor)));
-  lines.push(leftRight('Paid', formatMoney(data.cashReceivedMinor)));
-  lines.push(leftRight('Change', formatMoney(data.changeMinor)));
-  lines.push(divider());
-  lines.push(blank());
 
-  // Loyalty
+  const maybeVat = data as unknown as {
+    vatRatePercent?: number;
+    vatMinor?: number;
+  };
+  const vatRatePercent = typeof maybeVat.vatRatePercent === 'number' ? maybeVat.vatRatePercent : 0;
+  const vatMinor = typeof maybeVat.vatMinor === 'number' ? maybeVat.vatMinor : 0;
+  if (vatRatePercent > 0) {
+    lines.push(text(totalRow(`VAT (${vatRatePercent.toFixed(2)}%)`, formatMoney(vatMinor))));
+  }
+
+  lines.push(
+    text(totalRow('Total Amount', formatMoney(data.totalMinor)), {
+      bold: true,
+      large: true,
+      inverse: true,
+    }),
+  );
+  lines.push(text(totalRow('Paid Amount', formatMoney(data.cashReceivedMinor))));
+
+  const dueMinor = Math.max(0, data.totalMinor - data.cashReceivedMinor);
+  lines.push(text(totalRow('Due Amount', formatMoney(dueMinor))));
+  lines.push(text(totalRow('Change', formatMoney(data.changeMinor))));
+  lines.push(text(divider()));
+
+  // ---------------------------------------------------------------------------
+  // 5. Footer info
+  // ---------------------------------------------------------------------------
+  lines.push(text(labelValue('Payment Method', 'Cash')));
+  lines.push(text(labelValue('Staff Name', data.cashier)));
+  lines.push(text(labelValue('Remarks', 'Thank you for choosing Dream Makeover!')));
+  lines.push(text(divider()));
+
+  // ---------------------------------------------------------------------------
+  // 6. Loyalty
+  // ---------------------------------------------------------------------------
   if (data.loyalty && data.loyalty.pointsEarned > 0) {
-    lines.push(leftRight('Points earned', String(data.loyalty.pointsEarned)));
-    lines.push(leftRight('Total points', String(data.loyalty.totalPoints)));
-    lines.push(leftRight('Tier', data.loyalty.tier));
-    lines.push(divider());
-    lines.push(blank());
+    lines.push(text(labelValue('Points earned', String(data.loyalty.pointsEarned))));
+    lines.push(text(labelValue('Total points', String(data.loyalty.totalPoints))));
+    lines.push(text(labelValue('Tier', data.loyalty.tier)));
+    lines.push(text(divider()));
   }
 
-  // Footer
-  lines.push(blank());
-  lines.push(center('Thank You For Visiting'));
-  lines.push(center('We look forward to seeing'));
-  lines.push(center('you again soon'));
-  lines.push(divider('='));
+  // ---------------------------------------------------------------------------
+  // 7. Footer greeting
+  // ---------------------------------------------------------------------------
+  lines.push(text('Thank You', { align: 'center', bold: true, large: true }));
+  lines.push(text('Visit Again', { align: 'center' }));
 
   return lines;
-}
-
-/**
- * Convenience wrapper: joins the formatted lines with newlines.
- */
-export function formatReceiptText(data: ReceiptData): string {
-  return formatReceipt(data).join('\n');
 }

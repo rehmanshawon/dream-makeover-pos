@@ -7,6 +7,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@point-of-sale/webbluetooth-receipt-printer': fileURLToPath(
+        new URL(
+          '../node_modules/@point-of-sale/webbluetooth-receipt-printer/dist/webbluetooth-receipt-printer.esm.js',
+          import.meta.url,
+        ),
+      ),
     },
   },
   test: {

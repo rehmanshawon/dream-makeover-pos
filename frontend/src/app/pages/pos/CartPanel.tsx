@@ -18,6 +18,7 @@ interface CartPanelProps {
   onSelectCustomer: (id: string, name: string, tier: string) => void;
   onClearCustomer: () => void;
   onSetDiscount: (minorUnits: number) => void;
+  onSetVatRate: (ratePercent: number) => void;
   onSetCashReceived: (minorUnits: number) => void;
   onClearCart: () => void;
   submissionError: string | null;
@@ -36,6 +37,7 @@ export function CartPanel({
   onSelectCustomer,
   onClearCustomer,
   onSetDiscount,
+  onSetVatRate,
   onSetCashReceived,
   onClearCart,
   submissionError,
@@ -44,6 +46,7 @@ export function CartPanel({
 }: CartPanelProps): JSX.Element {
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
   const [discountInput, setDiscountInput] = useState('');
+  const [vatInput, setVatInput] = useState('');
   const [cashInput, setCashInput] = useState('');
 
   const canSubmit = items.length > 0 && totals.cashReceivedMinor >= totals.totalMinor;
@@ -122,6 +125,29 @@ export function CartPanel({
               setDiscountInput('');
             }}
           />
+        </div>
+
+        <div className="cart-panel__row cart-panel__row--input">
+          <label htmlFor="cart-vat">VAT (%)</label>
+          <input
+            id="cart-vat"
+            type="text"
+            inputMode="decimal"
+            className="cart-panel__input"
+            value={vatInput}
+            placeholder={String(totals.vatRatePercent)}
+            onChange={(e) => {
+              setVatInput(e.target.value);
+              const rate = Number(e.target.value);
+              onSetVatRate(Number.isFinite(rate) ? rate : 0);
+            }}
+            onBlur={() => setVatInput('')}
+          />
+        </div>
+
+        <div className="cart-panel__row">
+          <span>VAT ({totals.vatRatePercent.toFixed(2)}%)</span>
+          <span>{formatBdt(totals.vatMinor)}</span>
         </div>
 
         <div className="cart-panel__row cart-panel__row--total">

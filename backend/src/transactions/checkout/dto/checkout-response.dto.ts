@@ -9,6 +9,7 @@ export class CheckoutItemResponseDto {
 export class CheckoutCustomerResponseDto {
   id: string;
   name: string;
+  phoneNumber: string;
   tier: string;
   totalPointsAfterSale: number;
   lifetimeSpendMinorAfterSale: number;
@@ -19,6 +20,8 @@ export class CheckoutResponseDto {
   invoiceId: string;
   subtotalMinor: number;
   discountMinor: number;
+  vatRatePercent: number;
+  vatMinor: number;
   totalMinor: number;
   cashReceivedMinor: number;
   changeMinor: number;

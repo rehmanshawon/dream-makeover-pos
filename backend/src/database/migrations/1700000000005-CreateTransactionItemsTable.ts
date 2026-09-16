@@ -10,7 +10,7 @@ export class CreateTransactionItemsTable1700000000005 implements MigrationInterf
         transaction_id CHAR(36) NOT NULL,
         product_id CHAR(36) NULL,
         service_id CHAR(36) NULL,
-        item_type ENUM('PRODUCT', 'SERVICE') NOT NULL,
+        item_type ENUM('PRODUCT', 'SERVICE', 'PACKAGE') NOT NULL,
         item_name VARCHAR(150) NOT NULL,
         quantity INT UNSIGNED NOT NULL,
         unit_price_minor BIGINT UNSIGNED NOT NULL,

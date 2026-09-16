@@ -18,7 +18,7 @@ export function buildReceiptData(response: CheckoutResponse, business: BusinessI
     customer: response.customer
       ? {
           name: response.customer.name,
-          phone: null,
+          phone: response.customer.phoneNumber,
           tier: response.customer.tier,
           totalPoints: response.customer.totalPointsAfterSale,
         }
@@ -31,6 +31,8 @@ export function buildReceiptData(response: CheckoutResponse, business: BusinessI
     })),
     subtotalMinor: response.subtotalMinor,
     discountMinor: response.discountMinor,
+    vatRatePercent: response.vatRatePercent ?? 0,
+    vatMinor: response.vatMinor ?? 0,
     totalMinor: response.totalMinor,
     cashReceivedMinor: response.cashReceivedMinor,
     changeMinor: response.changeMinor,

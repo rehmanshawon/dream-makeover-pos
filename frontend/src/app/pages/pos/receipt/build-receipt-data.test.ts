@@ -15,6 +15,8 @@ function baseResponse(overrides: Partial<CheckoutResponse> = {}): CheckoutRespon
     invoiceId: 'DM-20260915-0001',
     subtotalMinor: 200000,
     discountMinor: 0,
+    vatRatePercent: 0,
+    vatMinor: 0,
     totalMinor: 200000,
     cashReceivedMinor: 300000,
     changeMinor: 100000,
@@ -57,6 +59,7 @@ describe('buildReceiptData', () => {
         customer: {
           id: 'c1',
           name: 'Alice Rahman',
+          phoneNumber: '01700000000',
           tier: 'Gold',
           totalPointsAfterSale: 250,
           lifetimeSpendMinorAfterSale: 500000,
@@ -80,6 +83,7 @@ describe('buildReceiptData', () => {
         customer: {
           id: 'c1',
           name: 'Alice',
+          phoneNumber: '01700000000',
           tier: 'Silver',
           totalPointsAfterSale: 5,
           lifetimeSpendMinorAfterSale: 5000,

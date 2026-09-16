@@ -1,27 +1,21 @@
-import type { ReceiptPrinter } from './receipt-printer';
+import type { ReceiptLine, ReceiptPrinter } from './receipt-printer';
 
 /**
- * Prints receipts using the browser's print dialog.
+ * Prints receipts using the browser print dialog.
  *
- * This implementation opens a minimal popup window with the receipt as
- * pre-formatted monospace text, triggers the browser print flow, then
- * closes the window. It works with any printer installed on the
- * operating system, including a USB thermal printer with a vendor
- * driver.
- *
- * It is not the final solution. On Windows, we will replace this with a
- * direct ESC/POS implementation that bypasses the browser dialog
- * entirely.
+ * Renders each structured line as styled HTML. This preserves the
+ * intent of the receipt formatter (bold, large, inverse, alignment)
+ * when printing from a regular browser tab.
  */
 export class BrowserReceiptPrinter implements ReceiptPrinter {
   readonly name = 'Browser print';
 
-  async print(lines: string[]): Promise<void> {
+  async print(lines: ReceiptLine[]): Promise<void> {
     if (typeof window === 'undefined') {
       throw new Error('Browser printing requires a window environment');
     }
 
-    const popup = window.open('', 'receipt', 'width=420,height=640');
+    const popup = window.open('', 'receipt', 'width=440,height=680');
     if (!popup) {
       throw new Error('Unable to open print window. Check that popups are allowed.');
     }
@@ -30,26 +24,22 @@ export class BrowserReceiptPrinter implements ReceiptPrinter {
       popup.document.open();
       popup.document.write(this.buildHtml(lines));
       popup.document.close();
-    } catch (err) {
+    } catch {
       popup.close();
       throw new Error('Unable to prepare the print window');
     }
 
-    // Give the popup a moment to render before invoking print.
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // Let the popup render (including any images) before invoking print.
+    await new Promise((resolve) => setTimeout(resolve, 150));
 
     try {
       popup.focus();
       popup.print();
-    } catch (err) {
+    } catch {
       popup.close();
       throw new Error('Printing was blocked or failed');
     }
 
-    // Closing after print may race with the print dialog on some
-    // browsers. We wait a bit longer and then attempt to close.
-    // If the user cancelled the dialog, the popup remains and they can
-    // close it manually.
     setTimeout(() => {
       try {
         popup.close();
@@ -59,9 +49,8 @@ export class BrowserReceiptPrinter implements ReceiptPrinter {
     }, 500);
   }
 
-  private buildHtml(lines: string[]): string {
-    const escaped = lines.map(escapeHtml).join('\n');
-
+  private buildHtml(lines: ReceiptLine[]): string {
+    const body = lines.map((line) => this.renderLine(line)).join('');
     return `<!doctype html>
 <html>
 <head>
@@ -73,24 +62,52 @@ export class BrowserReceiptPrinter implements ReceiptPrinter {
     margin: 0;
     padding: 0;
     background: #fff;
+    color: #000;
   }
   body {
     padding: 8px;
     font-family: 'Courier New', Courier, monospace;
     font-size: 12px;
-    line-height: 1.25;
-    color: #000;
+    line-height: 1.3;
   }
-  pre {
-    margin: 0;
+  .line {
     white-space: pre;
     font-family: inherit;
     font-size: inherit;
+    line-height: inherit;
   }
+  .line--bold   { font-weight: bold; }
+  .line--large  { font-size: 18px; font-weight: bold; line-height: 1.4; }
+  .line--center { text-align: center; }
+  .line--right  { text-align: right; }
+  .line--inverse {
+    background: #000;
+    color: #fff;
+    padding: 2px 4px;
+  }
+  .line--image  { text-align: center; margin: 6px 0; }
+  .line--image img { max-width: 180px; height: auto; }
 </style>
 </head>
-<body><pre>${escaped}</pre></body>
+<body>${body}</body>
 </html>`;
+  }
+
+  private renderLine(line: ReceiptLine): string {
+    if (line.type === 'image') {
+      return `<div class="line line--image"><img src="${escapeHtml(line.src)}" alt="" /></div>`;
+    }
+
+    const classes = ['line'];
+    if (line.bold) classes.push('line--bold');
+    if (line.large) classes.push('line--large');
+    if (line.inverse) classes.push('line--inverse');
+    if (line.align === 'center') classes.push('line--center');
+    else if (line.align === 'right') classes.push('line--right');
+
+    // Empty lines need a non-breaking space to preserve the row height.
+    const content = line.text.length === 0 ? '&nbsp;' : escapeHtml(line.text);
+    return `<div class="${classes.join(' ')}">${content}</div>`;
   }
 }
 

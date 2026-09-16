@@ -12,6 +12,8 @@ export class CreateTransactionsTable1700000000003 implements MigrationInterface 
         customer_id CHAR(36) NULL,
         subtotal_minor BIGINT UNSIGNED NOT NULL,
         discount_minor BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        vat_rate_percent DECIMAL(5, 2) UNSIGNED NOT NULL DEFAULT 0,
+        vat_minor BIGINT UNSIGNED NOT NULL DEFAULT 0,
         total_minor BIGINT UNSIGNED NOT NULL,
         cash_received_minor BIGINT UNSIGNED NOT NULL,
         change_minor BIGINT UNSIGNED NOT NULL,

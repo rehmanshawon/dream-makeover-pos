@@ -14,6 +14,8 @@ import { CreateExpensesTable1700000000012 } from './1700000000012-CreateExpenses
 import { CreateCategoriesTable1700000000013 } from './1700000000013-CreateCategoriesTable';
 import { AddCategoryIdToProducts1700000000014 } from './1700000000014-AddCategoryIdToProducts';
 import { AddCategoryIdToServices1700000000015 } from './1700000000015-AddCategoryIdToServices';
+import { AddPackageItemType1700000000016 } from './1700000000016-AddPackageItemType';
+import { AddVatToTransactions1700000000017 } from './1700000000017-AddVatToTransactions';
 export const migrations = [
   CreateCustomersTable1700000000000,
   CreateProductsTable1700000000001,
@@ -31,4 +33,6 @@ export const migrations = [
   CreateCategoriesTable1700000000013,
   AddCategoryIdToProducts1700000000014,
   AddCategoryIdToServices1700000000015,
+  AddPackageItemType1700000000016,
+  AddVatToTransactions1700000000017,
 ];

@@ -1,7 +1,13 @@
 import type { ReceiptPrinter } from './receipt-printer';
 import { BrowserReceiptPrinter } from './browser-receipt-printer';
+import { WebBluetoothReceiptPrinter } from './web-bluetooth-printer';
 
-let current: ReceiptPrinter = new BrowserReceiptPrinter();
+function createDefaultPrinter(): ReceiptPrinter {
+  const bluetooth = (navigator as Navigator & { bluetooth?: unknown }).bluetooth;
+  return bluetooth ? new WebBluetoothReceiptPrinter() : new BrowserReceiptPrinter();
+}
+
+let current: ReceiptPrinter = createDefaultPrinter();
 
 /**
  * Registers a printer implementation for the application to use.
@@ -29,5 +35,5 @@ export function getReceiptPrinter(): ReceiptPrinter {
  * Used by tests to avoid leaking a mock into the next test.
  */
 export function resetReceiptPrinter(): void {
-  current = new BrowserReceiptPrinter();
+  current = createDefaultPrinter();
 }

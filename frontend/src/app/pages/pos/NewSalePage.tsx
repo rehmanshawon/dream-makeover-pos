@@ -11,6 +11,7 @@ import { buildCheckoutRequest } from './checkout-mapper';
 import { buildReceiptData } from './receipt/build-receipt-data';
 import { formatReceipt } from './receipt/receipt-formatter';
 import { getReceiptPrinter } from './receipt/printer/printer-provider';
+import { BrowserReceiptPrinter } from './receipt/printer/browser-receipt-printer';
 import './NewSalePage.css';
 
 export function NewSalePage(): JSX.Element {
@@ -60,7 +61,15 @@ export function NewSalePage(): JSX.Element {
       const data = buildReceiptData(confirmation, BUSINESS_INFO);
       const lines = formatReceipt(data);
       const printer = getReceiptPrinter();
-      await printer.print(lines);
+      try {
+        await printer.print(lines);
+      } catch (bluetoothError) {
+        // A disconnected or out-of-paper Bluetooth printer should not block
+        // the sale; fall back to the browser print/PDF dialog.
+        if (printer instanceof BrowserReceiptPrinter) throw bluetoothError;
+        await new BrowserReceiptPrinter().print(lines);
+        setPrintError('Bluetooth printer unavailable. Opened browser print instead.');
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to print receipt.';
       setPrintError(message);
@@ -90,6 +99,7 @@ export function NewSalePage(): JSX.Element {
         onSelectCustomer={cart.setCustomer}
         onClearCustomer={cart.clearCustomer}
         onSetDiscount={cart.setDiscount}
+        onSetVatRate={cart.setVatRate}
         onSetCashReceived={cart.setCashReceived}
         onClearCart={cart.clear}
         onSubmit={handleSubmit}

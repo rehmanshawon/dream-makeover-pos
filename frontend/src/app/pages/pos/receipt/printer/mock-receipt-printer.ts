@@ -1,4 +1,4 @@
-import type { ReceiptPrinter } from './receipt-printer';
+import type { ReceiptLine, ReceiptPrinter } from './receipt-printer';
 
 /**
  * Records every print call for inspection in tests.
@@ -8,13 +8,11 @@ import type { ReceiptPrinter } from './receipt-printer';
  */
 export class MockReceiptPrinter implements ReceiptPrinter {
   readonly name = 'Mock printer';
-  readonly printed: string[][] = [];
+  readonly printed: ReceiptLine[][] = [];
   failWith: Error | null = null;
 
-  async print(lines: string[]): Promise<void> {
-    if (this.failWith) {
-      throw this.failWith;
-    }
+  async print(lines: ReceiptLine[]): Promise<void> {
+    if (this.failWith) throw this.failWith;
     this.printed.push([...lines]);
   }
 }

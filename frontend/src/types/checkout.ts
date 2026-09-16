@@ -10,6 +10,7 @@ export interface CheckoutRequest {
   items: CheckoutRequestItem[];
   customerId?: string;
   discountMinor: number;
+  vatRatePercent: number;
   cashReceivedMinor: number;
 }
 
@@ -24,6 +25,7 @@ export interface CheckoutResponseItem {
 export interface CheckoutCustomer {
   id: string;
   name: string;
+  phoneNumber: string;
   tier: string;
   totalPointsAfterSale: number;
   lifetimeSpendMinorAfterSale: number;
@@ -34,6 +36,8 @@ export interface CheckoutResponse {
   invoiceId: string;
   subtotalMinor: number;
   discountMinor: number;
+  vatRatePercent: number;
+  vatMinor: number;
   totalMinor: number;
   cashReceivedMinor: number;
   changeMinor: number;

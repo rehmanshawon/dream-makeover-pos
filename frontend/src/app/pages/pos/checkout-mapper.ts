@@ -19,6 +19,7 @@ export function buildCheckoutRequest(
       quantity: item.quantity,
     })),
     discountMinor: totals.discountMinor,
+    vatRatePercent: totals.vatRatePercent,
     cashReceivedMinor: totals.cashReceivedMinor,
   };
 
