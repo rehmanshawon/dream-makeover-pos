@@ -9,6 +9,7 @@ import { EmptyState } from '../../../ui/EmptyState';
 import { Input } from '../../../ui/Input';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
+import { Icon } from '../../components/Icon';
 import { useAuth } from '../../auth/AuthContext';
 import { formatBdt } from '../../../utils/format';
 import type { Package } from '../../../types/packages';
@@ -57,31 +58,34 @@ export function PackagesPage(): JSX.Element {
     },
     {
       key: 'components',
-      header: 'Components',
+      header: 'Total items',
       render: (p) => p.items.length,
-      align: 'right',
+      align: 'center',
     },
     {
       key: 'normalPrice',
-      header: 'Components total',
+      header: 'Total Price',
+
       render: (p) => formatBdt(p.normalPriceMinor),
-      align: 'right',
+      align: 'center',
     },
     {
       key: 'packagePrice',
-      header: 'Package price',
+      header: 'Package Price',
+      width: '160px',
       render: (p) => <span className="package-cell__price">{formatBdt(p.packagePriceMinor)}</span>,
-      align: 'right',
+      align: 'center',
     },
     {
       key: 'savings',
       header: 'Savings',
       render: (p) => <span className="package-cell__savings">{formatBdt(p.savingsMinor)}</span>,
-      align: 'right',
+      align: 'center',
     },
     {
       key: 'active',
       header: 'Status',
+      align: 'center',
       render: (p) => (
         <Badge variant={p.active ? 'success' : 'neutral'}>{p.active ? 'Active' : 'Inactive'}</Badge>
       ),
@@ -91,20 +95,31 @@ export function PackagesPage(): JSX.Element {
   if (isAdmin) {
     columns.push({
       key: 'actions',
-      header: '',
-      align: 'right',
+      header: 'Actions',
+      align: 'center',
       render: (p) => (
         <div className="packages-page__row-actions" onClick={(e) => e.stopPropagation()}>
-          <Button size="sm" variant="secondary" onClick={() => setEditing(p)}>
-            Edit
+          <Button
+            size="sm"
+            variant="secondary"
+            className="button--icon"
+            aria-label="Edit"
+            title="Edit package"
+            onClick={() => setEditing(p)}
+          >
+            <Icon name="edit" size={16} />
           </Button>
           <Button
             size="sm"
             variant="ghost"
+            className="button--icon"
+            aria-label={p.active ? 'Deactivate' : 'Activate'}
+            title={p.active ? 'Deactivate package' : 'Activate package'}
             onClick={() => handleToggleActive(p)}
             disabled={updateMutation.isPending}
+            style={{ marginLeft: '10px' }}
           >
-            {p.active ? 'Deactivate' : 'Activate'}
+            <Icon name="power" size={16} />
           </Button>
         </div>
       ),

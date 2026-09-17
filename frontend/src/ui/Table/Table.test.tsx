@@ -27,8 +27,13 @@ const ROWS: Row[] = [
 describe('Table', () => {
   it('renders headers', () => {
     render(<Table columns={COLUMNS} rows={ROWS} getRowKey={(r) => r.id} />);
-    expect(screen.getByRole('columnheader', { name: /name/i })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: /amount/i })).toBeInTheDocument();
+    const nameHeader = screen.getByRole('columnheader', { name: /name/i });
+    const amountHeader = screen.getByRole('columnheader', { name: /amount/i });
+    expect(nameHeader).toBeInTheDocument();
+    expect(amountHeader).toBeInTheDocument();
+    expect(nameHeader).toHaveClass('table__cell--left');
+    expect(amountHeader).toHaveClass('table__cell--right');
+    expect(screen.getAllByText('100.00')[0]!.closest('td')).toHaveClass('table__cell--right');
   });
 
   it('renders rows', () => {

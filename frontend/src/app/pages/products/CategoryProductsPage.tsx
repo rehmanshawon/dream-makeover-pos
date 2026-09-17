@@ -60,17 +60,20 @@ export function CategoryProductsPage({ slug }: CategoryProductsPageProps): JSX.E
     {
       key: 'name',
       header: 'Name',
+      width: isAdmin ? '28%' : '34%',
       render: (p) => <span className="product-cell__name">{p.name}</span>,
     },
     {
       key: 'stock',
       header: 'Stock',
+      width: isAdmin ? '14%' : '16%',
       align: 'right',
       render: (p) => p.stock.toLocaleString('en-BD'),
     },
     {
       key: 'status',
       header: 'Status',
+      width: isAdmin ? '18%' : '20%',
       render: (p) => {
         const status = stockStatus(p);
         return <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>;
@@ -79,6 +82,7 @@ export function CategoryProductsPage({ slug }: CategoryProductsPageProps): JSX.E
     {
       key: 'sellingPrice',
       header: 'Selling price',
+      width: isAdmin ? '20%' : '30%',
       align: 'right',
       render: (p) => formatBdt(p.sellingPriceMinor),
     },
@@ -88,6 +92,7 @@ export function CategoryProductsPage({ slug }: CategoryProductsPageProps): JSX.E
     columns.push({
       key: 'purchaseCost',
       header: 'Purchase cost',
+      width: '20%',
       align: 'right',
       render: (p) => formatBdt(p.purchaseCostMinor),
     });

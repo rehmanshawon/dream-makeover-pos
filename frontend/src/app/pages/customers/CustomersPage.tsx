@@ -45,28 +45,31 @@ export function CustomersPage(): JSX.Element {
     {
       key: 'phoneNumber',
       header: 'Phone',
+      align: 'center',
       render: (c) => c.phoneNumber,
     },
     {
       key: 'rewardTier',
-      header: 'Tier',
+      header: 'Membership',
+      align: 'center',
       render: (c) => <Badge variant={TIER_VARIANT[c.rewardTier]}>{c.rewardTier}</Badge>,
     },
     {
       key: 'rewardPoints',
       header: 'Points',
-      align: 'right',
+      align: 'center',
       render: (c) => c.rewardPoints.toLocaleString('en-BD'),
     },
     {
       key: 'lifetimeSpend',
       header: 'Lifetime spend',
-      align: 'right',
+      align: 'center',
       render: (c) => formatBdt(c.lifetimeSpendMinor),
     },
     {
       key: 'createdAt',
       header: 'Joined',
+      align: 'right',
       render: (c) => formatDate(c.createdAt),
     },
   ];

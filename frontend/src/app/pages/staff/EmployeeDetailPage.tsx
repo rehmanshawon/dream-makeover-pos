@@ -8,6 +8,7 @@ import { Card } from '../../../ui/Card';
 import { EmptyState } from '../../../ui/EmptyState';
 import { Spinner } from '../../../ui/Spinner';
 import { useAuth } from '../../auth/AuthContext';
+import { Icon } from '../../components/Icon';
 import { formatBdt, formatDate, formatDateTime } from '../../../utils/format';
 import { EmployeeFormModal } from './EmployeeFormModal';
 import { SalaryPaymentFormModal } from './SalaryPaymentFormModal';
@@ -70,8 +71,15 @@ export function EmployeeDetailPage(): JSX.Element {
                 {data.status === 'ACTIVE' ? 'Active' : 'Inactive'}
               </Badge>
               {isAdmin && (
-                <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
-                  Edit
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="button--icon"
+                  aria-label="Edit"
+                  title="Edit employee"
+                  onClick={() => setEditOpen(true)}
+                >
+                  <Icon name="edit" size={16} />
                 </Button>
               )}
             </div>

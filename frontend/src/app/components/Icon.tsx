@@ -14,7 +14,10 @@ export type IconName =
   | 'accounts'
   | 'staff'
   | 'expenditure'
-  | 'settings';
+  | 'settings'
+  | 'edit'
+  | 'power'
+  | 'trash';
 
 interface IconProps extends SVGProps<SVGSVGElement> {
   name: IconName;
@@ -151,6 +154,29 @@ export function Icon({ name, size = 18, ...rest }: IconProps): JSX.Element {
         <svg {...common}>
           <circle cx="12" cy="12" r="3" />
           <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.9 2.9l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.9-2.9l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.9-2.9l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.9 2.9l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.6 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1z" />
+        </svg>
+      );
+    case 'edit':
+      return (
+        <svg {...common}>
+          <path d="M4 16.5V20h3.5L19 8.5 15.5 5 4 16.5z" />
+          <path d="M13.5 7l3.5 3.5" />
+        </svg>
+      );
+    case 'power':
+      return (
+        <svg {...common}>
+          <path d="M12 3v9" />
+          <path d="M6.2 6.2a8 8 0 1 0 11.6 0" />
+        </svg>
+      );
+    case 'trash':
+      return (
+        <svg {...common}>
+          <path d="M4 7h16" />
+          <path d="M10 11v5M14 11v5" />
+          <path d="M6 7l1 14h10l1-14" />
+          <path d="M9 7V4h6v3" />
         </svg>
       );
     default:

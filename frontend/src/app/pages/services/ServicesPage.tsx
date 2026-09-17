@@ -8,6 +8,7 @@ import { EmptyState } from '../../../ui/EmptyState';
 import { Input } from '../../../ui/Input';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
+import { Icon } from '../../components/Icon';
 import { useAuth } from '../../auth/AuthContext';
 import { formatBdt } from '../../../utils/format';
 import type { SalonService } from '../../../types/services';
@@ -51,29 +52,34 @@ export function ServicesPage(): JSX.Element {
     {
       key: 'name',
       header: 'Name',
+      width: isAdmin ? '25%' : '30%',
       render: (s) => <span className="service-cell__name">{s.name}</span>,
     },
     {
       key: 'duration',
       header: 'Duration',
+      width: isAdmin ? '13%' : '15%',
       render: (s) => `${s.durationMinutes} min`,
       align: 'right',
     },
     {
       key: 'price',
       header: 'Price',
+      width: isAdmin ? '17%' : '20%',
       render: (s) => formatBdt(s.priceMinor),
       align: 'right',
     },
     {
       key: 'rewardWeight',
       header: 'Reward weight',
+      width: isAdmin ? '13%' : '15%',
       render: (s) => `×${s.rewardPointWeight}`,
       align: 'right',
     },
     {
       key: 'active',
       header: 'Status',
+      width: isAdmin ? '16%' : '20%',
       render: (s) => (
         <Badge variant={s.active ? 'success' : 'neutral'}>{s.active ? 'Active' : 'Inactive'}</Badge>
       ),
@@ -84,19 +90,30 @@ export function ServicesPage(): JSX.Element {
     columns.push({
       key: 'actions',
       header: '',
+      width: '16%',
       align: 'right',
       render: (s) => (
         <div className="services-page__row-actions">
-          <Button size="sm" variant="secondary" onClick={() => setEditingService(s)}>
-            Edit
+          <Button
+            size="sm"
+            variant="secondary"
+            className="button--icon"
+            aria-label="Edit"
+            title="Edit service"
+            onClick={() => setEditingService(s)}
+          >
+            <Icon name="edit" size={16} />
           </Button>
           <Button
             size="sm"
             variant="ghost"
+            className="button--icon"
+            aria-label={s.active ? 'Deactivate' : 'Activate'}
+            title={s.active ? 'Deactivate service' : 'Activate service'}
             onClick={() => handleToggleActive(s)}
             disabled={updateMutation.isPending}
           >
-            {s.active ? 'Deactivate' : 'Activate'}
+            <Icon name="power" size={16} />
           </Button>
         </div>
       ),

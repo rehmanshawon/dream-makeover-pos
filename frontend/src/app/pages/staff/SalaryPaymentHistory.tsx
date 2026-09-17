@@ -10,6 +10,7 @@ import { EmptyState } from '../../../ui/EmptyState';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
 import { ConfirmDialog } from '../../../ui/ConfirmDialog';
+import { Icon } from '../../components/Icon';
 import { formatBdt, formatDate } from '../../../utils/format';
 import {
   SALARY_PAYMENT_TYPE_LABELS,
@@ -128,10 +129,13 @@ export function SalaryPaymentHistory({ employeeId }: SalaryPaymentHistoryProps):
         <Button
           size="sm"
           variant="ghost"
+          className="button--icon"
+          aria-label="Delete"
+          title="Delete salary payment"
           onClick={() => setPendingDelete(p)}
           disabled={deleteMutation.isPending}
         >
-          Delete
+          <Icon name="trash" size={16} />
         </Button>
       ),
     },

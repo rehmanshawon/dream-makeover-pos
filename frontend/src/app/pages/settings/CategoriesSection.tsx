@@ -7,6 +7,7 @@ import { Card } from '../../../ui/Card';
 import { ConfirmDialog } from '../../../ui/ConfirmDialog';
 import { EmptyState } from '../../../ui/EmptyState';
 import { Spinner } from '../../../ui/Spinner';
+import { Icon } from '../../components/Icon';
 import type { Category, CategoryNode } from '../../../types/categories';
 import { CategoryFormModal } from './CategoryFormModal';
 import './CategoriesSection.css';
@@ -109,24 +110,37 @@ export function CategoriesSection(): JSX.Element {
                 {!category.active && <Badge variant="neutral">Inactive</Badge>}
               </div>
               <div className="categories-section__actions">
-                <Button size="sm" variant="secondary" onClick={() => setEditing(category)}>
-                  Edit
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="button--icon"
+                  aria-label="Edit"
+                  title="Edit category"
+                  onClick={() => setEditing(category)}
+                >
+                  <Icon name="edit" size={16} />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
+                  className="button--icon"
+                  aria-label={category.active ? 'Deactivate' : 'Activate'}
+                  title={category.active ? 'Deactivate category' : 'Activate category'}
                   onClick={() => handleToggle(category)}
                   disabled={updateMutation.isPending}
                 >
-                  {category.active ? 'Deactivate' : 'Activate'}
+                  <Icon name="power" size={16} />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
+                  className="button--icon"
+                  aria-label="Delete"
+                  title="Delete category"
                   onClick={() => setPendingDelete(category)}
                   disabled={deleteMutation.isPending}
                 >
-                  Delete
+                  <Icon name="trash" size={16} />
                 </Button>
               </div>
             </div>

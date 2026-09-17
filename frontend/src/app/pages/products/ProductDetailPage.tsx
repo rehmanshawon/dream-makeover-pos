@@ -12,6 +12,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { formatBdt, formatDateTime } from '../../../utils/format';
 import type { Product, StockMovement } from '../../../types/products';
 import { Button } from '../../../ui/Button';
+import { Icon } from '../../components/Icon';
 import { ProductFormModal } from './ProductFormModal';
 import { StockInModal } from './StockInModal';
 import { AdjustStockModal } from './AdjustStockModal';
@@ -137,8 +138,15 @@ export function ProductDetailPage(): JSX.Element {
               <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>
               {isAdmin && (
                 <>
-                  <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
-                    Edit
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="button--icon"
+                    aria-label="Edit"
+                    title="Edit product"
+                    onClick={() => setEditOpen(true)}
+                  >
+                    <Icon name="edit" size={16} />
                   </Button>
                   <Button size="sm" variant="secondary" onClick={() => setStockInOpen(true)}>
                     Stock in

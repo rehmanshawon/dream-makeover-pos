@@ -11,6 +11,7 @@ import { EmptyState } from '../../../ui/EmptyState';
 import { Input } from '../../../ui/Input';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
+import { Icon } from '../../components/Icon';
 import { useAuth } from '../../auth/AuthContext';
 import { formatBdt } from '../../../utils/format';
 import type { Category, CategoryNode } from '../../../types/categories';
@@ -311,16 +312,19 @@ interface ProductTableProps {
 
 function ProductTable({ rows, onRowClick }: ProductTableProps): JSX.Element {
   const columns: TableColumn<Product>[] = [
-    { key: 'name', header: 'Name', render: (p) => p.name },
+    { key: 'name', header: 'Name', width: '34%', render: (p) => p.name },
     {
       key: 'stock',
       header: 'Stock',
-      align: 'right',
+      width: '16%',
+      align: 'center',
       render: (p) => p.stock.toLocaleString('en-BD'),
     },
     {
       key: 'status',
       header: 'Status',
+      width: '20%',
+      align: 'center',
       render: (p) => {
         const s = stockStatus(p);
         return <Badge variant={STOCK_VARIANT[s]}>{STOCK_LABEL[s]}</Badge>;
@@ -329,6 +333,7 @@ function ProductTable({ rows, onRowClick }: ProductTableProps): JSX.Element {
     {
       key: 'price',
       header: 'Selling price',
+      width: '30%',
       align: 'right',
       render: (p) => formatBdt(p.sellingPriceMinor),
     },
@@ -344,16 +349,19 @@ interface ServiceTableProps {
 
 function ServiceTable({ rows, onEdit }: ServiceTableProps): JSX.Element {
   const columns: TableColumn<SalonService>[] = [
-    { key: 'name', header: 'Name', render: (s) => s.name },
+    { key: 'name', header: 'Name', width: onEdit ? '28%' : '34%', render: (s) => s.name },
     {
       key: 'duration',
       header: 'Duration',
-      align: 'right',
+      width: onEdit ? '16%' : '20%',
+      align: 'center',
       render: (s) => `${s.durationMinutes} min`,
     },
     {
       key: 'active',
       header: 'Status',
+      width: onEdit ? '18%' : '22%',
+      align: 'center',
       render: (s) => (
         <Badge variant={s.active ? 'success' : 'neutral'}>{s.active ? 'Active' : 'Inactive'}</Badge>
       ),
@@ -361,6 +369,7 @@ function ServiceTable({ rows, onEdit }: ServiceTableProps): JSX.Element {
     {
       key: 'price',
       header: 'Price',
+      width: onEdit ? '18%' : '24%',
       align: 'right',
       render: (s) => formatBdt(s.priceMinor),
     },
@@ -368,11 +377,19 @@ function ServiceTable({ rows, onEdit }: ServiceTableProps): JSX.Element {
       ? [
           {
             key: 'actions',
-            header: '',
+            header: 'Action',
+            width: '20%',
             align: 'right' as const,
             render: (s: SalonService) => (
-              <Button size="sm" variant="secondary" onClick={() => onEdit(s)}>
-                Edit
+              <Button
+                size="sm"
+                variant="secondary"
+                className="button--icon"
+                aria-label="Edit"
+                title="Edit service"
+                onClick={() => onEdit(s)}
+              >
+                <Icon name="edit" size={16} />
               </Button>
             ),
           } satisfies TableColumn<SalonService>,

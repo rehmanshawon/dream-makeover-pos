@@ -10,6 +10,7 @@ import { Input } from '../../../ui/Input';
 import { Select, type SelectOption } from '../../../ui/Select';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
+import { Icon } from '../../components/Icon';
 import { KpiCard } from '../dashboard/KpiCard';
 import { formatCategoryLabel } from '../dashboard/category-labels';
 import { formatBdt, formatDate } from '../../../utils/format';
@@ -159,16 +160,26 @@ export function ExpenditurePage(): JSX.Element {
       align: 'right',
       render: (e) => (
         <div className="expenditure__row-actions" onClick={(ev) => ev.stopPropagation()}>
-          <Button size="sm" variant="secondary" onClick={() => setEditing(e)}>
-            Edit
+          <Button
+            size="sm"
+            variant="secondary"
+            className="button--icon"
+            aria-label="Edit"
+            title="Edit expense"
+            onClick={() => setEditing(e)}
+          >
+            <Icon name="edit" size={16} />
           </Button>
           <Button
             size="sm"
             variant="ghost"
+            className="button--icon"
+            aria-label="Delete"
+            title="Delete expense"
             onClick={() => setPendingDelete(e)}
             disabled={deleteMutation.isPending}
           >
-            Delete
+            <Icon name="trash" size={16} />
           </Button>
         </div>
       ),

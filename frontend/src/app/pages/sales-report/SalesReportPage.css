@@ -32,7 +32,7 @@
 }
 
 .sales-report__invoice {
-  font-family: var(--font-mono);
+  font-family: var(--font-serif);
   font-size: var(--font-size-xs);
 }
 

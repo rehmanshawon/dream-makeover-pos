@@ -65,22 +65,25 @@ export function SalesReportPage(): JSX.Element {
     {
       key: 'createdAt',
       header: 'Date',
+      align: 'center',
       render: (t) => formatDateTime(t.createdAt),
     },
     {
       key: 'customerName',
       header: 'Customer',
+      align: 'center',
       render: (t) => t.customerName ?? 'Guest',
     },
     {
       key: 'cashier',
       header: 'Cashier',
+      align: 'center',
       render: (t) => t.cashier,
     },
     {
       key: 'items',
       header: 'Items',
-      align: 'right',
+      align: 'center',
       render: (t) => t.itemQuantityTotal,
     },
     {

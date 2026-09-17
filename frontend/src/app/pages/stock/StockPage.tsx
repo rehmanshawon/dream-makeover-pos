@@ -88,23 +88,25 @@ export function StockPage(): JSX.Element {
     {
       key: 'category',
       header: 'Category',
+      align: 'center',
       render: (p) => p.category,
     },
     {
       key: 'stock',
       header: 'Stock',
-      align: 'right',
+      align: 'center',
       render: (p) => p.stock.toLocaleString('en-BD'),
     },
     {
       key: 'threshold',
       header: 'Threshold',
-      align: 'right',
+      align: 'center',
       render: (p) => p.minimumStockThreshold.toLocaleString('en-BD'),
     },
     {
       key: 'status',
       header: 'Status',
+      align: 'center',
       render: (p) => {
         const status = stockStatus(p);
         return <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>;

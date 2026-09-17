@@ -11,6 +11,7 @@ import type { CustomerRewardTier } from '../../../types/customers';
 import { useState } from 'react';
 import { Button } from '../../../ui/Button';
 import { useAuth } from '../../auth/AuthContext';
+import { Icon } from '../../components/Icon';
 import { CustomerFormModal } from './CustomerFormModal';
 import { CustomerHistoryTable } from './CustomerHistoryTable';
 import './CustomerDetailPage.css';
@@ -75,8 +76,15 @@ export function CustomerDetailPage(): JSX.Element {
             <div className="customer-detail__actions">
               <Badge variant={TIER_VARIANT[data.rewardTier]}>{data.rewardTier}</Badge>
               {isAdmin && (
-                <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
-                  Edit
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="button--icon"
+                  aria-label="Edit"
+                  title="Edit customer"
+                  onClick={() => setEditOpen(true)}
+                >
+                  <Icon name="edit" size={16} />
                 </Button>
               )}
             </div>

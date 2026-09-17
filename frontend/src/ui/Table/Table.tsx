@@ -41,7 +41,7 @@ export function Table<T>({
               <th
                 key={column.key}
                 scope="col"
-                className={column.align ? `table__cell--${column.align}` : undefined}
+                className={`table__cell--${column.align ?? 'left'}`}
                 style={column.width ? { width: column.width } : undefined}
               >
                 {column.header}
@@ -59,10 +59,7 @@ export function Table<T>({
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
               >
                 {columns.map((column) => (
-                  <td
-                    key={column.key}
-                    className={column.align ? `table__cell--${column.align}` : undefined}
-                  >
+                  <td key={column.key} className={`table__cell--${column.align ?? 'left'}`}>
                     {column.render(row)}
                   </td>
                 ))}

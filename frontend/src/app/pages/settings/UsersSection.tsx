@@ -9,6 +9,7 @@ import { EmptyState } from '../../../ui/EmptyState';
 import { Input } from '../../../ui/Input';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
+import { Icon } from '../../components/Icon';
 import { useAuth } from '../../auth/AuthContext';
 import { formatDateTime } from '../../../utils/format';
 import type { User } from '../../../types/users';
@@ -98,27 +99,39 @@ export function UsersSection(): JSX.Element {
         const isSelf = currentUser?.id === u.id;
         return (
           <div className="users-section__row-actions">
-            <Button size="sm" variant="secondary" onClick={() => setEditing(u)}>
-              Edit
+            <Button
+              size="sm"
+              variant="secondary"
+              className="button--icon"
+              aria-label="Edit"
+              title="Edit user"
+              onClick={() => setEditing(u)}
+            >
+              <Icon name="edit" size={16} />
             </Button>
             {u.active ? (
               <Button
                 size="sm"
                 variant="ghost"
+                className="button--icon"
+                aria-label="Deactivate"
                 onClick={() => setPendingDeactivate(u)}
                 disabled={isSelf || updateMutation.isPending}
-                title={isSelf ? 'You cannot deactivate your own account' : undefined}
+                title={isSelf ? 'You cannot deactivate your own account' : 'Deactivate user'}
               >
-                Deactivate
+                <Icon name="power" size={16} />
               </Button>
             ) : (
               <Button
                 size="sm"
                 variant="ghost"
+                className="button--icon"
+                aria-label="Activate"
+                title="Activate user"
                 onClick={() => handleReactivate(u)}
                 disabled={updateMutation.isPending}
               >
-                Activate
+                <Icon name="power" size={16} />
               </Button>
             )}
           </div>

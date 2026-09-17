@@ -13,6 +13,7 @@ import { EmptyState } from '../../../ui/EmptyState';
 import { Input } from '../../../ui/Input';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
+import { Icon } from '../../components/Icon';
 import { useAuth } from '../../auth/AuthContext';
 import { formatBdt, formatDate } from '../../../utils/format';
 import type { Employee, EmployeeStatus } from '../../../types/employees';
@@ -132,11 +133,26 @@ export function StaffPage(): JSX.Element {
       align: 'right',
       render: (e) => (
         <div className="staff-page__row-actions" onClick={(ev) => ev.stopPropagation()}>
-          <Button size="sm" variant="secondary" onClick={() => setEditing(e)}>
-            Edit
+          <Button
+            size="sm"
+            variant="secondary"
+            className="button--icon"
+            aria-label="Edit"
+            title="Edit employee"
+            onClick={() => setEditing(e)}
+          >
+            <Icon name="edit" size={16} />
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => handleToggleStatus(e)} disabled={busy}>
-            {e.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="button--icon"
+            aria-label={e.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+            title={e.status === 'ACTIVE' ? 'Deactivate employee' : 'Activate employee'}
+            onClick={() => handleToggleStatus(e)}
+            disabled={busy}
+          >
+            <Icon name="power" size={16} />
           </Button>
         </div>
       ),
