@@ -65,7 +65,7 @@ export function CatalogNav(): JSX.Element | null {
               }
             >
               <span className="sidebar__link-icon">
-                <Icon name={iconForCategory(category)} size={20} />
+                <Icon name={iconForCategory(category)} size={28} />
               </span>
               <span className="sidebar__link-label">{category.name}</span>
             </NavLink>
