@@ -6,24 +6,22 @@
 
 .select-field__label {
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text);
 }
 
 .select-field__control {
-  font-size: var(--font-size-sm);
-  padding: var(--space-2) var(--space-3);
-  min-height: 36px;
-  border: 1px solid var(--color-border-strong);
+  font-size: var(--font-size-base);
+  padding: 10px var(--space-3);
+  min-height: 40px;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text);
-  transition:
-    border-color var(--transition-fast),
-    box-shadow var(--transition-fast);
+  transition: border-color var(--transition-fast);
   width: 100%;
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b605c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23050505' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: right var(--space-3) center;
   background-size: 14px;
@@ -33,7 +31,7 @@
 .select-field__control:focus {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px var(--color-accent-soft);
+  box-shadow: 0 0 0 2px var(--color-accent-soft);
 }
 
 .select-field__control:disabled {

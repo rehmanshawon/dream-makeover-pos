@@ -14,9 +14,9 @@
 
 .table thead th {
   text-align: left;
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: var(--space-3) var(--space-5);
@@ -25,7 +25,6 @@
   white-space: nowrap;
 }
 
-/* Keep each heading aligned with the cells in its column. */
 .table thead th.table__cell--left {
   text-align: left;
 }
@@ -50,10 +49,6 @@
   border-left: 1px solid var(--color-border);
 }
 
-.table__cell--right {
-  font-variant-numeric: tabular-nums;
-}
-
 .table tbody tr:last-child td {
   border-bottom: none;
 }
@@ -69,6 +64,7 @@
 
 .table__cell--right {
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .table__cell--center {
@@ -80,7 +76,7 @@
   text-align: center;
   color: var(--color-text-muted);
   background: var(--color-surface);
-  border: 1px dashed var(--color-border-strong);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
 }
 

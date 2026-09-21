@@ -3,6 +3,8 @@ export interface BusinessInfo {
   tagline: string;
   addressLines: string[];
   phone: string;
+  website: string;
+  email: string;
 }
 
 /**
@@ -20,4 +22,6 @@ export const BUSINESS_INFO: BusinessInfo = {
     'Dhaka Cantonment, Dhaka - 1206',
   ],
   phone: '01895-632484',
+  website: 'https://dreammakeover.bd',
+  email: 'info@dreammakeover.bd',
 };

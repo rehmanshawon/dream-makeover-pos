@@ -2,16 +2,16 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: 2px var(--space-2);
+  padding: 3px 10px;
   border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0.3px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0;
   white-space: nowrap;
 }
 
 .badge--neutral {
-  background: var(--color-surface-muted);
+  background: var(--color-surface-inset);
   color: var(--color-text-muted);
 }
 
@@ -22,7 +22,7 @@
 
 .badge--warning {
   background: var(--color-warning-soft);
-  color: var(--color-warning);
+  color: #8a6200;
 }
 
 .badge--danger {
@@ -32,5 +32,5 @@
 
 .badge--accent {
   background: var(--color-accent-soft);
-  color: var(--color-accent-hover);
+  color: var(--color-accent);
 }

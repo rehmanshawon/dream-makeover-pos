@@ -5,19 +5,13 @@
   gap: var(--space-2);
   border-radius: var(--radius-md);
   font-family: var(--font-sans);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-semibold);
   border: 1px solid transparent;
   transition:
     background var(--transition-fast),
-    color var(--transition-fast),
-    border-color var(--transition-fast),
-    transform var(--transition-fast);
+    color var(--transition-fast);
   white-space: nowrap;
   user-select: none;
-}
-
-.button:active:not(:disabled) {
-  transform: translateY(1px);
 }
 
 .button:disabled {
@@ -30,34 +24,34 @@
 }
 
 .button--icon {
-  width: 32px;
-  min-width: 32px;
+  width: 36px;
+  min-width: 36px;
   padding-left: 0;
   padding-right: 0;
 }
 
 .button--size-sm.button--icon {
-  width: 28px;
-  min-width: 28px;
+  width: 32px;
+  min-width: 32px;
 }
 
-/* Sizes */
+/* Sizes — Facebook standard heights */
 .button--size-sm {
-  font-size: var(--font-size-xs);
-  padding: var(--space-1) var(--space-3);
-  min-height: 28px;
+  font-size: var(--font-size-sm);
+  padding: 6px var(--space-3);
+  min-height: 32px;
 }
 
 .button--size-md {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   padding: var(--space-2) var(--space-4);
   min-height: 36px;
 }
 
 .button--size-lg {
   font-size: var(--font-size-md);
-  padding: var(--space-3) var(--space-5);
-  min-height: 44px;
+  padding: 10px var(--space-5);
+  min-height: 40px;
 }
 
 /* Variants */
@@ -72,15 +66,20 @@
   border-color: var(--color-accent-hover);
 }
 
+.button--primary:active:not(:disabled) {
+  background: var(--color-accent-active);
+  border-color: var(--color-accent-active);
+}
+
 .button--secondary {
-  background: var(--color-surface);
+  background: var(--color-surface-inset);
   color: var(--color-text);
-  border-color: var(--color-border-strong);
+  border-color: var(--color-surface-inset);
 }
 
 .button--secondary:hover:not(:disabled) {
-  background: var(--color-surface-muted);
-  border-color: var(--color-text-muted);
+  background: #d8dadf;
+  border-color: #d8dadf;
 }
 
 .button--ghost {
@@ -100,8 +99,8 @@
 }
 
 .button--danger:hover:not(:disabled) {
-  background: #9c4744;
-  border-color: #9c4744;
+  background: #d32d33;
+  border-color: #d32d33;
 }
 
 .button__content {

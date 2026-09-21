@@ -29,6 +29,14 @@ export function BusinessInfoSection(): JSX.Element {
           <dt>Phone</dt>
           <dd>{BUSINESS_INFO.phone}</dd>
         </div>
+        <div className="business-info__row">
+          <dt>Website</dt>
+          <dd>{BUSINESS_INFO.website}</dd>
+        </div>
+        <div className="business-info__row">
+          <dt>Email</dt>
+          <dd>{BUSINESS_INFO.email}</dd>
+        </div>
       </dl>
 
       <div className="business-info__note">

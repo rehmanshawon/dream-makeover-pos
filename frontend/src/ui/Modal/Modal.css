@@ -1,7 +1,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(31, 27, 26, 0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -21,7 +21,7 @@
 
 .modal {
   background: var(--color-surface);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
@@ -42,15 +42,15 @@
 }
 
 .modal--sm {
-  max-width: 400px;
+  max-width: 420px;
 }
 
 .modal--md {
-  max-width: 560px;
+  max-width: 580px;
 }
 
 .modal--lg {
-  max-width: 800px;
+  max-width: 820px;
 }
 
 .modal__header {
@@ -62,19 +62,19 @@
 }
 
 .modal__title {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
   margin: 0;
 }
 
 .modal__close {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
+  border-radius: 50%;
   font-size: 20px;
   line-height: 1;
   color: var(--color-text-muted);

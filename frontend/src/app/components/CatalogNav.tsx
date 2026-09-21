@@ -34,13 +34,24 @@ export function CatalogNav(): JSX.Element | null {
       <ul className="sidebar__list">
         {topLevel.map((category) => (
           <li key={category.id}>
-            <NavLink
+            {/* <NavLink
               to={`/catalog/${category.slug}`}
               className={({ isActive }) =>
                 'sidebar__link' + (isActive ? ' sidebar__link--active' : '')
               }
             >
               <Icon name={category.kind === 'SERVICE' ? 'sparkles' : 'lipstick'} />
+              <span className="sidebar__link-label">{category.name}</span>
+            </NavLink> */}
+            <NavLink
+              to={`/catalog/${category.slug}`}
+              className={({ isActive }) =>
+                'sidebar__link' + (isActive ? ' sidebar__link--active' : '')
+              }
+            >
+              <span className="sidebar__link-icon">
+                <Icon name={category.kind === 'SERVICE' ? 'sparkles' : 'lipstick'} size={20} />
+              </span>
               <span className="sidebar__link-label">{category.name}</span>
             </NavLink>
           </li>
