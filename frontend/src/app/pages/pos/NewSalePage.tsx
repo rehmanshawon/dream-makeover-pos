@@ -67,8 +67,12 @@ export function NewSalePage(): JSX.Element {
         // A disconnected or out-of-paper Bluetooth printer should not block
         // the sale; fall back to the browser print/PDF dialog.
         if (printer instanceof BrowserReceiptPrinter) throw bluetoothError;
-        await new BrowserReceiptPrinter().print(lines);
-        setPrintError('Bluetooth printer unavailable. Opened browser print instead.');
+        try {
+          await new BrowserReceiptPrinter().print(lines);
+          setPrintError('Bluetooth printer unavailable. Opened browser print instead.');
+        } catch {
+          throw bluetoothError;
+        }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to print receipt.';

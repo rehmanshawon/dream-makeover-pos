@@ -54,7 +54,7 @@ function formatTime(iso: string): string {
 function labelValue(label: string, value: string): string {
   const labelWidth = 16;
   const padded = truncate(label, labelWidth).padEnd(labelWidth);
-  const prefix = `${padded} : `;
+  const prefix = `${padded} :`;
   const remaining = RECEIPT_WIDTH - prefix.length;
   return prefix + truncate(value, remaining);
 }
@@ -82,11 +82,7 @@ function itemHeaderRow(): string {
 function totalRow(label: string, value: string): string {
   const labelWidth = 16;
   const valueWidth = 12;
-  const rightBlock = `${truncate(label, labelWidth).padStart(labelWidth)} : ${rightAlign(
-    value,
-    valueWidth,
-  )}`;
-  return truncate(rightBlock, RECEIPT_WIDTH).padStart(RECEIPT_WIDTH);
+  return `${truncate(label, labelWidth).padEnd(labelWidth)} : ${rightAlign(value, valueWidth)}`;
 }
 
 // -----------------------------------------------------------------------------
@@ -253,4 +249,19 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   lines.push(text('Visit Again', { align: 'center' }));
 
   return lines;
+}
+
+/**
+ * Convenience wrapper: joins the formatted lines as plain text.
+ *
+ * Intended for debugging, logging, or any context that needs the
+ * receipt content without styling. Style-bearing fields are ignored.
+ */
+export function formatReceiptText(data: ReceiptData): string {
+  return formatReceipt(data)
+    .map((line) => {
+      if (line.type === 'image') return `[image: ${line.src}]`;
+      return line.text;
+    })
+    .join('\n');
 }

@@ -81,7 +81,7 @@ export class WebBluetoothReceiptPrinter implements ReceiptPrinter {
    */
   private async appendLine(encoder: ReceiptPrinterEncoder, line: ReceiptLine): Promise<void> {
     // Reset modifiers from the previous line.
-    encoder.align('left').bold(false).size('normal').invert(false);
+    encoder.align('left').bold(false).size(1, 1).invert(false);
 
     if (line.type === 'image') {
       await this.appendImage(encoder, line);
@@ -92,13 +92,13 @@ export class WebBluetoothReceiptPrinter implements ReceiptPrinter {
     else if (line.align === 'right') encoder.align('right');
 
     if (line.bold) encoder.bold(true);
-    if (line.large) encoder.size('double');
+    if (line.large) encoder.size(2, 2);
     if (line.inverse) encoder.invert(true);
 
     encoder.text(line.text);
 
     if (line.inverse) encoder.invert(false);
-    if (line.large) encoder.size('normal');
+    if (line.large) encoder.size(1, 1);
     if (line.bold) encoder.bold(false);
 
     encoder.newline();

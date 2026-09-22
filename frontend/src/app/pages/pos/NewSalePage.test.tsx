@@ -339,8 +339,11 @@ describe('NewSalePage', () => {
 
     expect(printer.printed).toHaveLength(1);
     const lines = printer.printed[0]!;
-    expect(lines.some((l) => l.includes('DM-20260915-0001'))).toBe(true);
-    expect(lines.some((l) => l.includes('Test Facial'))).toBe(true);
+    const texts = lines
+      .filter((l) => l.type === 'text')
+      .map((l) => (l.type === 'text' ? l.text : ''));
+    expect(texts.some((t) => t.includes('DM-20260915-0001'))).toBe(true);
+    expect(texts.some((t) => t.includes('Test Facial'))).toBe(true);
   });
 
   it('shows a print error when printing fails', async () => {

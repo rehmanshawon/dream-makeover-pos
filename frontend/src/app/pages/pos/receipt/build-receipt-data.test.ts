@@ -7,6 +7,8 @@ const BUSINESS = {
   tagline: 'A Luxury Beauty Salon',
   addressLines: ['123 Test Road'],
   phone: '+880 1XXX-XXXXXX',
+  website: '',
+  email: '',
 };
 
 function baseResponse(overrides: Partial<CheckoutResponse> = {}): CheckoutResponse {
