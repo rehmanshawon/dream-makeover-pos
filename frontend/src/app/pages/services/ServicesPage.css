@@ -1,5 +1,8 @@
 .services-page {
-  padding: var(--space-6);
+  padding: var(--space-page);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
 .services-page__toolbar {

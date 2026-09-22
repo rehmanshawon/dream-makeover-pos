@@ -86,6 +86,7 @@
   --space-8: 32px;
   --space-10: 40px;
   --space-12: 48px;
+  --space-page: 16px;
 
   /* Radii — Facebook standard is 6px for small, 8px for cards */
   --radius-sm: 4px;

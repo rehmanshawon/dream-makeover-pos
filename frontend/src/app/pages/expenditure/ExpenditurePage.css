@@ -1,8 +1,8 @@
 .expenditure {
-  padding: var(--space-6);
+  padding: var(--space-page);
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
 .expenditure__filters {

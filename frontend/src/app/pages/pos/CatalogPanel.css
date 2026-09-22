@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: var(--space-5);
+  padding: var(--space-4);
   overflow: hidden;
 }
 
@@ -10,34 +10,33 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
 .catalog-panel__tab {
-  padding: var(--space-2) var(--space-4);
+  padding: 6px var(--space-3);
   border-radius: var(--radius-pill);
   font-size: var(--font-size-sm);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
+  font-weight: var(--font-weight-semibold);
+  background: var(--color-surface-inset);
+  border: 1px solid transparent;
+  color: var(--color-text);
   transition: all var(--transition-fast);
   cursor: pointer;
 }
 
 .catalog-panel__tab:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent-hover);
+  background: #d8dadf;
 }
 
 .catalog-panel__tab--active {
   background: var(--color-accent);
   color: var(--color-accent-text);
-  border-color: var(--color-accent);
 }
 
 .catalog-panel__search {
-  margin-bottom: var(--space-4);
-  max-width: 320px;
+  margin-bottom: var(--space-3);
+  max-width: 340px;
 }
 
 .catalog-panel__content {
@@ -48,7 +47,7 @@
 
 .catalog-panel__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: var(--space-3);
   padding-right: var(--space-2);
 }

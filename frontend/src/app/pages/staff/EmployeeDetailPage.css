@@ -8,14 +8,21 @@
   justify-content: center;
 }
 
+.customer-detail__breadcrumb,
+.product-detail__breadcrumb,
+.package-detail__breadcrumb,
 .employee-detail__breadcrumb {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
+.customer-detail__breadcrumb a,
+.product-detail__breadcrumb a,
+.package-detail__breadcrumb a,
 .employee-detail__breadcrumb a {
   color: var(--color-accent);
+  font-weight: var(--font-weight-medium);
 }
 
 .employee-detail__back {

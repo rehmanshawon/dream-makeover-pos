@@ -1,9 +1,9 @@
 .cart-row {
   display: grid;
   grid-template-columns: 1fr auto auto auto;
-  gap: var(--space-3);
+  gap: var(--space-2);
   align-items: center;
-  padding: var(--space-3) 0;
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -19,7 +19,7 @@
 }
 
 .cart-row__name {
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-sm);
   white-space: nowrap;
   overflow: hidden;
@@ -57,7 +57,7 @@
 }
 
 .cart-row__total {
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
   font-size: var(--font-size-sm);
   min-width: 90px;
   text-align: right;
