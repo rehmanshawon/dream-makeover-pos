@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import { SalaryFrequency } from '../salary-frequency.enum';
 import { EmployeeStatus } from '../employee-status.enum';
+import { PaymentMethod } from '../../salary-payments/payment-method.enum';
 
 export class CreateEmployeeDto {
   @IsString()
@@ -28,6 +29,10 @@ export class CreateEmployeeDto {
 
   @IsEnum(SalaryFrequency)
   salaryFrequency: SalaryFrequency;
+
+  @IsOptional()
+  @IsEnum(PaymentMethod)
+  defaultPaymentMethod?: PaymentMethod;
 
   @IsString()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, {

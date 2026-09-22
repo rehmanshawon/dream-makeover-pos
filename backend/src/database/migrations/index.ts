@@ -18,6 +18,8 @@ import { AddPackageItemType1700000000016 } from './1700000000016-AddPackageItemT
 import { CreatePayPeriodsTable1700000000016 } from './1700000000016-CreatePayPeriodsTable';
 import { AddPayPeriodIdToSalaryPayments1700000000017 } from './1700000000017-AddPayPeriodIdToSalaryPayments';
 import { AddVatToTransactions1700000000017 } from './1700000000017-AddVatToTransactions';
+import { CreateAttendanceTable1700000000018 } from './1700000000018-CreateAttendanceTable';
+import { AddDefaultPaymentMethodToEmployees1700000000019 } from './1700000000019-AddDefaultPaymentMethodToEmployees';
 
 export const migrations = [
   CreateCustomersTable1700000000000,
@@ -40,4 +42,6 @@ export const migrations = [
   AddVatToTransactions1700000000017,
   CreatePayPeriodsTable1700000000016,
   AddPayPeriodIdToSalaryPayments1700000000017,
+  CreateAttendanceTable1700000000018,
+  AddDefaultPaymentMethodToEmployees1700000000019,
 ];

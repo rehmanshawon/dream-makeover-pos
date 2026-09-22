@@ -17,6 +17,8 @@ import { Table, type TableColumn } from '../../../ui/Table';
 import { formatBdt, formatDate, formatDateTime } from '../../../utils/format';
 import type { PayableEmployee } from '../../../types/payroll';
 import './PayPeriodDetailPage.css';
+import { Modal } from '@/ui/Modal/Modal';
+import { AttendanceEditor } from './AttendanceEditor';
 
 export function PayPeriodDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +30,8 @@ export function PayPeriodDetailPage(): JSX.Element {
   const [confirmRun, setConfirmRun] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const [attendanceFor, setAttendanceFor] = useState<PayableEmployee | null>(null);
 
   const handleRun = async (): Promise<void> => {
     if (!id) return;
@@ -82,6 +86,22 @@ export function PayPeriodDetailPage(): JSX.Element {
   const columns: TableColumn<PayableEmployee>[] = [
     { key: 'name', header: 'Employee', render: (e) => e.employeeName },
     { key: 'role', header: 'Role', render: (e) => e.role },
+    {
+      key: 'attendance',
+      header: '',
+      render: (e) => (
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={(ev) => {
+            ev.stopPropagation();
+            setAttendanceFor(e);
+          }}
+        >
+          Attendance
+        </Button>
+      ),
+    },
     {
       key: 'payable',
       header: 'Payable',
@@ -188,6 +208,22 @@ export function PayPeriodDetailPage(): JSX.Element {
           <Table columns={columns} rows={payables.data} getRowKey={(e) => e.employeeId} />
         )}
       </Card>
+
+      {attendanceFor && (
+        <Modal
+          open
+          title={`Attendance — ${attendanceFor.employeeName}`}
+          onClose={() => setAttendanceFor(null)}
+          size="md"
+        >
+          <AttendanceEditor
+            employeeId={attendanceFor.employeeId}
+            from={p.startDate}
+            to={p.endDate}
+            disabled={p.status === 'CLOSED'}
+          />
+        </Modal>
+      )}
 
       <ConfirmDialog
         open={confirmRun}

@@ -4,12 +4,27 @@ import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../../../test/render-with-providers';
 import { SalaryPaymentHistory } from './SalaryPaymentHistory';
 import type { AuthenticatedUser } from '../../../types/auth';
+import type { Employee } from '../../../types/employees';
 
 const ADMIN: AuthenticatedUser = {
   id: '1',
   username: 'admin',
   displayName: 'Admin',
   role: 'ADMIN',
+};
+
+const EMPLOYEE: Employee = {
+  id: 'e1',
+  fullName: 'Asha Rahman',
+  role: 'Stylist',
+  salaryMinor: 3500000,
+  salaryFrequency: 'MONTHLY',
+  joinDate: '2026-01-01',
+  status: 'ACTIVE',
+  phone: null,
+  note: null,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
 function paymentResponse(overrides: Record<string, unknown> = {}): unknown {
@@ -48,7 +63,7 @@ describe('SalaryPaymentHistory', () => {
         }),
     ) as unknown as typeof fetch;
 
-    renderWithProviders(<SalaryPaymentHistory employeeId="e1" />, {
+    renderWithProviders(<SalaryPaymentHistory employee={EMPLOYEE} />, {
       user: ADMIN,
       token: 'test-token',
     });
@@ -74,7 +89,7 @@ describe('SalaryPaymentHistory', () => {
         ),
     ) as unknown as typeof fetch;
 
-    renderWithProviders(<SalaryPaymentHistory employeeId="e1" />, {
+    renderWithProviders(<SalaryPaymentHistory employee={EMPLOYEE} />, {
       user: ADMIN,
       token: 'test-token',
     });
@@ -102,7 +117,7 @@ describe('SalaryPaymentHistory', () => {
       });
     }) as unknown as typeof fetch;
 
-    renderWithProviders(<SalaryPaymentHistory employeeId="e1" />, {
+    renderWithProviders(<SalaryPaymentHistory employee={EMPLOYEE} />, {
       user: ADMIN,
       token: 'test-token',
     });

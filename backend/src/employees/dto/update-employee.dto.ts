@@ -1,7 +1,7 @@
 import { IsEnum, IsInt, IsOptional, IsString, Length, Min } from 'class-validator';
 import { SalaryFrequency } from '../salary-frequency.enum';
 import { EmployeeStatus } from '../employee-status.enum';
-
+import { PaymentMethod } from '../../salary-payments/payment-method.enum';
 /**
  * Partial update for an employee.
  *
@@ -29,6 +29,10 @@ export class UpdateEmployeeDto {
   @IsOptional()
   @IsEnum(SalaryFrequency)
   salaryFrequency?: SalaryFrequency;
+
+  @IsOptional()
+  @IsEnum(PaymentMethod)
+  defaultPaymentMethod?: PaymentMethod;
 
   @IsOptional()
   @IsString()

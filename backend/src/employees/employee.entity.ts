@@ -9,6 +9,7 @@ import {
 import { SalaryFrequency } from './salary-frequency.enum';
 import { EmployeeStatus } from './employee-status.enum';
 import { bigintTransformer } from '../common/transformers/bigint.transformer';
+import { PaymentMethod } from '../salary-payments/payment-method.enum';
 
 /**
  * An employee of the salon.
@@ -45,6 +46,14 @@ export class Employee {
     enum: SalaryFrequency,
   })
   salaryFrequency: SalaryFrequency;
+
+  @Column({
+    name: 'default_payment_method',
+    type: 'enum',
+    enum: PaymentMethod,
+    default: PaymentMethod.CASH,
+  })
+  defaultPaymentMethod: PaymentMethod = PaymentMethod.CASH;
 
   @Column({ name: 'join_date', type: 'date' })
   joinDate: string;

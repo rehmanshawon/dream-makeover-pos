@@ -16,6 +16,7 @@ import { EmployeesModule } from './employees/employees.module';
 import { SalaryPaymentsModule } from './salary-payments/salary-payments.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { PayrollModule } from './payroll/payroll.module';
+import { AttendanceModule } from './attendance/attendance.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { PayrollModule } from './payroll/payroll.module';
     ReportsModule,
     CategoriesModule,
     PayrollModule,
+    AttendanceModule,
   ],
 })
 export class AppModule {}

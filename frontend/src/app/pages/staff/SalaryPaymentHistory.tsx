@@ -17,10 +17,16 @@ import {
   SALARY_PAYMENT_METHOD_LABELS,
   type SalaryPayment,
 } from '../../../types/salary-payments';
+
+import { BUSINESS_INFO } from '../../../config/business';
+import { formatPayslip } from '../payroll/payslip-formatter';
+import { getReceiptPrinter } from '../pos/receipt/printer/printer-provider';
+
 import './SalaryPaymentHistory.css';
+import { Employee } from '@/types/employees';
 
 interface SalaryPaymentHistoryProps {
-  employeeId: string;
+  employee: Employee;
 }
 
 const TYPE_VARIANT: Record<
@@ -38,12 +44,49 @@ function currentMonthKey(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-export function SalaryPaymentHistory({ employeeId }: SalaryPaymentHistoryProps): JSX.Element {
-  const { data, isLoading, error } = useEmployeeSalaryPayments(employeeId);
+export function SalaryPaymentHistory({ employee }: SalaryPaymentHistoryProps): JSX.Element {
+  const { data, isLoading, error } = useEmployeeSalaryPayments(employee.id);
   const deleteMutation = useDeleteSalaryPayment();
 
   const [pendingDelete, setPendingDelete] = useState<SalaryPayment | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const [printingId, setPrintingId] = useState<string | null>(null);
+
+  const handlePrint = async (payment: SalaryPayment): Promise<void> => {
+    setPrintingId(payment.id);
+
+    try {
+      const frequencyDays =
+        employee.salaryFrequency === 'MONTHLY' ? 30 : employee.salaryFrequency === 'WEEKLY' ? 7 : 1;
+      const dailyRate = Math.round(payment.amountMinor / frequencyDays); // approximate; see note
+      const lines = formatPayslip(
+        {
+          employeeName: employee.fullName, // we do not have the name here; see note
+          employeeRole: employee.role,
+          periodName: 'Salary payment',
+          periodStart: payment.paidOn,
+          periodEnd: payment.paidOn,
+          paidOn: payment.paidOn,
+          workedDays: frequencyDays,
+          dailyRateMinor: dailyRate,
+          baseSalaryMinor: employee.salaryMinor,
+          amountPaidMinor: payment.amountMinor,
+          paymentMethodLabel: SALARY_PAYMENT_METHOD_LABELS[payment.paymentMethod],
+          paymentTypeLabel: SALARY_PAYMENT_TYPE_LABELS[payment.paymentType],
+          note: payment.note,
+          recordedBy: payment.paidBy,
+        },
+        BUSINESS_INFO,
+      );
+      const printer = getReceiptPrinter();
+      await printer.print(lines);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to print payslip.');
+    } finally {
+      setPrintingId(null);
+    }
+  };
 
   const totals = useMemo(() => {
     if (!data || data.length === 0) {
@@ -76,7 +119,7 @@ export function SalaryPaymentHistory({ employeeId }: SalaryPaymentHistoryProps):
     try {
       await deleteMutation.mutateAsync({
         id: pendingDelete.id,
-        employeeId,
+        employeeId: employee.id,
       });
       setPendingDelete(null);
     } catch (err) {
@@ -136,6 +179,22 @@ export function SalaryPaymentHistory({ employeeId }: SalaryPaymentHistoryProps):
           disabled={deleteMutation.isPending}
         >
           <Icon name="trash" size={16} />
+        </Button>
+      ),
+    },
+    {
+      key: 'print',
+      header: '',
+      align: 'right',
+      render: (p) => (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => handlePrint(p)}
+          loading={printingId === p.id}
+          disabled={printingId !== null && printingId !== p.id}
+        >
+          Print
         </Button>
       ),
     },

@@ -95,6 +95,7 @@ export class EmployeesService {
       salaryFrequency: employee.salaryFrequency,
       joinDate: employee.joinDate,
       status: employee.status,
+      defaultPaymentMethod: employee.defaultPaymentMethod,
       phone: employee.phone,
       note: employee.note,
       createdAt: employee.createdAt,

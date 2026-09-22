@@ -11,6 +11,7 @@ import { PackageItem } from '../../src/packages/package-item.entity';
 import { StockMovement } from '../../src/inventory/stock-movement.entity';
 import { PayPeriod } from '../../src/payroll/pay-period.entity';
 import { Employee } from '../../src/employees/employee.entity';
+import { Attendance } from '../../src/attendance/attendance.entity';
 import { SalaryPayment } from '../../src/salary-payments/salary-payment.entity';
 import { Expense } from '../../src/expenses/expense.entity';
 import { Category } from '../../src/categories/category.entity';
@@ -30,6 +31,7 @@ const TEST_TABLES = [
   'users',
   'salary_payments',
   'pay_periods',
+  'attendance_records',
   'employees',
   'expenses',
   'categories',
@@ -80,6 +82,7 @@ export async function createTestDataSource(): Promise<DataSource> {
       Expense,
       Category,
       PayPeriod,
+      Attendance,
     ],
     synchronize: false,
     dropSchema: false,
@@ -121,6 +124,12 @@ export async function createTestDataSource(): Promise<DataSource> {
   ALTER TABLE salary_payments
     ADD CONSTRAINT fk_salary_payments_period
     FOREIGN KEY (pay_period_id) REFERENCES pay_periods(id) ON DELETE SET NULL
+`);
+
+  await dataSource.query(`
+  ALTER TABLE attendance_records
+    ADD CONSTRAINT fk_attendance_employee
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
 `);
   return dataSource;
 }

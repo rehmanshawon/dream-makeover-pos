@@ -17,7 +17,8 @@ import { Employee } from '../employees/employee.entity';
 //import { EmployeeStatus } from '../employees/employee-status.enum';
 import { SalaryPayment } from '../salary-payments/salary-payment.entity';
 import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
-import { PaymentMethod } from '../salary-payments/payment-method.enum';
+//import { PaymentMethod } from '../salary-payments/payment-method.enum';
+import { AttendanceService } from '../attendance/attendance.service';
 
 @Injectable()
 export class PayPeriodsService {
@@ -25,6 +26,7 @@ export class PayPeriodsService {
     @InjectRepository(PayPeriod)
     private readonly periodRepository: Repository<PayPeriod>,
     private readonly dataSource: DataSource,
+    private readonly attendanceService: AttendanceService,
   ) {}
 
   async findAll(): Promise<PayPeriodResponseDto[]> {
@@ -71,21 +73,23 @@ export class PayPeriodsService {
       paidByEmployee.set(p.employeeId, (paidByEmployee.get(p.employeeId) ?? 0) + p.amountMinor);
     }
 
-    return employees.map((e) => {
-      const payableMinor = this.computePayable(e, period);
-      const alreadyPaidMinor = paidByEmployee.get(e.id) ?? 0;
-      const remainingMinor = Math.max(0, payableMinor - alreadyPaidMinor);
-      return {
-        employeeId: e.id,
-        employeeName: e.fullName,
-        role: e.role,
-        monthlySalaryMinor: e.salaryMinor,
-        payableMinor,
-        alreadyPaidMinor,
-        remainingMinor,
-        hasExistingPayment: paidByEmployee.has(e.id),
-      };
-    });
+    return Promise.all(
+      employees.map(async (e) => {
+        const payableMinor = await this.computePayable(e, period);
+        const alreadyPaidMinor = paidByEmployee.get(e.id) ?? 0;
+        const remainingMinor = Math.max(0, payableMinor - alreadyPaidMinor);
+        return {
+          employeeId: e.id,
+          employeeName: e.fullName,
+          role: e.role,
+          monthlySalaryMinor: e.salaryMinor,
+          payableMinor,
+          alreadyPaidMinor,
+          remainingMinor,
+          hasExistingPayment: paidByEmployee.has(e.id),
+        };
+      }),
+    );
   }
 
   async create(dto: CreatePayPeriodDto): Promise<PayPeriodResponseDto> {
@@ -169,7 +173,7 @@ export class PayPeriodsService {
           skippedCount += 1;
           continue;
         }
-        const payableMinor = this.computePayable(e, period);
+        const payableMinor = await this.computePayable(e, period);
         if (payableMinor <= 0) {
           skippedCount += 1;
           continue;
@@ -180,7 +184,7 @@ export class PayPeriodsService {
           payPeriodId: periodId,
           amountMinor: payableMinor,
           paymentType: SalaryPaymentType.REGULAR,
-          paymentMethod: PaymentMethod.CASH,
+          paymentMethod: e.defaultPaymentMethod,
           paidOn: period.endDate,
           note: `Payroll run — ${period.name}`,
           paidBy: cashier,
@@ -218,7 +222,17 @@ export class PayPeriodsService {
    *   WEEKLY  → 7 days
    *   DAILY   → 1 day
    */
-  private computePayable(employee: Employee, period: PayPeriod): number {
+  /**
+   * Computes the amount payable to an employee for a period.
+   *
+   * If the period has attendance records for the employee, the payable
+   * is based on worked days (PRESENT = 1, HALF_DAY = 0.5, LEAVE = 1,
+   * ABSENT = 0).
+   *
+   * If no attendance is recorded, the payable falls back to calendar
+   * days from the employee's join date through the period end.
+   */
+  private async computePayable(employee: Employee, period: PayPeriod): Promise<number> {
     const frequencyDays =
       employee.salaryFrequency === 'MONTHLY' ? 30 : employee.salaryFrequency === 'WEEKLY' ? 7 : 1;
     const dailyRate = employee.salaryMinor / frequencyDays;
@@ -226,16 +240,32 @@ export class PayPeriodsService {
     const periodStart = new Date(period.startDate);
     const periodEnd = new Date(period.endDate);
     const joinDate = new Date(employee.joinDate);
-
     const effectiveStart = joinDate > periodStart ? joinDate : periodStart;
-    const effectiveEnd = periodEnd;
+    const effectiveStartStr = this.isoDate(effectiveStart);
+
+    const { workedDays, recordedDays } = await this.attendanceService.getWorkedDays(
+      employee.id,
+      effectiveStartStr,
+      period.endDate,
+    );
+
+    if (recordedDays > 0) {
+      return Math.round(dailyRate * workedDays);
+    }
 
     const msPerDay = 24 * 60 * 60 * 1000;
     const days = Math.max(
       0,
-      Math.floor((effectiveEnd.getTime() - effectiveStart.getTime()) / msPerDay) + 1,
+      Math.floor((periodEnd.getTime() - effectiveStart.getTime()) / msPerDay) + 1,
     );
     return Math.round(dailyRate * days);
+  }
+
+  private isoDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
   private async assertNoOverlap(

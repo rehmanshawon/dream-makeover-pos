@@ -129,7 +129,7 @@ export function EmployeeDetailPage(): JSX.Element {
             ) : undefined
           }
         >
-          <SalaryPaymentHistory employeeId={data.id} />
+          <SalaryPaymentHistory employee={data} />
         </Card>
       </div>
 

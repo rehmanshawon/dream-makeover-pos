@@ -1,0 +1,37 @@
+.attendance-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.attendance-editor__row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.attendance-editor__day {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+}
+
+.attendance-editor__control {
+  max-width: 220px;
+}
+
+.attendance-editor__center {
+  padding: var(--space-6);
+  display: flex;
+  justify-content: center;
+}
+
+.attendance-editor__error {
+  padding: var(--space-4);
+  background: var(--color-danger-soft);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+}
