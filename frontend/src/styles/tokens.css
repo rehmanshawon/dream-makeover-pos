@@ -51,8 +51,8 @@
 
   /* Typography — Segoe UI stack, Facebook-style */
   --font-sans:
-    'Segoe UI', 'Helvetica Neue', Helvetica, Arial, 'Noto Sans', 'Apple Color Emoji',
-    'Segoe UI Emoji', sans-serif;
+    system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, 'Noto Sans',
+    'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
   --font-serif: var(--font-sans); /* Facebook uses no serif */
   --font-mono: 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
 
@@ -64,6 +64,7 @@
   --font-size-lg: 18px;
   --font-size-xl: 22px;
   --font-size-2xl: 28px;
+  --font-size-sidebar: 19px;
   --font-size-3xl: 32px;
 
   /* Weights lean heavier than typical UIs */
