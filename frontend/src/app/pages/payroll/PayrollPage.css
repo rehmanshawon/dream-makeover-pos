@@ -1,0 +1,28 @@
+.payroll {
+  padding: var(--space-page);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.payroll__center {
+  padding: var(--space-8);
+  display: flex;
+  justify-content: center;
+}
+
+.payroll__error {
+  padding: var(--space-4);
+  background: var(--color-danger-soft);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+}
+
+.payroll__name {
+  font-weight: var(--font-weight-semibold);
+}
+
+.payroll__view-link {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-semibold);
+}

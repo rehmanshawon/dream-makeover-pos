@@ -15,7 +15,10 @@ import { CreateCategoriesTable1700000000013 } from './1700000000013-CreateCatego
 import { AddCategoryIdToProducts1700000000014 } from './1700000000014-AddCategoryIdToProducts';
 import { AddCategoryIdToServices1700000000015 } from './1700000000015-AddCategoryIdToServices';
 import { AddPackageItemType1700000000016 } from './1700000000016-AddPackageItemType';
+import { CreatePayPeriodsTable1700000000016 } from './1700000000016-CreatePayPeriodsTable';
+import { AddPayPeriodIdToSalaryPayments1700000000017 } from './1700000000017-AddPayPeriodIdToSalaryPayments';
 import { AddVatToTransactions1700000000017 } from './1700000000017-AddVatToTransactions';
+
 export const migrations = [
   CreateCustomersTable1700000000000,
   CreateProductsTable1700000000001,
@@ -35,4 +38,6 @@ export const migrations = [
   AddCategoryIdToServices1700000000015,
   AddPackageItemType1700000000016,
   AddVatToTransactions1700000000017,
+  CreatePayPeriodsTable1700000000016,
+  AddPayPeriodIdToSalaryPayments1700000000017,
 ];

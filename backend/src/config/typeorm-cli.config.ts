@@ -13,6 +13,7 @@ import { SalaryPayment } from '../salary-payments/salary-payment.entity';
 import { Expense } from '../expenses/expense.entity';
 import { Category } from '../categories/category.entity';
 import { migrations } from '../database/migrations';
+import { PayPeriod } from '../payroll/pay-period.entity';
 
 export default new DataSource({
   type: 'mysql',
@@ -29,6 +30,7 @@ export default new DataSource({
     TransactionItem,
     Package,
     PackageItem,
+    PayPeriod,
     StockMovement,
     Employee,
     SalaryPayment,

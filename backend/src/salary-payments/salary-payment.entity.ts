@@ -23,6 +23,10 @@ export class SalaryPayment {
   @Column({ name: 'employee_id', type: 'char', length: 36 })
   employeeId: string;
 
+  @Index('idx_salary_payments_period')
+  @Column({ name: 'pay_period_id', type: 'char', length: 36, nullable: true })
+  payPeriodId: string | null = null;
+
   @Column({
     name: 'amount_minor',
     type: 'bigint',

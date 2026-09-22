@@ -52,6 +52,13 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'admin',
     adminOnly: true,
   },
+  {
+    path: '/payroll',
+    label: 'Payroll',
+    icon: 'report', // reuse an existing icon until we have a dedicated one
+    group: 'admin',
+    adminOnly: true,
+  },
   { path: '/settings', label: 'Settings', icon: 'settings', group: 'admin', adminOnly: true },
 ];
 

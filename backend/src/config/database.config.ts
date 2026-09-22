@@ -14,6 +14,7 @@ import { SalaryPayment } from '../salary-payments/salary-payment.entity';
 import { Expense } from '../expenses/expense.entity';
 import { Category } from '../categories/category.entity';
 import { migrations } from '../database/migrations';
+import { PayPeriod } from '../payroll/pay-period.entity';
 const env = process.env;
 
 export const databaseConfig: TypeOrmModuleOptions = {
@@ -37,6 +38,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
     SalaryPayment,
     Expense,
     Category,
+    PayPeriod,
   ],
   migrations,
   migrationsRun: true,

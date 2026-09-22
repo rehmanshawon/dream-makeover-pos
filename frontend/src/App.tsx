@@ -22,6 +22,8 @@ import { StaffPage } from './app/pages/staff/StaffPage';
 import { EmployeeDetailPage } from './app/pages/staff/EmployeeDetailPage';
 import { ExpenditurePage } from './app/pages/expenditure/ExpenditurePage';
 import { SettingsPage } from './app/pages/settings/SettingsPage';
+import { PayPeriodDetailPage } from './app/pages/payroll/PayPeriodDetailPage';
+import { PayrollPage } from './app/pages/payroll/PayrollPage';
 
 /**
  * Top-level application. Provides auth context and routing.
@@ -111,6 +113,22 @@ export function App(): JSX.Element {
               element={
                 <AdminRoute>
                   <ExpenditurePage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="payroll"
+              element={
+                <AdminRoute>
+                  <PayrollPage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="payroll/:id"
+              element={
+                <AdminRoute>
+                  <PayPeriodDetailPage />
                 </AdminRoute>
               }
             />

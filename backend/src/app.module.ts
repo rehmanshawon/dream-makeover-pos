@@ -15,6 +15,8 @@ import { InventoryModule } from './inventory/inventory.module';
 import { EmployeesModule } from './employees/employees.module';
 import { SalaryPaymentsModule } from './salary-payments/salary-payments.module';
 import { ExpensesModule } from './expenses/expenses.module';
+import { PayrollModule } from './payroll/payroll.module';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot(databaseConfig),
@@ -32,6 +34,7 @@ import { ExpensesModule } from './expenses/expenses.module';
     ExpensesModule,
     ReportsModule,
     CategoriesModule,
+    PayrollModule,
   ],
 })
 export class AppModule {}

@@ -8,6 +8,7 @@ export class SalaryPaymentResponseDto {
   paymentType: SalaryPaymentType;
   paymentMethod: PaymentMethod;
   paidOn: string;
+  payPeriodId: string | null;
   note: string | null;
   paidBy: string;
   createdAt: Date;

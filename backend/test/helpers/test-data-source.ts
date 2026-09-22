@@ -9,6 +9,7 @@ import { User } from '../../src/users/user.entity';
 import { Package } from '../../src/packages/package.entity';
 import { PackageItem } from '../../src/packages/package-item.entity';
 import { StockMovement } from '../../src/inventory/stock-movement.entity';
+import { PayPeriod } from '../../src/payroll/pay-period.entity';
 import { Employee } from '../../src/employees/employee.entity';
 import { SalaryPayment } from '../../src/salary-payments/salary-payment.entity';
 import { Expense } from '../../src/expenses/expense.entity';
@@ -28,6 +29,7 @@ const TEST_TABLES = [
   'customers',
   'users',
   'salary_payments',
+  'pay_periods',
   'employees',
   'expenses',
   'categories',
@@ -77,6 +79,7 @@ export async function createTestDataSource(): Promise<DataSource> {
       SalaryPayment,
       Expense,
       Category,
+      PayPeriod,
     ],
     synchronize: false,
     dropSchema: false,
@@ -112,6 +115,12 @@ export async function createTestDataSource(): Promise<DataSource> {
     OR
     (item_kind = 'PRODUCT' AND product_id IS NOT NULL AND service_id IS NULL)
   )
+`);
+
+  await dataSource.query(`
+  ALTER TABLE salary_payments
+    ADD CONSTRAINT fk_salary_payments_period
+    FOREIGN KEY (pay_period_id) REFERENCES pay_periods(id) ON DELETE SET NULL
 `);
   return dataSource;
 }
