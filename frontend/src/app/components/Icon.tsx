@@ -1,24 +1,21 @@
-import type { JSX, SVGProps } from 'react';
-import {
-  IconDashboard,
-  IconSaree,
-  IconSettings,
-  IconPos,
-  IconSparkles,
-  IconLipstick,
-  IconThreePiece,
-  IconInventory,
-  IconPackage,
-  IconCustomers,
-  IconReport,
-  IconAccounts,
-  IconStaff,
-  IconExpenditure,
-  IconEdit,
-  IconPower,
-  IconTrash,
-} from './PosIcons';
-export type IconName =
+import type { JSX, ImgHTMLAttributes, SVGProps } from 'react';
+
+import dashboardIcon from '../../assets/icons/dashboard.png';
+import posIcon from '../../assets/icons/pos.png';
+import sparklesIcon from '../../assets/icons/sparkles.png';
+import lipstickIcon from '../../assets/icons/lipstick.png';
+import sareeIcon from '../../assets/icons/saree.png';
+import threePieceIcon from '../../assets/icons/three-piece.png';
+import inventoryIcon from '../../assets/icons/inventory.png';
+import packageIcon from '../../assets/icons/package.png';
+import customersIcon from '../../assets/icons/customers.png';
+import reportIcon from '../../assets/icons/report.png';
+import accountsIcon from '../../assets/icons/accounts.png';
+import staffIcon from '../../assets/icons/staff.png';
+import expenditureIcon from '../../assets/icons/expenditure.png';
+import settingsIcon from '../../assets/icons/settings.png';
+
+export type IllustrationIconName =
   | 'dashboard'
   | 'pos'
   | 'sparkles'
@@ -32,25 +29,85 @@ export type IconName =
   | 'accounts'
   | 'staff'
   | 'expenditure'
-  | 'settings'
-  | 'edit'
-  | 'power'
-  | 'trash';
+  | 'settings';
 
-interface IconProps extends SVGProps<SVGSVGElement> {
-  name: IconName;
-  size?: number;
+export type UtilityIconName = 'edit' | 'power' | 'trash';
+
+export type IconName = IllustrationIconName | UtilityIconName;
+
+const ILLUSTRATION_SRC: Record<IllustrationIconName, string> = {
+  dashboard: dashboardIcon,
+  pos: posIcon,
+  sparkles: sparklesIcon,
+  lipstick: lipstickIcon,
+  saree: sareeIcon,
+  'three-piece': threePieceIcon,
+  inventory: inventoryIcon,
+  package: packageIcon,
+  customers: customersIcon,
+  report: reportIcon,
+  accounts: accountsIcon,
+  staff: staffIcon,
+  expenditure: expenditureIcon,
+  settings: settingsIcon,
+};
+
+const UTILITY_ICONS: UtilityIconName[] = ['edit', 'power', 'trash'];
+
+function isUtilityIcon(name: IconName): name is UtilityIconName {
+  return (UTILITY_ICONS as string[]).includes(name);
 }
 
+type IconProps =
+  | ({ name: IllustrationIconName } & Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
+        size?: number;
+      })
+  | ({ name: UtilityIconName } & SVGProps<SVGSVGElement> & { size?: number });
+
 /**
- * Renders a small inline SVG icon.
+ * Renders a full-color illustration (PNG) or a utility SVG icon.
  *
- * Icons use stroke="currentColor" so they inherit the text color of their
- * parent. This makes them themeable without JavaScript.
- *
- * Size defaults to 18px. Callers can override via the size prop.
+ * Illustrations use a fixed palette and are not tinted by CSS.
+ * Utility icons inherit `currentColor` so they can be colored to match
+ * their surroundings (e.g., a red delete button).
  */
-export function Icon({ name, size = 18, ...rest }: IconProps): JSX.Element {
+export function Icon(props: IconProps): JSX.Element {
+  const { name, size = 24 } = props;
+
+  if (isUtilityIcon(name)) {
+    const { name: _n, size: _s, ...rest } = props;
+    return renderUtilityIcon(name, size, rest as SVGProps<SVGSVGElement>);
+  }
+
+  const {
+    name: _n,
+    size: _s,
+    alt = '',
+    ...rest
+  } = props as {
+    name: IllustrationIconName;
+    size?: number;
+    alt?: string;
+  } & Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'>;
+
+  return (
+    <img
+      src={ILLUSTRATION_SRC[name]}
+      alt={alt}
+      width={size}
+      height={size}
+      draggable={false}
+      aria-hidden={alt === '' ? true : undefined}
+      {...rest}
+    />
+  );
+}
+
+function renderUtilityIcon(
+  name: UtilityIconName,
+  size: number,
+  rest: SVGProps<SVGSVGElement>,
+): JSX.Element {
   const common: SVGProps<SVGSVGElement> = {
     width: size,
     height: size,
@@ -66,42 +123,24 @@ export function Icon({ name, size = 18, ...rest }: IconProps): JSX.Element {
   };
 
   switch (name) {
-    case 'dashboard':
-      return <IconDashboard size={size} {...rest} />;
-    case 'pos':
-      return <IconPos size={size} {...rest} />;
-    case 'sparkles':
-      return <IconSparkles size={size} {...rest} />;
-    case 'lipstick':
-      return <IconLipstick size={size} {...rest} />;
-    case 'saree':
-      return <IconSaree size={size} {...rest} />;
-
-    case 'three-piece':
-      return <IconThreePiece size={size} {...rest} />;
-    case 'inventory':
-      return <IconInventory size={size} {...rest} />;
-    case 'package':
-      return <IconPackage size={size} {...rest} />;
-    case 'customers':
-      return <IconCustomers size={size} {...rest} />;
-    case 'report':
-      return <IconReport size={size} {...rest} />;
-    case 'accounts':
-      return <IconAccounts size={size} {...rest} />;
-    case 'staff':
-      return <IconStaff size={size} {...rest} />;
-    case 'expenditure':
-      return <IconExpenditure size={size} {...rest} />;
-    case 'settings':
-      return <IconSettings size={size} {...rest} />;
     case 'edit':
-      return <IconEdit size={size} {...rest} />;
+      return (
+        <svg {...common}>
+          <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      );
     case 'power':
-      return <IconPower size={size} {...rest} />;
+      return (
+        <svg {...common}>
+          <path d="M12 3v9" />
+          <path d="M18.36 6.64a9 9 0 11-12.72 0" />
+        </svg>
+      );
     case 'trash':
-      return <IconTrash size={size} {...rest} />;
-    default:
-      return <svg {...common} />;
+      return (
+        <svg {...common}>
+          <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      );
   }
 }

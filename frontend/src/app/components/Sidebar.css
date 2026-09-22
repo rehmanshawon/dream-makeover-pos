@@ -105,15 +105,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
 }
 
 .sidebar__link-icon img,
 .sidebar__link-icon svg {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   display: block;
 }
 

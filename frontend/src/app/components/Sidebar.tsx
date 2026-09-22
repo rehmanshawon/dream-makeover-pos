@@ -161,7 +161,7 @@ export function Sidebar(): JSX.Element {
                     }
                   >
                     <span className="sidebar__link-icon">
-                      <Icon name={item.icon} size={28} />
+                      <Icon name={item.icon} size={36} />
                     </span>
                     <span className="sidebar__link-label">{item.label}</span>
                   </NavLink>
@@ -188,7 +188,7 @@ export function Sidebar(): JSX.Element {
                     }
                   >
                     <span className="sidebar__link-icon">
-                      <Icon name={item.icon} size={28} />
+                      <Icon name={item.icon} size={36} />
                     </span>
                     <span className="sidebar__link-label">{item.label}</span>
                   </NavLink>
@@ -213,7 +213,7 @@ export function Sidebar(): JSX.Element {
                     }
                   >
                     <span className="sidebar__link-icon">
-                      <Icon name={item.icon} size={28} />
+                      <Icon name={item.icon} size={36} />
                     </span>
                     <span className="sidebar__link-label">{item.label}</span>
                   </NavLink>
