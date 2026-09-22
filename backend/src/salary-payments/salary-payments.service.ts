@@ -102,6 +102,7 @@ export class SalaryPaymentsService {
     return {
       id: payment.id,
       employeeId: payment.employeeId,
+      payPeriodId: payment.payPeriodId,
       amountMinor: payment.amountMinor,
       paymentType: payment.paymentType,
       paymentMethod: payment.paymentMethod,
