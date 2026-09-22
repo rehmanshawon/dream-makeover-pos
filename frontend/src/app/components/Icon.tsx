@@ -13,6 +13,7 @@ import reportIcon from '../../assets/icons/report.png';
 import accountsIcon from '../../assets/icons/accounts.png';
 import staffIcon from '../../assets/icons/staff.png';
 import expenditureIcon from '../../assets/icons/expenditure.png';
+import payrollIcon from '../../assets/icons/payroll.png';
 import settingsIcon from '../../assets/icons/settings.png';
 
 export type IllustrationIconName =
@@ -29,6 +30,7 @@ export type IllustrationIconName =
   | 'accounts'
   | 'staff'
   | 'expenditure'
+  | 'payroll'
   | 'settings';
 
 export type UtilityIconName = 'edit' | 'power' | 'trash';
@@ -49,6 +51,7 @@ const ILLUSTRATION_SRC: Record<IllustrationIconName, string> = {
   accounts: accountsIcon,
   staff: staffIcon,
   expenditure: expenditureIcon,
+  payroll: payrollIcon,
   settings: settingsIcon,
 };
 
