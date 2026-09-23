@@ -1,5 +1,6 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Delete,
   Get,
@@ -7,8 +8,15 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'node:path';
+import { mkdirSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { EmployeesService } from './employees.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
@@ -44,6 +52,33 @@ export class EmployeesController {
   @Get(':id')
   async findById(@Param('id') id: string): Promise<EmployeeResponseDto> {
     return this.employeesService.findById(id);
+  }
+
+  @Post(':id/photo')
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      limits: { fileSize: 5 * 1024 * 1024 },
+      storage: diskStorage({
+        destination: (_req, _file, callback) => {
+          const directory = join(process.cwd(), 'uploads', 'employees');
+          mkdirSync(directory, { recursive: true });
+          callback(null, directory);
+        },
+        filename: (_req, file, callback) => {
+          callback(null, `${randomUUID()}${extname(file.originalname).toLowerCase()}`);
+        },
+      }),
+      fileFilter: (_req, file, callback) => {
+        callback(null, /^image\/(jpeg|png|webp)$/.test(file.mimetype));
+      },
+    }),
+  )
+  async uploadPhoto(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ): Promise<EmployeeResponseDto> {
+    if (!file) throw new BadRequestException('Photo must be a JPEG, PNG, or WebP image.');
+    return this.employeesService.updatePhoto(id, `/uploads/employees/${file.filename}`);
   }
 
   @Patch(':id')

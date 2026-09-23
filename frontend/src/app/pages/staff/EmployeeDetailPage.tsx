@@ -53,6 +53,10 @@ export function EmployeeDetailPage(): JSX.Element {
 
   if (!data) return <></>;
 
+  const photoSrc = data.photoUrl
+    ? `${(import.meta.env.VITE_API_BASE_URL as string).replace(/\/+$/, '')}${data.photoUrl}`
+    : null;
+
   return (
     <div className="employee-detail">
       <div className="employee-detail__breadcrumb">
@@ -85,6 +89,19 @@ export function EmployeeDetailPage(): JSX.Element {
             </div>
           }
         >
+          <div className="employee-detail__photo-frame">
+            {photoSrc ? (
+              <img
+                src={photoSrc}
+                alt={`${data.fullName} photograph`}
+                className="employee-detail__photo"
+              />
+            ) : (
+              <div className="employee-detail__photo-placeholder" aria-label="No photograph">
+                {data.fullName.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
           <dl className="employee-detail__facts">
             <div className="employee-detail__fact">
               <dt>Salary</dt>

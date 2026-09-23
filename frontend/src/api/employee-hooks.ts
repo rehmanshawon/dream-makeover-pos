@@ -73,3 +73,19 @@ export function useDeactivateEmployee(): UseMutationResult<Employee, Error, stri
     },
   });
 }
+
+export function useUploadEmployeePhoto(): UseMutationResult<
+  Employee,
+  Error,
+  { id: string; photo: File }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, photo }) => employeesApi.uploadPhoto(id, photo),
+    onSuccess: (updated) => {
+      void queryClient.invalidateQueries({ queryKey: employeeKeys.all });
+      queryClient.setQueryData(employeeKeys.detail(updated.id), updated);
+    },
+  });
+}

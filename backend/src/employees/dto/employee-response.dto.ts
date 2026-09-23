@@ -13,6 +13,7 @@ export class EmployeeResponseDto {
   status: EmployeeStatus;
   phone: string | null;
   note: string | null;
+  photoUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

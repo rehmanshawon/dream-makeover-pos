@@ -11,6 +11,7 @@ export interface Employee {
   status: EmployeeStatus;
   phone: string | null;
   note: string | null;
+  photoUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }

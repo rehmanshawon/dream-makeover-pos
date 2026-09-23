@@ -47,6 +47,7 @@ describe('EmployeeDetailPage', () => {
             status: 'ACTIVE',
             phone: '01711111111',
             note: 'Star performer',
+            photoUrl: '/uploads/employees/rina.webp',
             createdAt: '2025-06-15T00:00:00.000Z',
             updatedAt: '2025-06-15T00:00:00.000Z',
           }),
@@ -60,6 +61,10 @@ describe('EmployeeDetailPage', () => {
     expect(screen.getByText(/35,000\.00/)).toBeInTheDocument();
     expect(screen.getByText('01711111111')).toBeInTheDocument();
     expect(screen.getByText('Star performer')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Rina Akter photograph' })).toHaveAttribute(
+      'src',
+      'http://test.local/uploads/employees/rina.webp',
+    );
   });
 
   it('shows a not-found message on 404', async () => {

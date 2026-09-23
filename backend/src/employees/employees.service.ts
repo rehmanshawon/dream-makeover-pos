@@ -65,6 +65,15 @@ export class EmployeesService {
     return this.toResponseDto(saved);
   }
 
+  async updatePhoto(id: string, photoUrl: string): Promise<EmployeeResponseDto> {
+    const employee = await this.employeeRepository.findOne({ where: { id } });
+    if (!employee) throw new NotFoundException('Employee not found');
+
+    employee.photoUrl = photoUrl;
+    const saved = await this.employeeRepository.save(employee);
+    return this.toResponseDto(saved);
+  }
+
   /**
    * Soft-deletes an employee by marking them INACTIVE.
    *
@@ -98,6 +107,7 @@ export class EmployeesService {
       defaultPaymentMethod: employee.defaultPaymentMethod,
       phone: employee.phone,
       note: employee.note,
+      photoUrl: employee.photoUrl,
       createdAt: employee.createdAt,
       updatedAt: employee.updatedAt,
     };

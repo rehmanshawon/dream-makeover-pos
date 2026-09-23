@@ -1,5 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'node:path';
+import { mkdirSync } from 'node:fs';
 import { AppModule } from './app.module';
 
 /**
@@ -21,7 +24,9 @@ function parseAllowedOrigins(raw: string | undefined): string[] {
 }
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  mkdirSync(join(process.cwd(), 'uploads', 'employees'), { recursive: true });
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' });
 
   const allowedOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
 

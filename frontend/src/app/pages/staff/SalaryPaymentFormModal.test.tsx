@@ -23,6 +23,7 @@ const EMPLOYEE: Employee = {
   status: 'ACTIVE',
   phone: '01711111111',
   note: null,
+  photoUrl: null,
   createdAt: '2025-06-15T00:00:00.000Z',
   updatedAt: '2025-06-15T00:00:00.000Z',
 };

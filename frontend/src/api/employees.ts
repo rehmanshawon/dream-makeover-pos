@@ -27,4 +27,10 @@ export const employeesApi = {
   deactivate(id: string): Promise<Employee> {
     return api.delete<Employee>(`/employees/${id}`);
   },
+
+  uploadPhoto(id: string, photo: File): Promise<Employee> {
+    const formData = new FormData();
+    formData.append('photo', photo);
+    return api.post<Employee>(`/employees/${id}/photo`, formData, { formData: true });
+  },
 };

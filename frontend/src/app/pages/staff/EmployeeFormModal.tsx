@@ -1,6 +1,10 @@
 import { useEffect, useState, type FormEvent, type JSX } from 'react';
 import { ApiError } from '../../../api/api-error';
-import { useCreateEmployee, useUpdateEmployee } from '../../../api/employee-hooks';
+import {
+  useCreateEmployee,
+  useUpdateEmployee,
+  useUploadEmployeePhoto,
+} from '../../../api/employee-hooks';
 import { Button } from '../../../ui/Button';
 import { Input } from '../../../ui/Input';
 import { Modal } from '../../../ui/Modal';
@@ -31,6 +35,7 @@ interface FormState {
   salaryTaka: string;
   salaryFrequency: SalaryFrequency;
   note: string;
+  photo: File | null;
 }
 
 interface FormErrors {
@@ -49,6 +54,7 @@ function emptyForm(): FormState {
     salaryTaka: '',
     salaryFrequency: 'MONTHLY',
     note: '',
+    photo: null,
   };
 }
 
@@ -61,6 +67,7 @@ function formFromEmployee(employee: Employee): FormState {
     salaryTaka: minorToTakaInput(employee.salaryMinor),
     salaryFrequency: employee.salaryFrequency,
     note: employee.note ?? '',
+    photo: null,
   };
 }
 
@@ -78,6 +85,7 @@ export function EmployeeFormModal({
 
   const createMutation = useCreateEmployee();
   const updateMutation = useUpdateEmployee();
+  const photoMutation = useUploadEmployeePhoto();
 
   useEffect(() => {
     if (!open) return;
@@ -133,6 +141,9 @@ export function EmployeeFormModal({
             note,
           },
         });
+        if (form.photo) {
+          await photoMutation.mutateAsync({ id: updated.id, photo: form.photo });
+        }
         onSaved?.(updated.id);
       } else {
         const created = await createMutation.mutateAsync({
@@ -145,6 +156,9 @@ export function EmployeeFormModal({
           ...(note ? { note } : {}),
           status: 'ACTIVE',
         });
+        if (form.photo) {
+          await photoMutation.mutateAsync({ id: created.id, photo: form.photo });
+        }
         onSaved?.(created.id);
       }
       onClose();
@@ -157,7 +171,8 @@ export function EmployeeFormModal({
     }
   };
 
-  const submitting = isEdit ? updateMutation.isPending : createMutation.isPending;
+  const submitting =
+    (isEdit ? updateMutation.isPending : createMutation.isPending) || photoMutation.isPending;
 
   return (
     <Modal
@@ -226,6 +241,20 @@ export function EmployeeFormModal({
             }
             disabled={submitting}
           />
+
+          <div className="employee-form__photo-field">
+            <label htmlFor="employee-photo" className="employee-form__photo-label">
+              Photograph (optional)
+            </label>
+            <input
+              id="employee-photo"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => setForm((s) => ({ ...s, photo: e.target.files?.[0] ?? null }))}
+              disabled={submitting}
+            />
+            <span className="employee-form__photo-hint">JPEG, PNG, or WebP up to 5 MB</span>
+          </div>
         </div>
 
         <Textarea

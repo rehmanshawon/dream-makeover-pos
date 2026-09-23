@@ -72,6 +72,9 @@ export class Employee {
   @Column({ type: 'text', nullable: true })
   note: string | null = null;
 
+  @Column({ name: 'photo_url', type: 'varchar', length: 500, nullable: true })
+  photoUrl: string | null = null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

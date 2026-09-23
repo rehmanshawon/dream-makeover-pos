@@ -15,6 +15,7 @@ interface RequestOptions {
    * Additional headers to merge.
    */
   headers?: Record<string, string>;
+  formData?: boolean;
 }
 
 function baseUrl(): string {
@@ -31,7 +32,7 @@ function buildHeaders(options: RequestOptions, hasBody: boolean): HeadersInit {
     ...(options.headers ?? {}),
   };
 
-  if (hasBody) {
+  if (hasBody && !options.formData) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -91,7 +92,7 @@ async function request<T>(
       headers: buildHeaders(options, hasBody),
     };
     if (hasBody) {
-      init.body = JSON.stringify(body);
+      init.body = options.formData ? (body as BodyInit) : JSON.stringify(body);
     }
     if (options.signal) {
       init.signal = options.signal;
