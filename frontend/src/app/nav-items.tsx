@@ -16,7 +16,7 @@ export const NAV_ITEMS: NavItem[] = [
 
   {
     path: '/stock',
-    label: 'Stock / Inventory',
+    label: 'Inventory',
     icon: 'inventory',
     group: 'operations',
     adminOnly: false,
@@ -39,7 +39,7 @@ export const NAV_ITEMS: NavItem[] = [
 
   {
     path: '/accounts',
-    label: 'Accounts / Financial Summary',
+    label: 'Accounts',
     icon: 'accounts',
     group: 'admin',
     adminOnly: true,
@@ -47,7 +47,7 @@ export const NAV_ITEMS: NavItem[] = [
   { path: '/staff', label: 'Staff', icon: 'staff', group: 'admin', adminOnly: true },
   {
     path: '/expenditure',
-    label: 'Office / Shop Expenditure',
+    label: 'Expenditure',
     icon: 'expenditure',
     group: 'admin',
     adminOnly: true,

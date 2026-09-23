@@ -10,8 +10,22 @@ import type { SalaryPayment, CreateSalaryPaymentRequest } from '../types/salary-
 
 export const salaryPaymentKeys = {
   all: ['salary-payments'] as const,
+  forPeriod: (payPeriodId: string) => [...salaryPaymentKeys.all, 'period', payPeriodId] as const,
   forEmployee: (employeeId: string) => [...salaryPaymentKeys.all, 'employee', employeeId] as const,
 };
+
+export function useSalaryPayments(
+  payPeriodId: string | undefined,
+): UseQueryResult<SalaryPayment[], Error> {
+  return useQuery({
+    queryKey: salaryPaymentKeys.forPeriod(payPeriodId ?? ''),
+    queryFn: async () => {
+      const payments = await salaryPaymentsApi.list();
+      return payments.filter((payment) => payment.payPeriodId === payPeriodId);
+    },
+    enabled: Boolean(payPeriodId),
+  });
+}
 
 export function useEmployeeSalaryPayments(
   employeeId: string | undefined,

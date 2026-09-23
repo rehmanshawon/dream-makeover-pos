@@ -4,7 +4,7 @@ import type {
   PayableEmployee,
   RunPayrollResult,
   CreatePayPeriodRequest,
-  UpdatePayPeriodRequest,
+  NextReminder,
 } from '../types/payroll';
 
 export const payrollApi = {
@@ -24,15 +24,21 @@ export const payrollApi = {
     return api.post<PayPeriod>('/pay-periods', payload);
   },
 
-  updatePeriod(id: string, payload: UpdatePayPeriodRequest): Promise<PayPeriod> {
-    return api.patch<PayPeriod>(`/pay-periods/${id}`, payload);
-  },
-
   closePeriod(id: string): Promise<PayPeriod> {
     return api.post<PayPeriod>(`/pay-periods/${id}/close`, {});
   },
 
   runPayroll(id: string): Promise<RunPayrollResult> {
     return api.post<RunPayrollResult>(`/pay-periods/${id}/run`, {});
+  },
+
+  getNextReminder(): Promise<NextReminder> {
+    return api.get<NextReminder>('/pay-periods/next-reminder');
+  },
+
+  deletePayments(ids: string[]): Promise<{ deletedCount: number }> {
+    return api.post<{ deletedCount: number }>('/pay-periods/payments/delete', {
+      ids,
+    });
   },
 };

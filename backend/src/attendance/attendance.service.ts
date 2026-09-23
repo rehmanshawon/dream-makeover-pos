@@ -143,6 +143,53 @@ export class AttendanceService {
     return { workedDays, recordedDays: records.length };
   }
 
+  async getMonthlySummary(
+    employeeId: string,
+    year: number,
+    month: number,
+  ): Promise<{
+    present: number;
+    absent: number;
+    halfDay: number;
+    leave: number;
+    notRecorded: number;
+    totalDaysInMonth: number;
+  }> {
+    const employee = await this.employeeRepository.findOne({
+      where: { id: employeeId },
+    });
+    if (!employee) throw new NotFoundException('Employee not found');
+
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const from = `${year}-${String(month).padStart(2, '0')}-01`;
+    const to = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+
+    const records = await this.attendanceRepository.find({
+      where: { employeeId, date: Between(from, to) },
+    });
+
+    let present = 0;
+    let absent = 0;
+    let halfDay = 0;
+    let leave = 0;
+
+    for (const r of records) {
+      if (r.status === AttendanceStatus.PRESENT) present += 1;
+      else if (r.status === AttendanceStatus.ABSENT) absent += 1;
+      else if (r.status === AttendanceStatus.HALF_DAY) halfDay += 1;
+      else if (r.status === AttendanceStatus.LEAVE) leave += 1;
+    }
+
+    return {
+      present,
+      absent,
+      halfDay,
+      leave,
+      notRecorded: daysInMonth - records.length,
+      totalDaysInMonth: daysInMonth,
+    };
+  }
+
   private toResponse(record: Attendance): AttendanceResponseDto {
     return {
       id: record.id,

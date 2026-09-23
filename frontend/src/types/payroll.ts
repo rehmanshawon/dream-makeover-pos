@@ -2,6 +2,8 @@ export type PayPeriodStatus = 'OPEN' | 'CLOSED';
 
 export interface PayPeriod {
   id: string;
+  year: number;
+  month: number;
   name: string;
   startDate: string;
   endDate: string;
@@ -10,6 +12,17 @@ export interface PayPeriod {
   closedBy: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreatePayPeriodRequest {
+  year: number;
+  month: number;
+}
+
+export interface NextReminder {
+  shouldRemind: boolean;
+  nextMonth: { year: number; month: number; name: string };
+  hasNextPeriod: boolean;
 }
 
 export interface PayableEmployee {
@@ -35,11 +48,3 @@ export interface RunPayrollResult {
     amountMinor: number;
   }>;
 }
-
-export interface CreatePayPeriodRequest {
-  name: string;
-  startDate: string;
-  endDate: string;
-}
-
-export interface UpdatePayPeriodRequest extends CreatePayPeriodRequest {}

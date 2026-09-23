@@ -67,3 +67,25 @@ export function useDeleteAttendance(): UseMutationResult<
     },
   });
 }
+
+export function useAttendanceSummary(
+  employeeId: string | undefined,
+  year: number,
+  month: number,
+): UseQueryResult<
+  {
+    present: number;
+    absent: number;
+    halfDay: number;
+    leave: number;
+    notRecorded: number;
+    totalDaysInMonth: number;
+  },
+  Error
+> {
+  return useQuery({
+    queryKey: [...attendanceKeys.all, 'summary', employeeId ?? '', year, month],
+    queryFn: () => attendanceApi.summary(employeeId as string, year, month),
+    enabled: Boolean(employeeId),
+  });
+}

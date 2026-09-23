@@ -16,6 +16,8 @@ const period = (overrides: Partial<PayPeriod> = {}): PayPeriod =>
   ({
     id: 'period-1',
     name: 'January 2026',
+    year: 2026,
+    month: 1,
     startDate: '2026-01-01',
     endDate: '2026-01-31',
     status: PayPeriodStatus.OPEN,
@@ -80,22 +82,23 @@ describe('PayPeriodsService', () => {
     const result = await service.findAll();
 
     expect(periodRepo.find).toHaveBeenCalledWith({ order: { startDate: 'DESC' } });
-    expect(result).toEqual(records);
+    expect(result).toEqual(records.map(({ year: _year, month: _month, ...record }) => record));
   });
 
-  it('creates an open period', async () => {
-    const created = period();
+  it('creates an open period from year and month', async () => {
+    const created = period({ year: 2026, month: 1 });
     periodRepo.findOne!.mockResolvedValue(null);
     periodRepo.create!.mockReturnValue(created);
     periodRepo.save!.mockResolvedValue(created);
 
     const result = await service.create({
-      name: 'January 2026',
-      startDate: '2026-01-01',
-      endDate: '2026-01-31',
+      year: 2026,
+      month: 1,
     });
 
     expect(periodRepo.create).toHaveBeenCalledWith({
+      year: 2026,
+      month: 1,
       name: 'January 2026',
       startDate: '2026-01-01',
       endDate: '2026-01-31',
@@ -104,35 +107,73 @@ describe('PayPeriodsService', () => {
     expect(result.status).toBe(PayPeriodStatus.OPEN);
   });
 
-  it('rejects reversed and overlapping periods', async () => {
-    await expect(
-      service.create({ name: 'Invalid', startDate: '2026-02-01', endDate: '2026-01-01' }),
-    ).rejects.toThrow(BadRequestException);
+  it('allows past, current, and next month periods', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-09-23T12:00:00Z'));
+    periodRepo.findOne!.mockResolvedValue(null);
+    periodRepo.create!.mockImplementation((value) => value as PayPeriod);
+    periodRepo.save!.mockImplementation(async (value) => value as PayPeriod);
 
-    periodRepo.findOne!.mockResolvedValue(period({ name: 'Existing period' }));
-    await expect(
-      service.create({ name: 'Overlap', startDate: '2026-01-15', endDate: '2026-02-15' }),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.create({ year: 2026, month: 8 })).resolves.toMatchObject({
+      name: 'August 2026',
+      startDate: '2026-08-01',
+      endDate: '2026-08-31',
+    });
+    await expect(service.create({ year: 2026, month: 9 })).resolves.toMatchObject({
+      name: 'September 2026',
+      startDate: '2026-09-01',
+      endDate: '2026-09-30',
+    });
+    await expect(service.create({ year: 2026, month: 10 })).resolves.toMatchObject({
+      name: 'October 2026',
+      startDate: '2026-10-01',
+      endDate: '2026-10-31',
+    });
+
+    jest.useRealTimers();
   });
 
-  it('rejects missing and closed periods when updating', async () => {
+  it('rejects periods more than one month ahead and duplicate periods', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-09-23T12:00:00Z'));
     periodRepo.findOne!.mockResolvedValue(null);
-    await expect(
-      service.update('missing', {
-        name: 'Updated',
-        startDate: '2026-01-01',
-        endDate: '2026-01-31',
-      }),
-    ).rejects.toThrow(NotFoundException);
+
+    await expect(service.create({ year: 2026, month: 11 })).rejects.toThrow(BadRequestException);
+
+    periodRepo.findOne!.mockResolvedValue(period({ year: 2026, month: 10 }));
+    await expect(service.create({ year: 2026, month: 10 })).rejects.toThrow(ConflictException);
+
+    jest.useRealTimers();
+  });
+
+  it('rejects invalid period input', async () => {
+    await expect(service.create({ year: 2026, month: 13 })).rejects.toThrow(BadRequestException);
+  });
+
+  it('returns the next-period reminder state', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-09-25T12:00:00Z'));
+    periodRepo.findOne!.mockResolvedValue(null);
+
+    await expect(service.getNextReminder()).resolves.toEqual({
+      shouldRemind: true,
+      nextMonth: { year: 2026, month: 10, name: 'October 2026' },
+      hasNextPeriod: false,
+    });
+
+    periodRepo.findOne!.mockResolvedValue(period({ year: 2026, month: 10 }));
+    await expect(service.getNextReminder()).resolves.toEqual({
+      shouldRemind: false,
+      nextMonth: { year: 2026, month: 10, name: 'October 2026' },
+      hasNextPeriod: true,
+    });
+
+    jest.useRealTimers();
+  });
+
+  it('rejects missing periods and closing an already closed period', async () => {
+    periodRepo.findOne!.mockResolvedValue(null);
+    await expect(service.findById('missing')).rejects.toThrow(NotFoundException);
 
     periodRepo.findOne!.mockResolvedValue(period({ status: PayPeriodStatus.CLOSED }));
-    await expect(
-      service.update('period-1', {
-        name: 'Updated',
-        startDate: '2026-01-01',
-        endDate: '2026-01-31',
-      }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.close('period-1', 'admin')).rejects.toThrow(BadRequestException);
   });
 
   it('closes an open period with audit information', async () => {

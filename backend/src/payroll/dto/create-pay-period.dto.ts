@@ -1,16 +1,13 @@
-import { IsNotEmpty, IsString, Length, Matches } from 'class-validator';
+import { IsInt, Max, Min } from 'class-validator';
 
 export class CreatePayPeriodDto {
-  @IsString()
-  @IsNotEmpty()
-  @Length(2, 150)
-  name: string;
+  @IsInt()
+  @Min(2000)
+  @Max(2100)
+  year: number;
 
-  @IsString()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/)
-  startDate: string;
-
-  @IsString()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/)
-  endDate: string;
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  month: number;
 }

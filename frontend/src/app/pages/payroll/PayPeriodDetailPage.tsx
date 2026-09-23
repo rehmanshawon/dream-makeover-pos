@@ -5,7 +5,9 @@ import {
   usePayables,
   useClosePayPeriod,
   useRunPayroll,
+  useDeletePayments,
 } from '../../../api/payroll-hooks';
+import { useDeleteSalaryPayment, useSalaryPayments } from '../../../api/salary-payment-hooks';
 import { ApiError } from '../../../api/api-error';
 import { Badge } from '../../../ui/Badge';
 import { Button } from '../../../ui/Button';
@@ -16,6 +18,7 @@ import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
 import { formatBdt, formatDate, formatDateTime } from '../../../utils/format';
 import type { PayableEmployee } from '../../../types/payroll';
+import type { SalaryPayment } from '../../../types/salary-payments';
 import './PayPeriodDetailPage.css';
 import { Modal } from '@/ui/Modal/Modal';
 import { AttendanceEditor } from './AttendanceEditor';
@@ -24,14 +27,62 @@ export function PayPeriodDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const period = usePayPeriod(id);
   const payables = usePayables(id);
+  const paymentsQuery = useSalaryPayments(id);
   const closeMutation = useClosePayPeriod();
   const runMutation = useRunPayroll();
+  const deletePaymentMutation = useDeleteSalaryPayment();
+  const deletePaymentsMutation = useDeletePayments();
+  const isOpen = period.data?.status === 'OPEN';
 
   const [confirmRun, setConfirmRun] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<SalaryPayment | null>(null);
+  const [selectedPaymentIds, setSelectedPaymentIds] = useState<Set<string>>(new Set());
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const [attendanceFor, setAttendanceFor] = useState<PayableEmployee | null>(null);
+
+  const setConfirmDeleteOne = (payment: SalaryPayment): void => {
+    setPendingDelete(payment);
+  };
+
+  const handleDeleteOne = async (): Promise<void> => {
+    if (!pendingDelete || !isOpen) return;
+    setActionError(null);
+    try {
+      await deletePaymentMutation.mutateAsync({
+        id: pendingDelete.id,
+        employeeId: pendingDelete.employeeId,
+      });
+      setPendingDelete(null);
+      setSelectedPaymentIds((prev) => {
+        const next = new Set(prev);
+        next.delete(pendingDelete.id);
+        return next;
+      });
+      void paymentsQuery.refetch();
+      void payables.refetch();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Unable to delete payment.');
+      setPendingDelete(null);
+    }
+  };
+
+  const handleDeleteBulk = async (): Promise<void> => {
+    if (selectedPaymentIds.size === 0 || !isOpen) return;
+    setActionError(null);
+    try {
+      await deletePaymentsMutation.mutateAsync([...selectedPaymentIds]);
+      setConfirmBulkDelete(false);
+      setSelectedPaymentIds(new Set());
+      void paymentsQuery.refetch();
+      void payables.refetch();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Unable to delete payments.');
+      setConfirmBulkDelete(false);
+    }
+  };
 
   const handleRun = async (): Promise<void> => {
     if (!id) return;
@@ -81,7 +132,6 @@ export function PayPeriodDetailPage(): JSX.Element {
   if (!period.data) return <></>;
 
   const p = period.data;
-  const isOpen = p.status === 'OPEN';
 
   const columns: TableColumn<PayableEmployee>[] = [
     { key: 'name', header: 'Employee', render: (e) => e.employeeName },
@@ -131,6 +181,63 @@ export function PayPeriodDetailPage(): JSX.Element {
         ) : (
           <Badge variant="warning">Pending</Badge>
         ),
+    },
+  ];
+
+  const employeeNameLookup = new Map(
+    (payables.data ?? []).map((employee) => [employee.employeeId, employee.employeeName]),
+  );
+
+  const paymentColumns: TableColumn<SalaryPayment>[] = [
+    {
+      key: 'select',
+      header: '',
+      render: (p) => (
+        <input
+          type="checkbox"
+          checked={selectedPaymentIds.has(p.id)}
+          onChange={(e) => {
+            setSelectedPaymentIds((prev) => {
+              const next = new Set(prev);
+              if (e.target.checked) next.add(p.id);
+              else next.delete(p.id);
+              return next;
+            });
+          }}
+          aria-label={`Select payment for ${p.employeeId}`}
+        />
+      ),
+    },
+    {
+      key: 'employeeId',
+      header: 'Employee',
+      render: (p) => employeeNameLookup.get(p.employeeId) ?? p.employeeId,
+    },
+    {
+      key: 'amount',
+      header: 'Amount',
+      align: 'right',
+      render: (p) => formatBdt(p.amountMinor),
+    },
+    {
+      key: 'method',
+      header: 'Method',
+      render: (p) => p.paymentMethod.replace(/_/g, ' '),
+    },
+    {
+      key: 'paidOn',
+      header: 'Paid on',
+      render: (p) => formatDate(p.paidOn),
+    },
+    {
+      key: 'actions',
+      header: '',
+      align: 'right',
+      render: (p) => (
+        <Button size="sm" variant="ghost" onClick={() => setConfirmDeleteOne(p)} disabled={!isOpen}>
+          Delete
+        </Button>
+      ),
     },
   ];
 
@@ -209,6 +316,40 @@ export function PayPeriodDetailPage(): JSX.Element {
         )}
       </Card>
 
+      <Card
+        title="Recorded payments"
+        subtitle={`${paymentsQuery.data?.length ?? 0} payment${(paymentsQuery.data?.length ?? 0) === 1 ? '' : 's'}`}
+        actions={
+          selectedPaymentIds.size > 0 ? (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setConfirmBulkDelete(true)}
+              disabled={!isOpen || deletePaymentsMutation.isPending}
+            >
+              Delete {selectedPaymentIds.size} selected
+            </Button>
+          ) : undefined
+        }
+      >
+        {paymentsQuery.isLoading && (
+          <div className="pay-period-detail__center">
+            <Spinner label="Loading payments" />
+          </div>
+        )}
+
+        {paymentsQuery.data && paymentsQuery.data.length === 0 && (
+          <EmptyState
+            title="No payments yet"
+            description="Run payroll to create salary payments for this period."
+          />
+        )}
+
+        {paymentsQuery.data && paymentsQuery.data.length > 0 && (
+          <Table columns={paymentColumns} rows={paymentsQuery.data} getRowKey={(p) => p.id} />
+        )}
+      </Card>
+
       {attendanceFor && (
         <Modal
           open
@@ -224,6 +365,32 @@ export function PayPeriodDetailPage(): JSX.Element {
           />
         </Modal>
       )}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete salary payment"
+        message={
+          pendingDelete
+            ? `Delete the payment of ${formatBdt(pendingDelete.amountMinor)} for ${employeeNameLookup.get(pendingDelete.employeeId) ?? pendingDelete.employeeId}? This cannot be undone.`
+            : ''
+        }
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deletePaymentMutation.isPending}
+        onConfirm={handleDeleteOne}
+        onCancel={() => setPendingDelete(null)}
+      />
+
+      <ConfirmDialog
+        open={confirmBulkDelete}
+        title="Delete selected payments"
+        message={`Delete ${selectedPaymentIds.size} selected payment${selectedPaymentIds.size === 1 ? '' : 's'}? This cannot be undone.`}
+        confirmLabel="Delete payments"
+        variant="danger"
+        loading={deletePaymentsMutation.isPending}
+        onConfirm={handleDeleteBulk}
+        onCancel={() => setConfirmBulkDelete(false)}
+      />
 
       <ConfirmDialog
         open={confirmRun}

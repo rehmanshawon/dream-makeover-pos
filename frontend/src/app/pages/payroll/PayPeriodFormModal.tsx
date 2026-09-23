@@ -1,148 +1,124 @@
-import { useEffect, useState, type FormEvent, type JSX } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type JSX } from 'react';
 import { ApiError } from '../../../api/api-error';
-import { useCreatePayPeriod, useUpdatePayPeriod } from '../../../api/payroll-hooks';
+import { useCreatePayPeriod } from '../../../api/payroll-hooks';
 import { Button } from '../../../ui/Button';
-import { Input } from '../../../ui/Input';
 import { Modal } from '../../../ui/Modal';
-import type { PayPeriod } from '../../../types/payroll';
+import { Select, type SelectOption } from '../../../ui/Select';
 import './PayPeriodFormModal.css';
 
 interface PayPeriodFormModalProps {
   open: boolean;
-  payPeriod?: PayPeriod;
   onClose: () => void;
-  onSaved?: (id: string) => void;
 }
 
-interface FormState {
-  name: string;
-  startDate: string;
-  endDate: string;
+const MONTH_OPTIONS: SelectOption[] = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+].map((label, index) => ({ value: String(index + 1), label }));
+
+function generateYearOptions(): SelectOption[] {
+  const now = new Date();
+  const years: SelectOption[] = [];
+  for (let y = now.getFullYear() - 3; y <= now.getFullYear() + 1; y += 1) {
+    years.push({ value: String(y), label: String(y) });
+  }
+  return years;
 }
 
-interface FormErrors {
-  name?: string;
-  startDate?: string;
-  endDate?: string;
-}
+export function PayPeriodFormModal({ open, onClose }: PayPeriodFormModalProps): JSX.Element {
+  const now = new Date();
 
-function formFromPeriod(p: PayPeriod): FormState {
-  return { name: p.name, startDate: p.startDate, endDate: p.endDate };
-}
-
-export function PayPeriodFormModal({
-  open,
-  payPeriod,
-  onClose,
-  onSaved,
-}: PayPeriodFormModalProps): JSX.Element {
-  const isEdit = Boolean(payPeriod);
-  const [form, setForm] = useState<FormState>({
-    name: '',
-    startDate: '',
-    endDate: '',
-  });
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [year, setYear] = useState(String(now.getFullYear()));
+  const [month, setMonth] = useState(String(now.getMonth() + 1));
   const [formError, setFormError] = useState<string | null>(null);
 
   const createMutation = useCreatePayPeriod();
-  const updateMutation = useUpdatePayPeriod();
+  const yearOptions = useMemo(generateYearOptions, []);
 
   useEffect(() => {
     if (!open) return;
-    setForm(payPeriod ? formFromPeriod(payPeriod) : { name: '', startDate: '', endDate: '' });
-    setErrors({});
+    setYear(String(now.getFullYear()));
+    setMonth(String(now.getMonth() + 1));
     setFormError(null);
-  }, [open, payPeriod]);
+  }, [open]);
+
+  // Reject future months beyond the immediately following month.
+  const isAllowedMonth = useMemo(() => {
+    const y = Number(year);
+    const m = Number(month);
+    const nextY = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
+    const nextM = now.getMonth() === 11 ? 1 : now.getMonth() + 2;
+
+    const isCurrent = y === now.getFullYear() && m === now.getMonth() + 1;
+    const isNext = y === nextY && m === nextM;
+    const isPast = y < now.getFullYear() || (y === now.getFullYear() && m < now.getMonth() + 1);
+
+    return isCurrent || isNext || isPast;
+  }, [year, month, now]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
-    setErrors({});
     setFormError(null);
 
-    const nextErrors: FormErrors = {};
-    if (form.name.trim().length < 2) {
-      nextErrors.name = 'Name must be at least 2 characters';
-    }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.startDate)) {
-      nextErrors.startDate = 'Enter a valid date';
-    }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.endDate)) {
-      nextErrors.endDate = 'Enter a valid date';
-    } else if (form.startDate && form.endDate < form.startDate) {
-      nextErrors.endDate = 'End date must be on or after start date';
-    }
-
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      return;
-    }
-
     try {
-      if (isEdit && payPeriod) {
-        const updated = await updateMutation.mutateAsync({
-          id: payPeriod.id,
-          payload: {
-            name: form.name.trim(),
-            startDate: form.startDate,
-            endDate: form.endDate,
-          },
-        });
-        onSaved?.(updated.id);
-      } else {
-        const created = await createMutation.mutateAsync({
-          name: form.name.trim(),
-          startDate: form.startDate,
-          endDate: form.endDate,
-        });
-        onSaved?.(created.id);
-      }
+      await createMutation.mutateAsync({
+        year: Number(year),
+        month: Number(month),
+      });
       onClose();
     } catch (err) {
       if (err instanceof ApiError) setFormError(err.message);
-      else setFormError('Unable to save pay period.');
+      else setFormError('Unable to create pay period.');
     }
   };
 
-  const submitting = isEdit ? updateMutation.isPending : createMutation.isPending;
+  const submitting = createMutation.isPending;
 
   return (
     <Modal
       open={open}
-      title={isEdit ? `Edit ${payPeriod?.name}` : 'New pay period'}
+      title="New pay period"
       onClose={onClose}
-      size="md"
+      size="sm"
       closeOnOverlayClick={!submitting}
     >
       <form onSubmit={handleSubmit} className="pay-period-form" noValidate>
-        <Input
-          label="Name"
-          autoFocus
-          value={form.name}
-          onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
-          {...(errors.name ? { error: errors.name } : {})}
-          disabled={submitting}
-          placeholder="e.g. September 2026 — First Half"
-        />
+        <p className="pay-period-form__intro">
+          Choose the month this pay period covers. Each month can have only one pay period.
+        </p>
 
         <div className="pay-period-form__grid">
-          <Input
-            label="Start date"
-            type="date"
-            value={form.startDate}
-            onChange={(e) => setForm((s) => ({ ...s, startDate: e.target.value }))}
-            {...(errors.startDate ? { error: errors.startDate } : {})}
+          <Select
+            label="Month"
+            options={MONTH_OPTIONS}
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
             disabled={submitting}
           />
-          <Input
-            label="End date"
-            type="date"
-            value={form.endDate}
-            onChange={(e) => setForm((s) => ({ ...s, endDate: e.target.value }))}
-            {...(errors.endDate ? { error: errors.endDate } : {})}
+          <Select
+            label="Year"
+            options={yearOptions}
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
             disabled={submitting}
           />
         </div>
+
+        {!isAllowedMonth && (
+          <div className="pay-period-form__warning" role="alert">
+            Pay periods can be created for past and current months, and at most one month ahead.
+          </div>
+        )}
 
         {formError && (
           <div className="pay-period-form__error" role="alert">
@@ -154,8 +130,8 @@ export function PayPeriodFormModal({
           <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
-          <Button type="submit" loading={submitting}>
-            {isEdit ? 'Save changes' : 'Create period'}
+          <Button type="submit" loading={submitting} disabled={!isAllowedMonth}>
+            Create period
           </Button>
         </div>
       </form>

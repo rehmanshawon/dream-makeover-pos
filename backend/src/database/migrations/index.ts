@@ -20,6 +20,7 @@ import { AddPayPeriodIdToSalaryPayments1700000000017 } from './1700000000017-Add
 import { AddVatToTransactions1700000000017 } from './1700000000017-AddVatToTransactions';
 import { CreateAttendanceTable1700000000018 } from './1700000000018-CreateAttendanceTable';
 import { AddDefaultPaymentMethodToEmployees1700000000019 } from './1700000000019-AddDefaultPaymentMethodToEmployees';
+import { ReplacePayPeriodsWithYearMonth1700000000020 } from './1700000000020-ReplacePayPeriodsWithYearMonth';
 
 export const migrations = [
   CreateCustomersTable1700000000000,
@@ -44,4 +45,5 @@ export const migrations = [
   AddPayPeriodIdToSalaryPayments1700000000017,
   CreateAttendanceTable1700000000018,
   AddDefaultPaymentMethodToEmployees1700000000019,
+  ReplacePayPeriodsWithYearMonth1700000000020,
 ];

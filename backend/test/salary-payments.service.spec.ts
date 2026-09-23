@@ -9,11 +9,14 @@ import { SalaryPaymentType } from '../src/salary-payments/salary-payment-type.en
 import { PaymentMethod } from '../src/salary-payments/payment-method.enum';
 import { Employee } from '../src/employees/employee.entity';
 import { CreateSalaryPaymentDto } from '../src/salary-payments/dto/create-salary-payment.dto';
+import { PayPeriod } from '../src/payroll/pay-period.entity';
+import { PayPeriodStatus } from '../src/payroll/pay-period-status.enum';
 
 describe('SalaryPaymentsService', () => {
   let service: SalaryPaymentsService;
   let paymentRepo: Repository<SalaryPayment>;
   let employeeRepo: Repository<Employee>;
+  let payPeriodRepo: Repository<PayPeriod>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -35,12 +38,19 @@ describe('SalaryPaymentsService', () => {
             findOne: jest.fn(),
           },
         },
+        {
+          provide: getRepositoryToken(PayPeriod),
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get(SalaryPaymentsService);
     paymentRepo = module.get(getRepositoryToken(SalaryPayment));
     employeeRepo = module.get(getRepositoryToken(Employee));
+    payPeriodRepo = module.get(getRepositoryToken(PayPeriod));
   });
 
   it('records payment with defaults when optional fields omitted', async () => {
@@ -109,5 +119,23 @@ describe('SalaryPaymentsService', () => {
   it('throws NotFoundException on remove when payment missing', async () => {
     jest.spyOn(paymentRepo, 'findOne').mockResolvedValue(null);
     await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+  });
+
+  it('refuses to delete a payment from a closed pay period', async () => {
+    const payment = {
+      id: 'pay-1',
+      employeeId: 'emp-1',
+      payPeriodId: 'period-1',
+    } as SalaryPayment;
+    jest.spyOn(paymentRepo, 'findOne').mockResolvedValue(payment);
+    jest.spyOn(payPeriodRepo, 'findOne').mockResolvedValue({
+      id: 'period-1',
+      status: PayPeriodStatus.CLOSED,
+    } as PayPeriod);
+
+    await expect(service.remove('pay-1')).rejects.toThrow(
+      'Cannot delete payments from a closed pay period.',
+    );
+    expect(paymentRepo.remove).not.toHaveBeenCalled();
   });
 });

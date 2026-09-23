@@ -21,4 +21,26 @@ export const attendanceApi = {
   remove(employeeId: string, date: string): Promise<void> {
     return api.delete<void>(`/attendance/employee/${employeeId}/${date}`);
   },
+
+  upsertBulk(
+    employeeId: string,
+    entries: Array<{ date: string; status: AttendanceStatus }>,
+  ): Promise<AttendanceRecord[]> {
+    return api.post<AttendanceRecord[]>(`/attendance/employee/${employeeId}/bulk`, { entries });
+  },
+
+  summary(
+    employeeId: string,
+    year: number,
+    month: number,
+  ): Promise<{
+    present: number;
+    absent: number;
+    halfDay: number;
+    leave: number;
+    notRecorded: number;
+    totalDaysInMonth: number;
+  }> {
+    return api.get(`/attendance/employee/${employeeId}/summary?year=${year}&month=${month}`);
+  },
 };

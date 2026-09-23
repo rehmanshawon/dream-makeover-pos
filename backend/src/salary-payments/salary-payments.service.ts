@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { PayPeriod } from '../payroll/pay-period.entity';
+import { PayPeriodStatus } from '../payroll/pay-period-status.enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SalaryPayment } from './salary-payment.entity';
@@ -15,6 +17,8 @@ export class SalaryPaymentsService {
     private readonly paymentRepository: Repository<SalaryPayment>,
     @InjectRepository(Employee)
     private readonly employeeRepository: Repository<Employee>,
+    @InjectRepository(PayPeriod)
+    private readonly payPeriodRepository: Repository<PayPeriod>,
   ) {}
 
   /**
@@ -92,9 +96,17 @@ export class SalaryPaymentsService {
    */
   async remove(id: string): Promise<void> {
     const payment = await this.paymentRepository.findOne({ where: { id } });
-    if (!payment) {
-      throw new NotFoundException('Salary payment not found');
+    if (!payment) throw new NotFoundException('Salary payment not found');
+
+    if (payment.payPeriodId) {
+      const period = await this.payPeriodRepository.findOne({
+        where: { id: payment.payPeriodId },
+      });
+      if (period && period.status === PayPeriodStatus.CLOSED) {
+        throw new BadRequestException('Cannot delete payments from a closed pay period.');
+      }
     }
+
     await this.paymentRepository.remove(payment);
   }
 

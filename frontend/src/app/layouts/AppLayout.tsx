@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
 import { Topbar } from '../components/Topbar';
+import { PayrollReminderBanner } from '../components/PayrollReminderBanner';
 import { NAV_ITEMS } from '../nav-items';
 import './AppLayout.css';
 
@@ -25,7 +26,9 @@ export function AppLayout(): JSX.Element {
     <div className="app-layout">
       <Sidebar />
       <div className="app-layout__main">
+        <PayrollReminderBanner />
         <Topbar title={pageTitle} />
+
         <div className="app-layout__content">
           <Outlet />
         </div>

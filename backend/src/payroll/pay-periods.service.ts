@@ -5,20 +5,54 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, LessThanOrEqual, MoreThanOrEqual, Not, Repository } from 'typeorm';
+import { DataSource, LessThanOrEqual, Repository } from 'typeorm';
 import { PayPeriod } from './pay-period.entity';
 import { PayPeriodStatus } from './pay-period-status.enum';
 import { CreatePayPeriodDto } from './dto/create-pay-period.dto';
-import { UpdatePayPeriodDto } from './dto/update-pay-period.dto';
+//import { UpdatePayPeriodDto } from './dto/update-pay-period.dto';
 import { PayPeriodResponseDto } from './dto/pay-period-response.dto';
 import { PayableEmployeeDto } from './dto/payable-employee.dto';
 import { RunPayrollResponseDto } from './dto/run-payroll-response.dto';
 import { Employee } from '../employees/employee.entity';
 //import { EmployeeStatus } from '../employees/employee-status.enum';
 import { SalaryPayment } from '../salary-payments/salary-payment.entity';
+import { SalaryPaymentResponseDto } from '../salary-payments/dto/salary-payment-response.dto';
 import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
 //import { PaymentMethod } from '../salary-payments/payment-method.enum';
 import { AttendanceService } from '../attendance/attendance.service';
+
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+function nameFor(year: number, month: number): string {
+  return `${MONTH_NAMES[month - 1]} ${year}`;
+}
+
+function startOf(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, '0')}-01`;
+}
+
+function endOf(year: number, month: number): string {
+  const lastDay = new Date(year, month, 0).getDate();
+  return `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+}
+
+function nextMonth(year: number, month: number): { year: number; month: number } {
+  if (month === 12) return { year: year + 1, month: 1 };
+  return { year, month: month + 1 };
+}
 
 @Injectable()
 export class PayPeriodsService {
@@ -93,37 +127,66 @@ export class PayPeriodsService {
   }
 
   async create(dto: CreatePayPeriodDto): Promise<PayPeriodResponseDto> {
-    if (dto.startDate > dto.endDate) {
-      throw new BadRequestException('startDate must be on or before endDate');
+    // Reject far-future months
+    const now = new Date();
+    const current = { year: now.getFullYear(), month: now.getMonth() + 1 };
+    const allowed = nextMonth(current.year, current.month);
+    const requested = { year: dto.year, month: dto.month };
+
+    const isCurrent = requested.year === current.year && requested.month === current.month;
+    const isNext = requested.year === allowed.year && requested.month === allowed.month;
+    const isPast =
+      requested.year < current.year ||
+      (requested.year === current.year && requested.month < current.month);
+
+    if (!isCurrent && !isNext && !isPast) {
+      throw new BadRequestException(
+        'Pay periods can be created for past and current months, and at most one month ahead.',
+      );
     }
-    await this.assertNoOverlap(dto.startDate, dto.endDate, null);
+
+    const existing = await this.periodRepository.findOne({
+      where: { year: dto.year, month: dto.month },
+    });
+    if (existing) {
+      throw new ConflictException(
+        `A pay period for ${nameFor(dto.year, dto.month)} already exists.`,
+      );
+    }
 
     const period = this.periodRepository.create({
-      name: dto.name,
-      startDate: dto.startDate,
-      endDate: dto.endDate,
+      year: dto.year,
+      month: dto.month,
+      name: nameFor(dto.year, dto.month),
+      startDate: startOf(dto.year, dto.month),
+      endDate: endOf(dto.year, dto.month),
       status: PayPeriodStatus.OPEN,
     });
     const saved = await this.periodRepository.save(period);
     return this.toResponse(saved);
   }
 
-  async update(id: string, dto: UpdatePayPeriodDto): Promise<PayPeriodResponseDto> {
-    const period = await this.periodRepository.findOne({ where: { id } });
-    if (!period) throw new NotFoundException('Pay period not found');
-    if (period.status === PayPeriodStatus.CLOSED) {
-      throw new BadRequestException('Cannot edit a closed pay period');
-    }
-    if (dto.startDate > dto.endDate) {
-      throw new BadRequestException('startDate must be on or before endDate');
-    }
-    await this.assertNoOverlap(dto.startDate, dto.endDate, id);
+  async getNextReminder(): Promise<{
+    shouldRemind: boolean;
+    nextMonth: { year: number; month: number; name: string };
+    hasNextPeriod: boolean;
+  }> {
+    const now = new Date();
+    const next = nextMonth(now.getFullYear(), now.getMonth() + 1);
 
-    period.name = dto.name;
-    period.startDate = dto.startDate;
-    period.endDate = dto.endDate;
-    const saved = await this.periodRepository.save(period);
-    return this.toResponse(saved);
+    const existing = await this.periodRepository.findOne({
+      where: { year: next.year, month: next.month },
+    });
+
+    const dayOfMonth = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const inLastWeek = dayOfMonth > daysInMonth - 7;
+
+    return {
+      shouldRemind: inLastWeek && !existing,
+      nextMonth: { ...next, name: nameFor(next.year, next.month) },
+      hasNextPeriod: Boolean(existing),
+    };
   }
 
   async close(id: string, closedBy: string): Promise<PayPeriodResponseDto> {
@@ -268,20 +331,72 @@ export class PayPeriodsService {
     return `${y}-${m}-${day}`;
   }
 
-  private async assertNoOverlap(
-    startDate: string,
-    endDate: string,
-    excludeId: string | null,
-  ): Promise<void> {
-    const where: Record<string, unknown> = {
-      startDate: LessThanOrEqual(endDate),
-      endDate: MoreThanOrEqual(startDate),
-    };
-    if (excludeId) where.id = Not(excludeId);
-    const conflict = await this.periodRepository.findOne({ where });
-    if (conflict) {
-      throw new ConflictException(`Pay period overlaps with existing period: ${conflict.name}`);
-    }
+  // private async assertNoOverlap(
+  //   startDate: string,
+  //   endDate: string,
+  //   excludeId: string | null,
+  // ): Promise<void> {
+  //   const where: Record<string, unknown> = {
+  //     startDate: LessThanOrEqual(endDate),
+  //     endDate: MoreThanOrEqual(startDate),
+  //   };
+  //   if (excludeId) where.id = Not(excludeId);
+  //   const conflict = await this.periodRepository.findOne({ where });
+  //   if (conflict) {
+  //     throw new ConflictException(`Pay period overlaps with existing period: ${conflict.name}`);
+  //   }
+  // }
+
+  async deletePayments(ids: string[]): Promise<{ deletedCount: number }> {
+    if (ids.length === 0) return { deletedCount: 0 };
+    return await this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(SalaryPayment);
+      const payments = await repo
+        .createQueryBuilder('p')
+        .where('p.id IN (:...ids)', { ids })
+        .getMany();
+
+      // Refuse deletion when any payment belongs to a closed period
+      const periodIds = Array.from(
+        new Set(payments.map((p) => p.payPeriodId).filter(Boolean)),
+      ) as string[];
+
+      if (periodIds.length > 0) {
+        const closedCount = await manager
+          .getRepository(PayPeriod)
+          .createQueryBuilder('pp')
+          .where('pp.id IN (:...ids)', { ids: periodIds })
+          .andWhere('pp.status = :status', { status: PayPeriodStatus.CLOSED })
+          .getCount();
+
+        if (closedCount > 0) {
+          throw new BadRequestException('Cannot delete payments from a closed pay period.');
+        }
+      }
+
+      const result = await repo.delete(ids);
+      return { deletedCount: result.affected ?? 0 };
+    });
+  }
+
+  async getPaymentsForPeriod(periodId: string): Promise<SalaryPaymentResponseDto[]> {
+    const repo = this.dataSource.getRepository(SalaryPayment);
+    const payments = await repo.find({
+      where: { payPeriodId: periodId },
+      order: { createdAt: 'ASC' },
+    });
+    return payments.map((p) => ({
+      id: p.id,
+      employeeId: p.employeeId,
+      payPeriodId: p.payPeriodId,
+      amountMinor: p.amountMinor,
+      paymentType: p.paymentType,
+      paymentMethod: p.paymentMethod,
+      paidOn: p.paidOn,
+      note: p.note,
+      paidBy: p.paidBy,
+      createdAt: p.createdAt,
+    }));
   }
 
   private toResponse(period: PayPeriod): PayPeriodResponseDto {

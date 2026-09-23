@@ -11,7 +11,7 @@ import type {
   PayableEmployee,
   RunPayrollResult,
   CreatePayPeriodRequest,
-  UpdatePayPeriodRequest,
+  NextReminder,
 } from '../types/payroll';
 
 export const payrollKeys = {
@@ -20,6 +20,19 @@ export const payrollKeys = {
   period: (id: string) => [...payrollKeys.all, 'period', id] as const,
   payables: (id: string) => [...payrollKeys.all, 'payables', id] as const,
 };
+
+export const payrollKeys2 = {
+  ...payrollKeys,
+  nextReminder: () => [...payrollKeys.all, 'next-reminder'] as const,
+};
+
+export function useNextPayPeriodReminder(): UseQueryResult<NextReminder, Error> {
+  return useQuery({
+    queryKey: payrollKeys2.nextReminder(),
+    queryFn: () => payrollApi.getNextReminder(),
+    staleTime: 60_000,
+  });
+}
 
 export function usePayPeriods(): UseQueryResult<PayPeriod[], Error> {
   return useQuery({
@@ -54,20 +67,6 @@ export function useCreatePayPeriod(): UseMutationResult<PayPeriod, Error, Create
   });
 }
 
-export function useUpdatePayPeriod(): UseMutationResult<
-  PayPeriod,
-  Error,
-  { id: string; payload: UpdatePayPeriodRequest }
-> {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, payload }) => payrollApi.updatePeriod(id, payload),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: payrollKeys.all });
-    },
-  });
-}
-
 export function useClosePayPeriod(): UseMutationResult<PayPeriod, Error, string> {
   const queryClient = useQueryClient();
   return useMutation({
@@ -86,6 +85,17 @@ export function useRunPayroll(): UseMutationResult<RunPayrollResult, Error, stri
       void queryClient.invalidateQueries({ queryKey: payrollKeys.all });
       void queryClient.invalidateQueries({ queryKey: ['salary-payments'] });
       void queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
+}
+
+export function useDeletePayments(): UseMutationResult<{ deletedCount: number }, Error, string[]> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids) => payrollApi.deletePayments(ids),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: payrollKeys.all });
+      void queryClient.invalidateQueries({ queryKey: ['salary-payments'] });
     },
   });
 }

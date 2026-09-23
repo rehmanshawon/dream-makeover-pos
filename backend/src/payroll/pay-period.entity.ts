@@ -4,20 +4,31 @@ import {
   Entity,
   Index,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { PayPeriodStatus } from './pay-period-status.enum';
 
 /**
- * A defined interval of time for which salaries are computed.
+ * A pay period represents one calendar month.
  *
- * Periods must not overlap. A period is OPEN until it is explicitly
- * closed; closed periods cannot receive new payments.
+ * `year` and `month` are the source of truth. `startDate` and `endDate`
+ * are derived and stored for query convenience. They are updated
+ * whenever the entity is saved.
+ *
+ * Periods are never deleted. Once closed, a period is immutable.
  */
 @Entity('pay_periods')
+@Unique('uq_pay_periods_year_month', ['year', 'month'])
 export class PayPeriod {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({ type: 'int', unsigned: true })
+  year: number;
+
+  @Column({ type: 'tinyint', unsigned: true })
+  month: number;
 
   @Index('uq_pay_periods_name', { unique: true })
   @Column({ type: 'varchar', length: 150 })

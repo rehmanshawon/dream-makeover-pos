@@ -9,6 +9,7 @@ export interface SalaryPayment {
   paymentType: SalaryPaymentType;
   paymentMethod: SalaryPaymentMethod;
   paidOn: string;
+  payPeriodId: string | null;
   note: string | null;
   paidBy: string;
   createdAt: string;

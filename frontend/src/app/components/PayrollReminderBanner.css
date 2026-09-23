@@ -1,0 +1,35 @@
+.payroll-reminder {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-accent-soft);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.payroll-reminder__text {
+  flex: 1;
+}
+
+.payroll-reminder__action {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-semibold);
+}
+
+.payroll-reminder__dismiss {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  font-size: 20px;
+  color: var(--color-text-muted);
+}
+
+.payroll-reminder__dismiss:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--color-text);
+}

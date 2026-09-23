@@ -36,6 +36,22 @@ export class AttendanceController {
     return this.attendanceService.findForEmployee(employeeId, from, to);
   }
 
+  @Get('employee/:employeeId/summary')
+  async getSummary(
+    @Param('employeeId') employeeId: string,
+    @Query('year') year: string,
+    @Query('month') month: string,
+  ): Promise<{
+    present: number;
+    absent: number;
+    halfDay: number;
+    leave: number;
+    notRecorded: number;
+    totalDaysInMonth: number;
+  }> {
+    return this.attendanceService.getMonthlySummary(employeeId, Number(year), Number(month));
+  }
+
   @Put('employee/:employeeId/:date')
   async upsert(
     @Param('employeeId') employeeId: string,
