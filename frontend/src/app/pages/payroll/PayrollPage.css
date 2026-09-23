@@ -26,3 +26,10 @@
   color: var(--color-accent);
   font-weight: var(--font-weight-semibold);
 }
+
+.payroll__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}

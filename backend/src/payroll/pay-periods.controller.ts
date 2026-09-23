@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { PayPeriodsService } from './pay-periods.service';
 import { CreatePayPeriodDto } from './dto/create-pay-period.dto';
 //import { UpdatePayPeriodDto } from './dto/update-pay-period.dto';
@@ -54,6 +54,13 @@ export class PayPeriodsController {
   @Roles(UserRole.ADMIN)
   async create(@Body() dto: CreatePayPeriodDto): Promise<PayPeriodResponseDto> {
     return this.service.create(dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async delete(@Param('id') id: string): Promise<void> {
+    return this.service.delete(id);
   }
 
   @Post('payments/delete')

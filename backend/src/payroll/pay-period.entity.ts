@@ -16,7 +16,8 @@ import { PayPeriodStatus } from './pay-period-status.enum';
  * are derived and stored for query convenience. They are updated
  * whenever the entity is saved.
  *
- * Periods are never deleted. Once closed, a period is immutable.
+ * Closed periods are immutable. Open periods can be deleted only before
+ * any salary payments have been recorded against them.
  */
 @Entity('pay_periods')
 @Unique('uq_pay_periods_year_month', ['year', 'month'])

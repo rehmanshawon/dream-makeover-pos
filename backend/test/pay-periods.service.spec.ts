@@ -50,11 +50,12 @@ describe('PayPeriodsService', () => {
     periodRepo = {
       find: jest.fn(),
       findOne: jest.fn(),
+      delete: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
     };
     employeeRepo = { find: jest.fn() };
-    paymentRepo = { find: jest.fn(), create: jest.fn(), save: jest.fn() };
+    paymentRepo = { find: jest.fn(), findOne: jest.fn(), create: jest.fn(), save: jest.fn() };
     attendanceService = { getWorkedDays: jest.fn() };
     dataSource = {
       getRepository: jest.fn((entity: unknown) =>
@@ -174,6 +175,26 @@ describe('PayPeriodsService', () => {
 
     periodRepo.findOne!.mockResolvedValue(period({ status: PayPeriodStatus.CLOSED }));
     await expect(service.close('period-1', 'admin')).rejects.toThrow(BadRequestException);
+  });
+
+  it('deletes an open period without recorded payments', async () => {
+    periodRepo.findOne!.mockResolvedValue(period());
+    paymentRepo.findOne!.mockResolvedValue(null);
+
+    await expect(service.delete('period-1')).resolves.toBeUndefined();
+
+    expect(paymentRepo.findOne).toHaveBeenCalledWith({ where: { payPeriodId: 'period-1' } });
+    expect(periodRepo.delete).toHaveBeenCalledWith('period-1');
+  });
+
+  it('rejects deleting closed periods or periods with payments', async () => {
+    periodRepo.findOne!.mockResolvedValue(period({ status: PayPeriodStatus.CLOSED }));
+    await expect(service.delete('period-1')).rejects.toThrow(BadRequestException);
+
+    periodRepo.findOne!.mockResolvedValue(period());
+    paymentRepo.findOne!.mockResolvedValue({ id: 'payment-1' } as SalaryPayment);
+    await expect(service.delete('period-1')).rejects.toThrow(BadRequestException);
+    expect(periodRepo.delete).not.toHaveBeenCalled();
   });
 
   it('closes an open period with audit information', async () => {

@@ -379,6 +379,22 @@ export class PayPeriodsService {
     });
   }
 
+  async delete(id: string): Promise<void> {
+    const period = await this.periodRepository.findOne({ where: { id } });
+    if (!period) throw new NotFoundException('Pay period not found');
+    if (period.status === PayPeriodStatus.CLOSED) {
+      throw new BadRequestException('Cannot delete a closed pay period.');
+    }
+
+    const paymentRepo = this.dataSource.getRepository(SalaryPayment);
+    const payment = await paymentRepo.findOne({ where: { payPeriodId: id } });
+    if (payment) {
+      throw new BadRequestException('Cannot delete a pay period with recorded payments.');
+    }
+
+    await this.periodRepository.delete(id);
+  }
+
   async getPaymentsForPeriod(periodId: string): Promise<SalaryPaymentResponseDto[]> {
     const repo = this.dataSource.getRepository(SalaryPayment);
     const payments = await repo.find({

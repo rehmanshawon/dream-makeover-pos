@@ -24,6 +24,10 @@ export const payrollApi = {
     return api.post<PayPeriod>('/pay-periods', payload);
   },
 
+  deletePeriod(id: string): Promise<void> {
+    return api.delete<void>(`/pay-periods/${id}`);
+  },
+
   closePeriod(id: string): Promise<PayPeriod> {
     return api.post<PayPeriod>(`/pay-periods/${id}/close`, {});
   },

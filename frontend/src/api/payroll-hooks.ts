@@ -67,6 +67,16 @@ export function useCreatePayPeriod(): UseMutationResult<PayPeriod, Error, Create
   });
 }
 
+export function useDeletePayPeriod(): UseMutationResult<void, Error, string> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => payrollApi.deletePeriod(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: payrollKeys.all });
+    },
+  });
+}
+
 export function useClosePayPeriod(): UseMutationResult<PayPeriod, Error, string> {
   const queryClient = useQueryClient();
   return useMutation({
