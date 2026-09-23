@@ -83,7 +83,7 @@ describe('PayPeriodDetailPage', () => {
     expect(screen.getByRole('heading', { name: 'Delete salary payment' })).toBeInTheDocument();
 
     const deleteButtons = screen.getAllByRole('button', { name: /^Delete$/i });
-    await user.click(deleteButtons[deleteButtons.length - 1]);
+    await user.click(deleteButtons[deleteButtons.length - 1]!);
 
     expect(deleteOne).toHaveBeenCalledWith({ id: 'payment-1', employeeId: 'employee-1' });
   });

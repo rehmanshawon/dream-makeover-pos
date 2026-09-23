@@ -22,8 +22,8 @@ const STATUS_OPTIONS: SelectOption[] = (Object.keys(ATTENDANCE_LABELS) as Attend
 
 function enumerateDates(from: string, to: string): string[] {
   const dates: string[] = [];
-  const [fy, fm, fd] = from.split('-').map(Number);
-  const [ty, tm, td] = to.split('-').map(Number);
+  const [fy = 0, fm = 1, fd = 1] = from.split('-').map(Number);
+  const [ty = 0, tm = 1, td = 1] = to.split('-').map(Number);
   const cursor = new Date(fy, fm - 1, fd);
   const end = new Date(ty, tm - 1, td);
   while (cursor <= end) {
@@ -36,8 +36,15 @@ function enumerateDates(from: string, to: string): string[] {
   return dates;
 }
 
+function todayAsIso(): string {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(
+    today.getDate(),
+  ).padStart(2, '0')}`;
+}
+
 function formatDay(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number);
+  const [y = 0, m = 1, d = 1] = iso.split('-').map(Number);
   const date = new Date(y, m - 1, d);
   return date.toLocaleDateString('en-GB', {
     weekday: 'short',
@@ -60,8 +67,8 @@ export function AttendanceEditor({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const now = new Date();
-  const summaryQuery = useAttendanceSummary(employeeId, now.getFullYear(), now.getMonth() + 1);
+  const [periodYear = 0, periodMonth = 0] = from.split('-').map(Number);
+  const summaryQuery = useAttendanceSummary(employeeId, periodYear, periodMonth);
 
   useEffect(() => {
     setPending(new Map());
@@ -75,7 +82,11 @@ export function AttendanceEditor({
     return map;
   }, [data]);
 
-  const dates = useMemo(() => enumerateDates(from, to), [from, to]);
+  const dates = useMemo(() => {
+    const today = todayAsIso();
+    const visibleTo = to < today ? to : today;
+    return from <= visibleTo ? enumerateDates(from, visibleTo) : [];
+  }, [from, to]);
 
   const valueFor = (date: string): string => {
     if (pending.has(date)) return pending.get(date) as string;
@@ -109,7 +120,7 @@ export function AttendanceEditor({
       );
       setPending(new Map());
       setSaved(true);
-      await refetch();
+      await Promise.all([refetch(), summaryQuery.refetch()]);
       onSaved?.();
     } catch (err) {
       setSaveError(err instanceof ApiError ? err.message : 'Unable to save attendance.');

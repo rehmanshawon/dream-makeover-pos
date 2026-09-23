@@ -54,7 +54,7 @@ describe('AttendanceEditor', () => {
     expect(screen.getByText('22')).toBeInTheDocument();
 
     const selects = screen.getAllByRole('combobox');
-    await user.selectOptions(selects[0], 'PRESENT');
+    await user.selectOptions(selects[0]!, 'PRESENT');
     expect(screen.getByText('1 change pending')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save attendance' })).toBeEnabled();
 
