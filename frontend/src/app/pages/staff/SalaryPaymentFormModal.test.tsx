@@ -62,7 +62,8 @@ describe('SalaryPaymentFormModal', () => {
       const body = JSON.parse(init?.body as string);
       expect(body.employeeId).toBe('e1');
       expect(body.amountMinor).toBe(3500000);
-      expect(body.paymentType).toBe('REGULAR');
+      expect(body.paymentType).toBe('BONUS');
+      expect(body.bonusType).toBe('FESTIVAL');
       expect(body.paymentMethod).toBe('CASH');
       return new Response(
         JSON.stringify({
@@ -82,6 +83,7 @@ describe('SalaryPaymentFormModal', () => {
     globalThis.fetch = fetchSpy as unknown as typeof fetch;
 
     renderModal();
+    await userEvent.selectOptions(screen.getByLabelText('Bonus type'), 'FESTIVAL');
     await userEvent.click(screen.getByRole('button', { name: /record payment/i }));
 
     await vi.waitFor(() => {
@@ -97,5 +99,54 @@ describe('SalaryPaymentFormModal', () => {
     await userEvent.click(screen.getByRole('button', { name: /record payment/i }));
 
     expect(await screen.findByText(/greater than 0/i)).toBeInTheDocument();
+  });
+
+  it('records overtime hours, work date, and mobile number', async () => {
+    const fetchSpy = vi.fn<typeof fetch>(async (_input, init) => {
+      const body = JSON.parse(init?.body as string);
+      expect(body.paymentType).toBe('OVERTIME');
+      expect(body.overtimeHours).toBe(6);
+      expect(body.overtimeDate).toBe('2026-09-20');
+      expect(body.paymentMethod).toBe('MOBILE');
+      expect(body.mobileWalletNumber).toBe('01712345678');
+      return new Response(JSON.stringify({ id: 'p2' }), {
+        status: 201,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+    renderModal();
+
+    await userEvent.selectOptions(screen.getByLabelText('Payment type'), 'OVERTIME');
+    await userEvent.selectOptions(screen.getByLabelText('Overtime hours'), '6');
+    await userEvent.type(screen.getByLabelText('Overtime work date'), '2026-09-20');
+    await userEvent.selectOptions(screen.getByLabelText('Payment method'), 'MOBILE');
+    await userEvent.type(screen.getByLabelText('Mobile number'), '01712345678');
+    await userEvent.click(screen.getByRole('button', { name: /record payment/i }));
+
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+  });
+
+  it('requires and submits cheque number as text for cheque payments', async () => {
+    const fetchSpy = vi.fn<typeof fetch>(async (_input, init) => {
+      const body = JSON.parse(init?.body as string);
+      expect(body.paymentMethod).toBe('BANK');
+      expect(body.checkNumber).toBe('DBBL-001A');
+      return new Response(JSON.stringify({ id: 'p3' }), {
+        status: 201,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+    renderModal();
+
+    await userEvent.selectOptions(screen.getByLabelText('Bonus type'), 'ANNUAL');
+    await userEvent.selectOptions(screen.getByLabelText('Payment method'), 'BANK');
+    const chequeNumber = screen.getByLabelText('Cheque number');
+    expect(chequeNumber).toHaveAttribute('type', 'text');
+    await userEvent.type(chequeNumber, 'DBBL-001A');
+    await userEvent.click(screen.getByRole('button', { name: /record payment/i }));
+
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalled());
   });
 });

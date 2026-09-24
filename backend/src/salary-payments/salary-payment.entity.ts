@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 import { SalaryPaymentType } from './salary-payment-type.enum';
 import { PaymentMethod } from './payment-method.enum';
+import { BonusType } from './bonus-type.enum';
 import { bigintTransformer } from '../common/transformers/bigint.transformer';
 
 /**
@@ -60,6 +61,15 @@ export class SalaryPayment {
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   note: string | null = null;
+
+  @Column({ name: 'bonus_type', type: 'varchar', length: 20, nullable: true })
+  bonusType: BonusType | null = null;
+
+  @Column({ name: 'overtime_hours', type: 'smallint', unsigned: true, nullable: true })
+  overtimeHours: number | null = null;
+
+  @Column({ name: 'overtime_date', type: 'date', nullable: true })
+  overtimeDate: string | null = null;
 
   @Column({ name: 'check_number', type: 'varchar', length: 80, nullable: true })
   checkNumber: string | null = null;

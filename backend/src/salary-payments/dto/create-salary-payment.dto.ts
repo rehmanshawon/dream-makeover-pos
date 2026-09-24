@@ -1,6 +1,20 @@
-import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Length, Matches, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsDefined,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Length,
+  Matches,
+  Max,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 import { SalaryPaymentType } from '../salary-payment-type.enum';
 import { PaymentMethod } from '../payment-method.enum';
+import { BonusType } from '../bonus-type.enum';
 
 export class CreateSalaryPaymentDto {
   @IsUUID()
@@ -28,6 +42,23 @@ export class CreateSalaryPaymentDto {
   @IsString()
   @Length(0, 255)
   note?: string;
+
+  @ValidateIf((dto: CreateSalaryPaymentDto) => dto.paymentType === SalaryPaymentType.BONUS)
+  @IsDefined()
+  @IsEnum(BonusType)
+  bonusType?: BonusType;
+
+  @ValidateIf((dto: CreateSalaryPaymentDto) => dto.paymentType === SalaryPaymentType.OVERTIME)
+  @IsDefined()
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  overtimeHours?: number;
+
+  @ValidateIf((dto: CreateSalaryPaymentDto) => dto.paymentType === SalaryPaymentType.OVERTIME)
+  @IsDefined()
+  @IsDateString({ strict: true })
+  overtimeDate?: string;
 
   @IsOptional()
   @IsString()

@@ -8,7 +8,12 @@ import { Select, type SelectOption } from '../../../ui/Select';
 import { Textarea } from '../../../ui/Textarea';
 import { minorToTakaInput, parseTakaToMinor, todayIso } from '../../../utils/format';
 import type { Employee, SalaryFrequency } from '../../../types/employees';
-import type { SalaryPaymentType, SalaryPaymentMethod } from '../../../types/salary-payments';
+import {
+  BONUS_TYPE_LABELS,
+  type BonusType,
+  type SalaryPaymentType,
+  type SalaryPaymentMethod,
+} from '../../../types/salary-payments';
 import './SalaryPaymentFormModal.css';
 
 const TYPE_OPTIONS: SelectOption[] = [
@@ -19,9 +24,18 @@ const TYPE_OPTIONS: SelectOption[] = [
 
 const METHOD_OPTIONS: SelectOption[] = [
   { value: 'CASH', label: 'Cash' },
-  { value: 'BANK', label: 'Bank transfer' },
+  { value: 'BANK', label: 'Cheque' },
   { value: 'MOBILE', label: 'Mobile banking' },
 ];
+
+const BONUS_OPTIONS: SelectOption[] = (Object.keys(BONUS_TYPE_LABELS) as BonusType[]).map(
+  (value) => ({ value, label: BONUS_TYPE_LABELS[value] }),
+);
+
+const OVERTIME_HOUR_OPTIONS: SelectOption[] = Array.from({ length: 12 }, (_, index) => {
+  const value = String(index + 1);
+  return { value, label: `${value} ${value === '1' ? 'hour' : 'hours'}` };
+});
 
 interface SalaryPaymentFormModalProps {
   open: boolean;
@@ -35,11 +49,21 @@ interface FormState {
   paymentMethod: SalaryPaymentMethod;
   paidOn: string;
   note: string;
+  bonusType: BonusType | '';
+  overtimeHours: string;
+  overtimeDate: string;
+  checkNumber: string;
+  mobileWalletNumber: string;
 }
 
 interface FormErrors {
   amountTaka?: string;
   paidOn?: string;
+  bonusType?: string;
+  overtimeHours?: string;
+  overtimeDate?: string;
+  checkNumber?: string;
+  mobileWalletNumber?: string;
 }
 
 function frequencyNoun(frequency: SalaryFrequency): string {
@@ -55,6 +79,11 @@ function defaultForm(employee: Employee): FormState {
     paymentMethod: 'CASH',
     paidOn: todayIso(),
     note: '',
+    bonusType: '',
+    overtimeHours: '',
+    overtimeDate: '',
+    checkNumber: '',
+    mobileWalletNumber: '',
   };
 }
 
@@ -93,6 +122,25 @@ export function SalaryPaymentFormModal({
       nextErrors.paidOn = 'Enter a valid date';
     }
 
+    if (form.paymentType === 'BONUS' && !form.bonusType) {
+      nextErrors.bonusType = 'Select a bonus type';
+    }
+    if (form.paymentType === 'OVERTIME') {
+      const hours = Number(form.overtimeHours);
+      if (!Number.isInteger(hours) || hours < 1 || hours > 12) {
+        nextErrors.overtimeHours = 'Select between 1 and 12 hours';
+      }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(form.overtimeDate)) {
+        nextErrors.overtimeDate = 'Enter the overtime work date';
+      }
+    }
+    if (form.paymentMethod === 'BANK' && !form.checkNumber.trim()) {
+      nextErrors.checkNumber = 'Enter the cheque number';
+    }
+    if (form.paymentMethod === 'MOBILE' && !form.mobileWalletNumber.trim()) {
+      nextErrors.mobileWalletNumber = 'Enter the mobile number';
+    }
+
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       return;
@@ -105,6 +153,14 @@ export function SalaryPaymentFormModal({
         paymentType: form.paymentType,
         paymentMethod: form.paymentMethod,
         paidOn: form.paidOn,
+        ...(form.paymentType === 'BONUS' ? { bonusType: form.bonusType as BonusType } : {}),
+        ...(form.paymentType === 'OVERTIME'
+          ? { overtimeHours: Number(form.overtimeHours), overtimeDate: form.overtimeDate }
+          : {}),
+        ...(form.paymentMethod === 'BANK' ? { checkNumber: form.checkNumber.trim() } : {}),
+        ...(form.paymentMethod === 'MOBILE'
+          ? { mobileWalletNumber: form.mobileWalletNumber.trim() }
+          : {}),
         ...(form.note.trim() ? { note: form.note.trim() } : {}),
       });
       onClose();
@@ -180,6 +236,64 @@ export function SalaryPaymentFormModal({
             }
             disabled={submitting}
           />
+
+          {form.paymentType === 'BONUS' && (
+            <Select
+              label="Bonus type"
+              options={BONUS_OPTIONS}
+              placeholder="Select bonus type"
+              value={form.bonusType}
+              onChange={(e) =>
+                setForm((s) => ({ ...s, bonusType: e.target.value as BonusType | '' }))
+              }
+              {...(errors.bonusType ? { error: errors.bonusType } : {})}
+              disabled={submitting}
+            />
+          )}
+
+          {form.paymentType === 'OVERTIME' && (
+            <>
+              <Select
+                label="Overtime hours"
+                options={OVERTIME_HOUR_OPTIONS}
+                placeholder="Select hours"
+                value={form.overtimeHours}
+                onChange={(e) => setForm((s) => ({ ...s, overtimeHours: e.target.value }))}
+                {...(errors.overtimeHours ? { error: errors.overtimeHours } : {})}
+                disabled={submitting}
+              />
+              <Input
+                label="Overtime work date"
+                type="date"
+                value={form.overtimeDate}
+                onChange={(e) => setForm((s) => ({ ...s, overtimeDate: e.target.value }))}
+                {...(errors.overtimeDate ? { error: errors.overtimeDate } : {})}
+                disabled={submitting}
+              />
+            </>
+          )}
+
+          {form.paymentMethod === 'BANK' && (
+            <Input
+              label="Cheque number"
+              type="text"
+              value={form.checkNumber}
+              onChange={(e) => setForm((s) => ({ ...s, checkNumber: e.target.value }))}
+              {...(errors.checkNumber ? { error: errors.checkNumber } : {})}
+              disabled={submitting}
+            />
+          )}
+
+          {form.paymentMethod === 'MOBILE' && (
+            <Input
+              label="Mobile number"
+              type="tel"
+              value={form.mobileWalletNumber}
+              onChange={(e) => setForm((s) => ({ ...s, mobileWalletNumber: e.target.value }))}
+              {...(errors.mobileWalletNumber ? { error: errors.mobileWalletNumber } : {})}
+              disabled={submitting}
+            />
+          )}
         </div>
 
         <Textarea

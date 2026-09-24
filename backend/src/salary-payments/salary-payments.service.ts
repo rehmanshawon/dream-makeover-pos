@@ -9,6 +9,7 @@ import { CreateSalaryPaymentDto } from './dto/create-salary-payment.dto';
 import { SalaryPaymentResponseDto } from './dto/salary-payment-response.dto';
 import { SalaryPaymentType } from './salary-payment-type.enum';
 import { PaymentMethod } from './payment-method.enum';
+import { BonusType } from './bonus-type.enum';
 
 @Injectable()
 export class SalaryPaymentsService {
@@ -43,6 +44,7 @@ export class SalaryPaymentsService {
     if (paymentType === SalaryPaymentType.REGULAR) {
       throw new BadRequestException('Regular salary payments must be recorded from a pay period.');
     }
+    this.validatePaymentDetails(paymentType, dto);
     this.validateDisbursementDetails(dto.paymentMethod ?? PaymentMethod.CASH, dto);
 
     const payment = this.paymentRepository.create({
@@ -52,6 +54,9 @@ export class SalaryPaymentsService {
       paymentMethod: dto.paymentMethod ?? PaymentMethod.CASH,
       paidOn: dto.paidOn,
       note: dto.note ?? null,
+      bonusType: dto.bonusType ?? null,
+      overtimeHours: dto.overtimeHours ?? null,
+      overtimeDate: dto.overtimeDate ?? null,
       checkNumber: dto.checkNumber ?? null,
       bankAccountNumber: dto.bankAccountNumber ?? null,
       mobileWalletProvider: dto.mobileWalletProvider ?? null,
@@ -129,6 +134,9 @@ export class SalaryPaymentsService {
       paymentMethod: payment.paymentMethod,
       paidOn: payment.paidOn,
       note: payment.note,
+      bonusType: payment.bonusType,
+      overtimeHours: payment.overtimeHours,
+      overtimeDate: payment.overtimeDate,
       checkNumber: payment.checkNumber,
       bankAccountNumber: payment.bankAccountNumber,
       mobileWalletProvider: payment.mobileWalletProvider,
@@ -139,11 +147,26 @@ export class SalaryPaymentsService {
   }
 
   validateDisbursementDetails(method: PaymentMethod, dto: CreateSalaryPaymentDto): void {
-    if (method === PaymentMethod.BANK && !dto.checkNumber && !dto.bankAccountNumber) {
-      throw new BadRequestException('Bank payments require a check number or bank account number.');
+    if (method === PaymentMethod.BANK && !dto.checkNumber?.trim()) {
+      throw new BadRequestException('Cheque payments require a cheque number.');
     }
-    if (method === PaymentMethod.MOBILE && (!dto.mobileWalletProvider || !dto.mobileWalletNumber)) {
-      throw new BadRequestException('Mobile payments require a wallet provider and wallet number.');
+    if (method === PaymentMethod.MOBILE && !dto.mobileWalletNumber?.trim()) {
+      throw new BadRequestException('Mobile payments require a mobile number.');
+    }
+  }
+
+  private validatePaymentDetails(type: SalaryPaymentType, dto: CreateSalaryPaymentDto): void {
+    if (type === SalaryPaymentType.BONUS && !Object.values(BonusType).includes(dto.bonusType!)) {
+      throw new BadRequestException('Bonus payments require a valid bonus type.');
+    }
+    if (
+      type === SalaryPaymentType.OVERTIME &&
+      (!Number.isInteger(dto.overtimeHours) ||
+        (dto.overtimeHours ?? 0) < 1 ||
+        (dto.overtimeHours ?? 0) > 12 ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(dto.overtimeDate ?? ''))
+    ) {
+      throw new BadRequestException('Overtime payments require 1 to 12 hours and a work date.');
     }
   }
 }

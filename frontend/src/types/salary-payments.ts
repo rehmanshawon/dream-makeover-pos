@@ -1,6 +1,7 @@
 export type SalaryPaymentType = 'REGULAR' | 'BONUS' | 'OVERTIME' | 'ADVANCE' | 'ADVANCE_ADJUSTMENT';
 
 export type SalaryPaymentMethod = 'CASH' | 'BANK' | 'MOBILE';
+export type BonusType = 'FESTIVAL' | 'ANNUAL' | 'SPECIAL';
 
 export interface SalaryPayment {
   id: string;
@@ -11,6 +12,9 @@ export interface SalaryPayment {
   paidOn: string;
   payPeriodId: string | null;
   note: string | null;
+  bonusType: BonusType | null;
+  overtimeHours: number | null;
+  overtimeDate: string | null;
   checkNumber: string | null;
   bankAccountNumber: string | null;
   mobileWalletProvider: string | null;
@@ -26,6 +30,9 @@ export interface CreateSalaryPaymentRequest {
   paymentMethod?: SalaryPaymentMethod;
   paidOn: string;
   note?: string;
+  bonusType?: BonusType;
+  overtimeHours?: number;
+  overtimeDate?: string;
   checkNumber?: string;
   bankAccountNumber?: string;
   mobileWalletProvider?: string;
@@ -42,6 +49,12 @@ export const SALARY_PAYMENT_TYPE_LABELS: Record<SalaryPaymentType, string> = {
 
 export const SALARY_PAYMENT_METHOD_LABELS: Record<SalaryPaymentMethod, string> = {
   CASH: 'Cash',
-  BANK: 'Bank transfer',
+  BANK: 'Cheque',
   MOBILE: 'Mobile banking',
+};
+
+export const BONUS_TYPE_LABELS: Record<BonusType, string> = {
+  FESTIVAL: 'Festival bonus',
+  ANNUAL: 'Annual bonus',
+  SPECIAL: 'Special bonus',
 };

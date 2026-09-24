@@ -37,6 +37,11 @@ function paymentResponse(overrides: Record<string, unknown> = {}): unknown {
     paymentMethod: 'CASH',
     paidOn: '2026-09-01',
     note: 'September salary',
+    bonusType: null,
+    overtimeHours: null,
+    overtimeDate: null,
+    checkNumber: null,
+    mobileWalletNumber: null,
     paidBy: 'admin',
     createdAt: '2026-09-01T10:00:00.000Z',
     ...overrides,
@@ -82,6 +87,7 @@ describe('SalaryPaymentHistory', () => {
               id: 'p2',
               amountMinor: 500000,
               paymentType: 'BONUS',
+              bonusType: 'FESTIVAL',
               paidOn: '2026-09-15',
               note: 'Eid bonus',
             }),
@@ -101,6 +107,41 @@ describe('SalaryPaymentHistory', () => {
     expect(screen.getByText(/^Bonus$/i)).toBeInTheDocument();
     expect(screen.getByText('September salary')).toBeInTheDocument();
     expect(screen.getByText('Eid bonus')).toBeInTheDocument();
+    expect(screen.getByText('Festival bonus')).toBeInTheDocument();
+  });
+
+  it('shows overtime, cheque, and mobile details in the ledger', async () => {
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify([
+            paymentResponse({
+              id: 'overtime',
+              paymentType: 'OVERTIME',
+              paymentMethod: 'BANK',
+              overtimeHours: 4,
+              overtimeDate: '2026-09-20',
+              checkNumber: 'DBBL-001A',
+            }),
+            paymentResponse({
+              id: 'mobile',
+              paymentType: 'ADVANCE',
+              paymentMethod: 'MOBILE',
+              mobileWalletNumber: '01712345678',
+            }),
+          ]),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+    ) as unknown as typeof fetch;
+
+    renderWithProviders(<SalaryPaymentHistory employee={EMPLOYEE} />, {
+      user: ADMIN,
+      token: 'test-token',
+    });
+
+    expect(await screen.findByText(/4 hours on/)).toBeInTheDocument();
+    expect(screen.getByText(/Cheque DBBL-001A/)).toBeInTheDocument();
+    expect(screen.getByText('Mobile 01712345678')).toBeInTheDocument();
   });
 
   it('opens a delete confirmation and calls the delete endpoint', async () => {
