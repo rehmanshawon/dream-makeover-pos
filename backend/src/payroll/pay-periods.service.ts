@@ -390,7 +390,9 @@ export class PayPeriodsService {
 
     if (recordedDays > 0) {
       const payableDays =
-        employee.salaryFrequency === 'MONTHLY' ? Math.min(workedDays, 30) : workedDays;
+        employee.salaryFrequency === 'MONTHLY'
+          ? Math.max(0, Math.min(30, 30 - (recordedDays - workedDays)))
+          : workedDays;
       return Math.round(dailyRate * payableDays);
     }
 

@@ -233,11 +233,31 @@ describe('PayPeriodsService', () => {
     );
     expect(result[0]).toMatchObject({
       employeeId: staff.id,
-      payableMinor: 250000,
+      payableMinor: 2950000,
       alreadyPaidMinor: 100000,
-      remainingMinor: 150000,
+      remainingMinor: 2850000,
       hasExistingPayment: true,
     });
+  });
+
+  it('deducts absent days from the fixed 30-day monthly salary', async () => {
+    const staff = employee({ salaryMinor: 2000000 });
+    const august = period({
+      id: 'period-august',
+      name: 'August 2026',
+      month: 8,
+      startDate: '2026-08-01',
+      endDate: '2026-08-31',
+    });
+    periodRepo.findOne!.mockResolvedValue(august);
+    periodRepo.find!.mockResolvedValue([august]);
+    employeeRepo.find!.mockResolvedValue([staff]);
+    paymentRepo.find!.mockResolvedValue([]);
+    attendanceService.getWorkedDays.mockResolvedValue({ workedDays: 27, recordedDays: 31 });
+
+    const result = await service.getPayables(august.id);
+
+    expect(result[0].payableMinor).toBe(1733333);
   });
 
   it('falls back to calendar days when attendance is unrecorded', async () => {
