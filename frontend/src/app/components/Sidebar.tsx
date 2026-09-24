@@ -143,7 +143,11 @@ export function Sidebar(): JSX.Element {
         <img src="/logo.png" alt="" className="sidebar__brand-logo" width={44} height={44} />
         <div className="sidebar__brand-text">
           <span className="sidebar__brand-name">Dream Makeover</span>
-          <span className="sidebar__brand-tagline">A Luxury Beauty Salon</span>
+          <span className="sidebar__brand-tagline">
+            A LUXURY
+            <br />
+            BEAUTY SALON
+          </span>
         </div>
       </div>
 

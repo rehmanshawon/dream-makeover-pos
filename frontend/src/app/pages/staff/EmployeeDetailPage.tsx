@@ -89,43 +89,45 @@ export function EmployeeDetailPage(): JSX.Element {
             </div>
           }
         >
-          <div className="employee-detail__photo-frame">
-            {photoSrc ? (
-              <img
-                src={photoSrc}
-                alt={`${data.fullName} photograph`}
-                className="employee-detail__photo"
-              />
-            ) : (
-              <div className="employee-detail__photo-placeholder" aria-label="No photograph">
-                {data.fullName.charAt(0).toUpperCase()}
+          <div className="employee-detail__overview">
+            <div className="employee-detail__photo-frame">
+              {photoSrc ? (
+                <img
+                  src={photoSrc}
+                  alt={`${data.fullName} photograph`}
+                  className="employee-detail__photo"
+                />
+              ) : (
+                <div className="employee-detail__photo-placeholder" aria-label="No photograph">
+                  {data.fullName.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+            <dl className="employee-detail__facts">
+              <div className="employee-detail__fact">
+                <dt>Salary</dt>
+                <dd>
+                  {formatBdt(data.salaryMinor)}
+                  <span className="employee-detail__frequency">
+                    {' '}
+                    per {data.salaryFrequency.toLowerCase().replace('ly', '')}
+                  </span>
+                </dd>
               </div>
-            )}
+              <div className="employee-detail__fact">
+                <dt>Joined</dt>
+                <dd>{formatDate(data.joinDate)}</dd>
+              </div>
+              <div className="employee-detail__fact">
+                <dt>Phone</dt>
+                <dd>{data.phone ?? '—'}</dd>
+              </div>
+              <div className="employee-detail__fact">
+                <dt>Last updated</dt>
+                <dd>{formatDateTime(data.updatedAt)}</dd>
+              </div>
+            </dl>
           </div>
-          <dl className="employee-detail__facts">
-            <div className="employee-detail__fact">
-              <dt>Salary</dt>
-              <dd>
-                {formatBdt(data.salaryMinor)}
-                <span className="employee-detail__frequency">
-                  {' '}
-                  per {data.salaryFrequency.toLowerCase().replace('ly', '')}
-                </span>
-              </dd>
-            </div>
-            <div className="employee-detail__fact">
-              <dt>Joined</dt>
-              <dd>{formatDate(data.joinDate)}</dd>
-            </div>
-            <div className="employee-detail__fact">
-              <dt>Phone</dt>
-              <dd>{data.phone ?? '—'}</dd>
-            </div>
-            <div className="employee-detail__fact">
-              <dt>Last updated</dt>
-              <dd>{formatDateTime(data.updatedAt)}</dd>
-            </div>
-          </dl>
 
           {data.note && (
             <div className="employee-detail__note">

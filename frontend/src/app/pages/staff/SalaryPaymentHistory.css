@@ -55,3 +55,13 @@
 .payment-history .table {
   min-width: 760px;
 }
+
+@media (max-width: 640px) {
+  .payment-history__advance-adjustment-label {
+    display: inline-block;
+    max-width: 68px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.1;
+  }
+}

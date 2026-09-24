@@ -46,9 +46,7 @@
 .sidebar__brand-tagline {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 /* -----------------------------------------------------------------------------

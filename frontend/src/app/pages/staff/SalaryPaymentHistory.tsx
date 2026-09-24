@@ -148,7 +148,13 @@ export function SalaryPaymentHistory({ employee }: SalaryPaymentHistoryProps): J
       align: 'center',
       render: (p) => (
         <Badge variant={TYPE_VARIANT[p.paymentType]}>
-          {SALARY_PAYMENT_TYPE_LABELS[p.paymentType]}
+          {p.paymentType === 'ADVANCE_ADJUSTMENT' ? (
+            <span className="payment-history__advance-adjustment-label">
+              {SALARY_PAYMENT_TYPE_LABELS[p.paymentType]}
+            </span>
+          ) : (
+            SALARY_PAYMENT_TYPE_LABELS[p.paymentType]
+          )}
         </Badge>
       ),
     },

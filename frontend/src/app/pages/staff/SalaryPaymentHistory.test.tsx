@@ -112,6 +112,25 @@ describe('SalaryPaymentHistory', () => {
     );
   });
 
+  it('marks advance adjustments for wrapping in the narrow salary table', async () => {
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify([paymentResponse({ paymentType: 'ADVANCE_ADJUSTMENT' })]), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+    ) as unknown as typeof fetch;
+
+    renderWithProviders(<SalaryPaymentHistory employee={EMPLOYEE} />, {
+      user: ADMIN,
+      token: 'test-token',
+    });
+
+    expect(await screen.findByText('Advance adjustment')).toHaveClass(
+      'payment-history__advance-adjustment-label',
+    );
+  });
+
   it('opens a delete confirmation and calls the delete endpoint', async () => {
     let deleteCalled = false;
     globalThis.fetch = vi.fn(async (_input, init) => {
