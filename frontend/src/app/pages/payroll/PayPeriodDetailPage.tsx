@@ -428,7 +428,7 @@ export function PayPeriodDetailPage(): JSX.Element {
           open
           title={`Attendance — ${attendanceFor.employeeName}`}
           onClose={() => setAttendanceFor(null)}
-          size="md"
+          size="lg"
         >
           <AttendanceEditor
             employeeId={attendanceFor.employeeId}

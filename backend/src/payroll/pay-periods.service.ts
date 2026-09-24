@@ -119,7 +119,12 @@ export class PayPeriodsService {
         const totalDueMinor = balances.salaryDueMinor;
         const currentObligationMinor = obligations[obligations.length - 1] ?? 0;
         const alreadyPaidMinor = payments
-          .filter((payment) => payment.employeeId === e.id && payment.payPeriodId === periodId)
+          .filter(
+            (payment) =>
+              payment.employeeId === e.id &&
+              payment.payPeriodId === periodId &&
+              payment.paymentType === SalaryPaymentType.REGULAR,
+          )
           .reduce((sum, payment) => sum + payment.amountMinor, 0);
         const carriedArrearsMinor = Math.max(0, totalDueMinor - currentObligationMinor);
         const remainingMinor = balances.netDueMinor;
@@ -378,7 +383,12 @@ export class PayPeriodsService {
           paidBy: cashier,
         });
         const saved = await paymentRepo.save(payment);
-        if (balances.advanceMinor > 0) {
+        const hasAdvanceAdjustmentThisPeriod = payments.some(
+          (payment) =>
+            payment.payPeriodId === periodId &&
+            payment.paymentType === SalaryPaymentType.ADVANCE_ADJUSTMENT,
+        );
+        if (balances.advanceMinor > 0 && !hasAdvanceAdjustmentThisPeriod) {
           await paymentRepo.save(
             paymentRepo.create({
               employeeId: e.id,
@@ -511,6 +521,13 @@ export class PayPeriodsService {
           periods.some((candidate) => candidate.id === payment.payPeriodId),
       )
       .reduce((sum, payment) => sum + payment.amountMinor, 0);
+    const currentAdjustmentMinor = employeePayments
+      .filter(
+        (payment) =>
+          payment.payPeriodId === period.id &&
+          payment.paymentType === SalaryPaymentType.ADVANCE_ADJUSTMENT,
+      )
+      .reduce((sum, payment) => sum + payment.amountMinor, 0);
     let cumulativeObligation = 0;
     let cumulativeRegular = 0;
     let overpaymentMinor = 0;
@@ -522,10 +539,12 @@ export class PayPeriodsService {
       overpaymentMinor = Math.max(overpaymentMinor, cumulativeRegular - cumulativeObligation);
     }
     const advanceMinor = Math.max(0, explicitAdvanceMinor + overpaymentMinor - adjustmentMinor);
+    const currentAdvanceDeductionMinor =
+      currentAdjustmentMinor > 0 ? currentAdjustmentMinor : advanceMinor;
     return {
       salaryDueMinor,
       advanceMinor,
-      netDueMinor: Math.max(0, salaryDueMinor - advanceMinor),
+      netDueMinor: Math.max(0, salaryDueMinor - currentAdvanceDeductionMinor),
     };
   }
 

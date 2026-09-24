@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import { Select, type SelectOption } from '../../../ui/Select';
 import { Button } from '../../../ui/Button';
 import { Spinner } from '../../../ui/Spinner';
 import { useAttendance, useAttendanceSummary } from '../../../api/attendance-hooks';
@@ -17,9 +16,7 @@ interface AttendanceEditorProps {
   onClose?: () => void;
 }
 
-const STATUS_OPTIONS: SelectOption[] = (Object.keys(ATTENDANCE_LABELS) as AttendanceStatus[]).map(
-  (key) => ({ value: key, label: ATTENDANCE_LABELS[key] }),
-);
+const STATUS_OPTIONS = Object.keys(ATTENDANCE_LABELS) as AttendanceStatus[];
 
 function enumerateDates(from: string, to: string): string[] {
   const dates: string[] = [];
@@ -64,7 +61,7 @@ export function AttendanceEditor({
 }: AttendanceEditorProps): JSX.Element {
   const { data, isLoading, error, refetch } = useAttendance(employeeId, from, to);
 
-  const [pending, setPending] = useState<Map<string, AttendanceStatus>>(new Map());
+  const [pending, setPending] = useState<Map<string, AttendanceStatus | ''>>(new Map());
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -95,7 +92,7 @@ export function AttendanceEditor({
     return committedByDate.get(date) ?? '';
   };
 
-  const handleChange = (date: string, status: AttendanceStatus): void => {
+  const handleChange = (date: string, status: AttendanceStatus | ''): void => {
     setPending((prev) => {
       const next = new Map(prev);
       if (status === (committedByDate.get(date) ?? '')) {
@@ -113,13 +110,15 @@ export function AttendanceEditor({
     setSaving(true);
     setSaveError(null);
     try {
-      await attendanceApi.upsertBulk(
-        employeeId,
-        Array.from(pending.entries()).map(([date, status]) => ({
-          date,
-          status,
-        })),
-      );
+      const updates = Array.from(pending.entries());
+      const entries = updates
+        .filter(([, status]) => status !== '')
+        .map(([date, status]) => ({ date, status: status as AttendanceStatus }));
+      const removals = updates.filter(([, status]) => status === '').map(([date]) => date);
+      await Promise.all([
+        entries.length > 0 ? attendanceApi.upsertBulk(employeeId, entries) : Promise.resolve(),
+        ...removals.map((date) => attendanceApi.remove(employeeId, date)),
+      ]);
       setPending(new Map());
       setSaved(true);
       await Promise.all([refetch(), summaryQuery.refetch()]);
@@ -179,14 +178,33 @@ export function AttendanceEditor({
         {dates.map((date) => (
           <div key={date} className="attendance-editor__row">
             <span className="attendance-editor__day">{formatDay(date)}</span>
-            <div className="attendance-editor__control">
-              <Select
-                options={[{ value: '', label: '— Not recorded —' }, ...STATUS_OPTIONS]}
-                value={valueFor(date)}
-                onChange={(e) => handleChange(date, e.target.value as AttendanceStatus)}
-                disabled={disabled || saving}
-              />
-            </div>
+            <fieldset className="attendance-editor__options" disabled={disabled || saving}>
+              <legend className="attendance-editor__visually-hidden">
+                Attendance for {formatDay(date)}
+              </legend>
+              <label className="attendance-editor__option">
+                <input
+                  type="radio"
+                  name={`attendance-${date}`}
+                  value=""
+                  checked={valueFor(date) === ''}
+                  onChange={() => handleChange(date, '')}
+                />
+                <span>Not Recorded</span>
+              </label>
+              {STATUS_OPTIONS.map((status) => (
+                <label key={status} className="attendance-editor__option">
+                  <input
+                    type="radio"
+                    name={`attendance-${date}`}
+                    value={status}
+                    checked={valueFor(date) === status}
+                    onChange={() => handleChange(date, status)}
+                  />
+                  <span>{ATTENDANCE_LABELS[status]}</span>
+                </label>
+              ))}
+            </fieldset>
           </div>
         ))}
       </div>

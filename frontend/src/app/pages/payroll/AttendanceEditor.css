@@ -8,9 +8,11 @@
 
 .attendance-editor__row {
   display: grid;
-  grid-template-columns: 120px 1fr;
-  align-items: center;
+  grid-template-columns: 104px minmax(0, 1fr);
+  align-items: start;
   gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .attendance-editor__day {
@@ -19,8 +21,50 @@
   font-weight: var(--font-weight-medium);
 }
 
-.attendance-editor__control {
-  max-width: 220px;
+.attendance-editor__options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.attendance-editor__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.attendance-editor__option input {
+  flex: 0 0 auto;
+  accent-color: var(--color-accent);
+}
+
+.attendance-editor__option span {
+  overflow-wrap: anywhere;
+}
+
+.attendance-editor__options:disabled .attendance-editor__option {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.attendance-editor__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .attendance-editor__center {
@@ -100,4 +144,15 @@
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   color: var(--color-text);
+}
+
+@media (max-width: 720px) {
+  .attendance-editor__row {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  .attendance-editor__options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

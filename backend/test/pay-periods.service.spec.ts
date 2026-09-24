@@ -321,6 +321,53 @@ describe('PayPeriodsService', () => {
     expect(result[0].payableMinor).toBe(3000000);
   });
 
+  it('uses a partial advance adjustment as the current deduction', async () => {
+    const staff = employee({ salaryMinor: 4000000 });
+    const september = period({
+      id: 'period-september',
+      name: 'September 2026',
+      month: 9,
+      startDate: '2026-09-01',
+      endDate: '2026-09-30',
+    });
+    const october = period({
+      id: 'period-october',
+      name: 'October 2026',
+      month: 10,
+      startDate: '2026-10-01',
+      endDate: '2026-10-31',
+    });
+    periodRepo.findOne!.mockResolvedValue(october);
+    periodRepo.find!.mockResolvedValue([september, october]);
+    employeeRepo.find!.mockResolvedValue([staff]);
+    paymentRepo.find!.mockResolvedValue([
+      {
+        employeeId: staff.id,
+        amountMinor: 500000,
+        payPeriodId: null,
+        paymentType: SalaryPaymentType.ADVANCE,
+        paidOn: '2026-09-15',
+      },
+      {
+        employeeId: staff.id,
+        amountMinor: 200000,
+        payPeriodId: october.id,
+        paymentType: SalaryPaymentType.ADVANCE_ADJUSTMENT,
+        paidOn: october.endDate,
+      },
+    ] as SalaryPayment[]);
+    attendanceService.getWorkedDays.mockResolvedValue({ workedDays: 30, recordedDays: 30 });
+
+    const result = await service.getPayables(october.id);
+
+    expect(result[0]).toMatchObject({
+      totalDueMinor: 8000000,
+      advanceMinor: 300000,
+      alreadyPaidMinor: 0,
+      remainingMinor: 7800000,
+    });
+  });
+
   it('runs payroll once and skips already paid employees', async () => {
     const staff = employee();
     const existing = employee({ id: 'employee-2', fullName: 'Already Paid' });
