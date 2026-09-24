@@ -38,6 +38,19 @@ h6 {
   margin: 0;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+[role='heading'],
+.pl-table__section-title,
+.package-form__components-title,
+.security-section__label-title {
+  text-transform: uppercase;
+}
+
 h1 {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);

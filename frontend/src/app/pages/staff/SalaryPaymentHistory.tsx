@@ -149,11 +149,13 @@ export function SalaryPaymentHistory({ employee }: SalaryPaymentHistoryProps): J
     {
       key: 'paidOn',
       header: 'Date',
+      align: 'left',
       render: (p) => formatDate(p.paidOn),
     },
     {
       key: 'type',
       header: 'Type',
+      align: 'center',
       render: (p) => (
         <Badge variant={TYPE_VARIANT[p.paymentType]}>
           {SALARY_PAYMENT_TYPE_LABELS[p.paymentType]}
@@ -163,33 +165,36 @@ export function SalaryPaymentHistory({ employee }: SalaryPaymentHistoryProps): J
     {
       key: 'method',
       header: 'Method',
+      align: 'center',
       render: (p) => SALARY_PAYMENT_METHOD_LABELS[p.paymentMethod],
     },
-    {
-      key: 'details',
-      header: 'Details',
-      render: paymentDetails,
-    },
+    // {
+    //   key: 'details',
+    //   header: 'Details',
+    //   render: paymentDetails,
+    // },
     {
       key: 'note',
       header: 'Note',
+      align: 'center',
       render: (p) => p.note ?? '—',
     },
     {
       key: 'paidBy',
       header: 'Recorded by',
+      align: 'center',
       render: (p) => p.paidBy,
     },
     {
       key: 'amount',
       header: 'Amount',
-      align: 'right',
+      align: 'center',
       render: (p) => <span className="payment-history__amount">{formatBdt(p.amountMinor)}</span>,
     },
     {
       key: 'actions',
-      header: '',
-      align: 'right',
+      header: 'actions',
+      align: 'center',
       render: (p) => (
         <Button
           size="sm"
@@ -206,7 +211,7 @@ export function SalaryPaymentHistory({ employee }: SalaryPaymentHistoryProps): J
     },
     {
       key: 'print',
-      header: '',
+      header: 'Print',
       align: 'right',
       render: (p) => (
         <Button
