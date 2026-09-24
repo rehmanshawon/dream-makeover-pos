@@ -84,6 +84,11 @@ describe('PayPeriodDetailPage', () => {
     expect(screen.getByText('Recorded payments')).toBeInTheDocument();
     expect(screen.getAllByText('Asha Rahman')).not.toHaveLength(0);
     expect(screen.getAllByText('৳30,000.00')).not.toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Attendance for Asha Rahman' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Adjust advance for Asha Rahman' })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Pay partial salary for Asha Rahman' }),
+    ).toBeDisabled();
 
     await user.click(screen.getByRole('button', { name: /^Delete$/i }));
     expect(screen.getByRole('heading', { name: 'Delete salary payment' })).toBeInTheDocument();

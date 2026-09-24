@@ -33,7 +33,7 @@ export type IllustrationIconName =
   | 'payroll'
   | 'settings';
 
-export type UtilityIconName = 'edit' | 'power' | 'trash';
+export type UtilityIconName = 'edit' | 'power' | 'trash' | 'calendar-check' | 'adjust' | 'pay';
 
 export type IconName = IllustrationIconName | UtilityIconName;
 
@@ -55,7 +55,14 @@ const ILLUSTRATION_SRC: Record<IllustrationIconName, string> = {
   settings: settingsIcon,
 };
 
-const UTILITY_ICONS: UtilityIconName[] = ['edit', 'power', 'trash'];
+const UTILITY_ICONS: UtilityIconName[] = [
+  'edit',
+  'power',
+  'trash',
+  'calendar-check',
+  'adjust',
+  'pay',
+];
 
 function isUtilityIcon(name: IconName): name is UtilityIconName {
   return (UTILITY_ICONS as string[]).includes(name);
@@ -143,6 +150,30 @@ function renderUtilityIcon(
       return (
         <svg {...common}>
           <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      );
+    case 'calendar-check':
+      return (
+        <svg {...common}>
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M16 3v4M8 3v4M3 10h18m-13 5 2 2 4-4" />
+        </svg>
+      );
+    case 'adjust':
+      return (
+        <svg {...common}>
+          <path d="M4 6h16M4 12h16M4 18h16" />
+          <circle cx="8" cy="6" r="2" fill="currentColor" />
+          <circle cx="16" cy="12" r="2" fill="currentColor" />
+          <circle cx="10" cy="18" r="2" fill="currentColor" />
+        </svg>
+      );
+    case 'pay':
+      return (
+        <svg {...common}>
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="M3 10h18m-13 5h3" />
+          <circle cx="17" cy="15" r="1" fill="currentColor" stroke="none" />
         </svg>
       );
   }

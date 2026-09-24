@@ -24,6 +24,7 @@ import { Modal } from '@/ui/Modal/Modal';
 import { AttendanceEditor } from './AttendanceEditor';
 import { PayrollSalaryPaymentModal } from './PayrollSalaryPaymentModal';
 import { AdvanceAdjustmentModal } from './AdvanceAdjustmentModal';
+import { Icon } from '../../components/Icon';
 
 export function PayPeriodDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -139,39 +140,43 @@ export function PayPeriodDetailPage(): JSX.Element {
 
   const columns: TableColumn<PayableEmployee>[] = [
     { key: 'name', header: 'Employee', render: (e) => e.employeeName },
-    { key: 'role', header: 'Role', render: (e) => e.role },
+    { key: 'role', header: 'Role', align: 'center', render: (e) => e.role },
     {
       key: 'attendance',
-      header: '',
+      header: 'Attendance',
+      align: 'center',
       render: (e) => (
         <Button
           size="sm"
           variant="secondary"
+          className="button--icon"
+          aria-label={`Attendance for ${e.employeeName}`}
+          title={`Attendance for ${e.employeeName}`}
           onClick={(ev) => {
             ev.stopPropagation();
             setAttendanceFor(e);
           }}
         >
-          Attendance
+          <Icon name="calendar-check" size={16} />
         </Button>
       ),
     },
     {
       key: 'payable',
       header: 'Payable',
-      align: 'right',
+      align: 'center',
       render: (e) => formatBdt(e.payableMinor),
     },
     {
       key: 'paid',
-      header: 'Already paid',
-      align: 'right',
+      header: 'paid',
+      align: 'center',
       render: (e) => formatBdt(e.alreadyPaidMinor),
     },
     {
       key: 'remaining',
-      header: 'Due Amount',
-      align: 'right',
+      header: 'Due',
+      align: 'center',
       render: (e) => (
         <span className="pay-period-detail__remaining">{formatBdt(e.remainingMinor)}</span>
       ),
@@ -179,48 +184,55 @@ export function PayPeriodDetailPage(): JSX.Element {
     {
       key: 'advance',
       header: 'Advance',
-      align: 'right',
+      align: 'center',
       render: (e) => formatBdt(e.advanceMinor),
     },
     {
       key: 'adjust',
-      header: '',
-      align: 'right',
+      header: 'Adjust',
+      align: 'center',
       render: (e) => (
         <Button
           size="sm"
           variant="secondary"
+          className="button--icon"
+          aria-label={`Adjust advance for ${e.employeeName}`}
+          title={`Adjust advance for ${e.employeeName}`}
           disabled={!isOpen || e.advanceMinor <= 0}
           onClick={(event) => {
             event.stopPropagation();
             setAdvanceAdjustmentFor(e);
           }}
         >
-          Adjust
+          <Icon name="adjust" size={16} />
         </Button>
       ),
     },
     {
       key: 'pay',
-      header: '',
-      align: 'right',
+      header: 'Partial Pay',
+      align: 'center',
       render: (e) => (
         <Button
           size="sm"
           variant="primary"
+          className="button--icon"
+          aria-label={`Pay partial salary for ${e.employeeName}`}
+          title={`Pay partial salary for ${e.employeeName}`}
           disabled={!isOpen || e.remainingMinor <= 0}
           onClick={(ev) => {
             ev.stopPropagation();
             setSalaryPaymentFor(e);
           }}
         >
-          Pay Partial Salary
+          <Icon name="pay" size={16} />
         </Button>
       ),
     },
     {
       key: 'status',
       header: 'Status',
+      align: 'right',
       render: (e) =>
         e.hasExistingPayment ? (
           e.remainingMinor > 0 ? (
