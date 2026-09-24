@@ -79,6 +79,57 @@ export class PayPeriodsService {
     return this.toResponse(period);
   }
 
+  async ensurePeriodExists(year: number, month: number): Promise<PayPeriod> {
+    const existing = await this.periodRepository.findOne({ where: { year, month } });
+    if (existing) return existing;
+
+    try {
+      return await this.periodRepository.save(
+        this.periodRepository.create({
+          year,
+          month,
+          name: nameFor(year, month),
+          startDate: startOf(year, month),
+          endDate: endOf(year, month),
+          status: PayPeriodStatus.OPEN,
+        }),
+      );
+    } catch (error) {
+      // Another application instance may have inserted this month concurrently.
+      const createdByOtherInstance = await this.periodRepository.findOne({
+        where: { year, month },
+      });
+      if (createdByOtherInstance) return createdByOtherInstance;
+      throw error;
+    }
+  }
+
+  async ensureMissingPeriodsThrough(year: number, month: number): Promise<void> {
+    const periods = await this.periodRepository.find({
+      order: { year: 'ASC', month: 'ASC' },
+    });
+    const startingPeriod = periods.find(
+      (period) => period.year < year || (period.year === year && period.month <= month),
+    );
+
+    if (!startingPeriod) {
+      await this.ensurePeriodExists(year, month);
+      return;
+    }
+
+    let cursorYear = startingPeriod.year;
+    let cursorMonth = startingPeriod.month;
+    while (cursorYear < year || (cursorYear === year && cursorMonth <= month)) {
+      await this.ensurePeriodExists(cursorYear, cursorMonth);
+      if (cursorMonth === 12) {
+        cursorYear += 1;
+        cursorMonth = 1;
+      } else {
+        cursorMonth += 1;
+      }
+    }
+  }
+
   /**
    * Returns all employees who were eligible during the period,
    * along with their payable amounts.

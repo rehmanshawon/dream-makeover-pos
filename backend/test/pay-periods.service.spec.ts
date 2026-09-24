@@ -108,6 +108,58 @@ describe('PayPeriodsService', () => {
     expect(result.status).toBe(PayPeriodStatus.OPEN);
   });
 
+  it('returns an existing period instead of creating a duplicate', async () => {
+    const existing = period({ year: 2026, month: 9 });
+    periodRepo.findOne!.mockResolvedValue(existing);
+
+    await expect(service.ensurePeriodExists(2026, 9)).resolves.toBe(existing);
+    expect(periodRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('recovers when another instance creates the period between lookup and save', async () => {
+    const createdByOtherInstance = period({ year: 2026, month: 9 });
+    periodRepo.findOne!.mockResolvedValueOnce(null).mockResolvedValueOnce(createdByOtherInstance);
+    periodRepo.create!.mockImplementation((value) => value as PayPeriod);
+    periodRepo.save!.mockRejectedValue(new Error('duplicate year/month key'));
+
+    await expect(service.ensurePeriodExists(2026, 9)).resolves.toBe(createdByOtherInstance);
+    expect(periodRepo.findOne).toHaveBeenCalledTimes(2);
+  });
+
+  it('fills missing periods between the oldest existing period and current month', async () => {
+    const january = period({ year: 2026, month: 1 });
+    const march = period({ id: 'period-march', year: 2026, month: 3, name: 'March 2026' });
+    const existing = [january, march];
+    const saved: PayPeriod[] = [];
+    periodRepo.find!.mockResolvedValue(existing);
+    periodRepo.findOne!.mockImplementation(async (options) => {
+      const where = options?.where as { year?: number; month?: number };
+      return (
+        [...existing, ...saved].find(
+          (candidate) => candidate.year === where.year && candidate.month === where.month,
+        ) ?? null
+      );
+    });
+    periodRepo.create!.mockImplementation((value) => value as PayPeriod);
+    periodRepo.save!.mockImplementation(async (value) => {
+      const created = value as PayPeriod;
+      saved.push(created);
+      return created;
+    });
+
+    await service.ensureMissingPeriodsThrough(2026, 3);
+
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).toMatchObject({
+      year: 2026,
+      month: 2,
+      name: 'February 2026',
+      startDate: '2026-02-01',
+      endDate: '2026-02-28',
+      status: PayPeriodStatus.OPEN,
+    });
+  });
+
   it('allows past, current, and next month periods', async () => {
     jest.useFakeTimers().setSystemTime(new Date('2026-09-23T12:00:00Z'));
     periodRepo.findOne!.mockResolvedValue(null);
