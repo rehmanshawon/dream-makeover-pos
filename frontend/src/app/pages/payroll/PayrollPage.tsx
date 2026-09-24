@@ -110,7 +110,7 @@ export function PayrollPage(): JSX.Element {
         {!isLoading && !error && data && data.length === 0 && (
           <EmptyState
             title="No pay periods yet"
-            description="Create the first pay period to start running payroll."
+            description="Pay periods are created automatically at the start of each business month. You can also create one manually for testing."
             action={<Button onClick={() => setCreateOpen(true)}>Create pay period</Button>}
           />
         )}

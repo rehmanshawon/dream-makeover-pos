@@ -4,7 +4,6 @@ import type {
   PayableEmployee,
   RunPayrollResult,
   CreatePayPeriodRequest,
-  NextReminder,
   CreatePayrollSalaryPaymentRequest,
   AdjustAdvanceRequest,
 } from '../types/payroll';
@@ -54,10 +53,6 @@ export const payrollApi = {
       `/pay-periods/${periodId}/employees/${payload.employeeId}/advance-adjustments`,
       { amountMinor: payload.amountMinor },
     );
-  },
-
-  getNextReminder(): Promise<NextReminder> {
-    return api.get<NextReminder>('/pay-periods/next-reminder');
   },
 
   deletePayments(ids: string[]): Promise<{ deletedCount: number }> {

@@ -11,7 +11,6 @@ import type {
   PayableEmployee,
   RunPayrollResult,
   CreatePayPeriodRequest,
-  NextReminder,
   CreatePayrollSalaryPaymentRequest,
   AdjustAdvanceRequest,
 } from '../types/payroll';
@@ -23,19 +22,6 @@ export const payrollKeys = {
   period: (id: string) => [...payrollKeys.all, 'period', id] as const,
   payables: (id: string) => [...payrollKeys.all, 'payables', id] as const,
 };
-
-export const payrollKeys2 = {
-  ...payrollKeys,
-  nextReminder: () => [...payrollKeys.all, 'next-reminder'] as const,
-};
-
-export function useNextPayPeriodReminder(): UseQueryResult<NextReminder, Error> {
-  return useQuery({
-    queryKey: payrollKeys2.nextReminder(),
-    queryFn: () => payrollApi.getNextReminder(),
-    staleTime: 60_000,
-  });
-}
 
 export function usePayPeriods(): UseQueryResult<PayPeriod[], Error> {
   return useQuery({

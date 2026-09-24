@@ -26,15 +26,6 @@ export class PayPeriodsController {
     return this.service.findAll();
   }
 
-  @Get('next-reminder')
-  async getNextReminder(): Promise<{
-    shouldRemind: boolean;
-    nextMonth: { year: number; month: number; name: string };
-    hasNextPeriod: boolean;
-  }> {
-    return this.service.getNextReminder();
-  }
-
   @Get(':id')
   async findById(@Param('id') id: string): Promise<PayPeriodResponseDto> {
     return this.service.findById(id);

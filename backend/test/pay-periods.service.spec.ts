@@ -201,26 +201,6 @@ describe('PayPeriodsService', () => {
     await expect(service.create({ year: 2026, month: 13 })).rejects.toThrow(BadRequestException);
   });
 
-  it('returns the next-period reminder state', async () => {
-    jest.useFakeTimers().setSystemTime(new Date('2026-09-25T12:00:00Z'));
-    periodRepo.findOne!.mockResolvedValue(null);
-
-    await expect(service.getNextReminder()).resolves.toEqual({
-      shouldRemind: true,
-      nextMonth: { year: 2026, month: 10, name: 'October 2026' },
-      hasNextPeriod: false,
-    });
-
-    periodRepo.findOne!.mockResolvedValue(period({ year: 2026, month: 10 }));
-    await expect(service.getNextReminder()).resolves.toEqual({
-      shouldRemind: false,
-      nextMonth: { year: 2026, month: 10, name: 'October 2026' },
-      hasNextPeriod: true,
-    });
-
-    jest.useRealTimers();
-  });
-
   it('rejects missing periods and closing an already closed period', async () => {
     periodRepo.findOne!.mockResolvedValue(null);
     await expect(service.findById('missing')).rejects.toThrow(NotFoundException);

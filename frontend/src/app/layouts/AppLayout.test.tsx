@@ -44,4 +44,9 @@ describe('AppLayout', () => {
     renderLayout('/customers');
     expect(screen.getByRole('complementary', { name: /primary navigation/i })).toBeInTheDocument();
   });
+
+  it('does not render the obsolete manual pay-period reminder banner', () => {
+    renderLayout('/pos');
+    expect(screen.queryByText(/pay period has not been created yet/i)).not.toBeInTheDocument();
+  });
 });

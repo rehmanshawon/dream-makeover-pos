@@ -19,12 +19,6 @@ export interface CreatePayPeriodRequest {
   month: number;
 }
 
-export interface NextReminder {
-  shouldRemind: boolean;
-  nextMonth: { year: number; month: number; name: string };
-  hasNextPeriod: boolean;
-}
-
 export interface PayableEmployee {
   employeeId: string;
   employeeName: string;

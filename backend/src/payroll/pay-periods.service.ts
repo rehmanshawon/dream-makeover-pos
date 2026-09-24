@@ -333,29 +333,6 @@ export class PayPeriodsService {
     return this.toResponse(saved);
   }
 
-  async getNextReminder(): Promise<{
-    shouldRemind: boolean;
-    nextMonth: { year: number; month: number; name: string };
-    hasNextPeriod: boolean;
-  }> {
-    const now = new Date();
-    const next = nextMonth(now.getFullYear(), now.getMonth() + 1);
-
-    const existing = await this.periodRepository.findOne({
-      where: { year: next.year, month: next.month },
-    });
-
-    const dayOfMonth = now.getDate();
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const inLastWeek = dayOfMonth > daysInMonth - 7;
-
-    return {
-      shouldRemind: inLastWeek && !existing,
-      nextMonth: { ...next, name: nameFor(next.year, next.month) },
-      hasNextPeriod: Boolean(existing),
-    };
-  }
-
   async close(id: string, closedBy: string): Promise<PayPeriodResponseDto> {
     const period = await this.periodRepository.findOne({ where: { id } });
     if (!period) throw new NotFoundException('Pay period not found');

@@ -94,7 +94,8 @@ export function PayPeriodFormModal({ open, onClose }: PayPeriodFormModalProps): 
     >
       <form onSubmit={handleSubmit} className="pay-period-form" noValidate>
         <p className="pay-period-form__intro">
-          Choose the month this pay period covers. Each month can have only one pay period.
+          Pay periods are created automatically at the start of each business month. Choose a month
+          to create one manually for testing or setup. Each month can have only one period.
         </p>
 
         <div className="pay-period-form__grid">
