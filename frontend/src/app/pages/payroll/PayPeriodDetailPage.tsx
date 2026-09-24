@@ -188,7 +188,7 @@ export function PayPeriodDetailPage(): JSX.Element {
             setSalaryPaymentFor(e);
           }}
         >
-          Pay salary
+          Pay Partial Salary
         </Button>
       ),
     },
@@ -197,7 +197,11 @@ export function PayPeriodDetailPage(): JSX.Element {
       header: 'Status',
       render: (e) =>
         e.hasExistingPayment ? (
-          <Badge variant="success">Paid</Badge>
+          e.remainingMinor > 0 ? (
+            <Badge variant="warning">Partial</Badge>
+          ) : (
+            <Badge variant="success">Paid</Badge>
+          )
         ) : (
           <Badge variant="warning">Pending</Badge>
         ),
@@ -261,7 +265,8 @@ export function PayPeriodDetailPage(): JSX.Element {
     },
   ];
 
-  const pendingCount = payables.data?.filter((e) => e.remainingMinor > 0).length ?? 0;
+  const pendingCount =
+    payables.data?.filter((e) => !e.hasExistingPayment && e.remainingMinor > 0).length ?? 0;
 
   return (
     <div className="pay-period-detail">
@@ -426,7 +431,7 @@ export function PayPeriodDetailPage(): JSX.Element {
       <ConfirmDialog
         open={confirmRun}
         title="Run payroll"
-        message={`This will create salary payments for ${pendingCount} employees who have not yet been paid for this period. Continue?`}
+        message={`This will pay the full salary due for ${pendingCount} employees without a manual salary payment in this period. Employees with partial payments will be skipped. Continue?`}
         confirmLabel="Run payroll"
         loading={runMutation.isPending}
         onConfirm={handleRun}

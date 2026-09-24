@@ -44,6 +44,7 @@ vi.mock('../../../api/payroll-hooks', () => ({
   }),
   useClosePayPeriod: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useRunPayroll: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useCreatePayrollSalaryPayment: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useDeletePayments: () => ({ mutateAsync: deleteMany, isPending: false }),
 }));
 

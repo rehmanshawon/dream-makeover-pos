@@ -288,6 +288,16 @@ export class PayPeriodsService {
         where: { joinDate: LessThanOrEqual(period.endDate) },
       });
 
+      const currentPeriodPayments = await paymentRepo.find({
+        where: {
+          payPeriodId: periodId,
+          paymentType: SalaryPaymentType.REGULAR,
+        },
+      });
+      const employeesPaidThisPeriod = new Set(
+        currentPeriodPayments.map((payment) => payment.employeeId),
+      );
+
       const created: Array<{
         id: string;
         employeeId: string;
@@ -298,6 +308,10 @@ export class PayPeriodsService {
       let totalPaidMinor = 0;
 
       for (const e of employees) {
+        if (employeesPaidThisPeriod.has(e.id)) {
+          skippedCount += 1;
+          continue;
+        }
         const payableMinor = await this.getRemainingDue(e, period);
         if (payableMinor <= 0) {
           skippedCount += 1;
