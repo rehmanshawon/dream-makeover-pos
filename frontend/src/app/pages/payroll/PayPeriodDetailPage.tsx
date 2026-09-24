@@ -148,7 +148,7 @@ export function PayPeriodDetailPage(): JSX.Element {
       render: (e) => (
         <Button
           size="sm"
-          variant="secondary"
+          variant="primary"
           className="button--icon"
           aria-label={`Attendance for ${e.employeeName}`}
           title={`Attendance for ${e.employeeName}`}
@@ -194,7 +194,7 @@ export function PayPeriodDetailPage(): JSX.Element {
       render: (e) => (
         <Button
           size="sm"
-          variant="secondary"
+          variant="primary"
           className="button--icon"
           aria-label={`Adjust advance for ${e.employeeName}`}
           title={`Adjust advance for ${e.employeeName}`}
