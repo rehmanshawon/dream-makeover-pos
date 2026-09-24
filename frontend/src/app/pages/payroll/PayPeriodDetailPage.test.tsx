@@ -1,11 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { PayPeriodDetailPage } from './PayPeriodDetailPage';
 import { renderWithProviders } from '../../../test/render-with-providers';
-
-const deleteOne = vi.fn();
-const deleteMany = vi.fn();
 
 vi.mock('../../../api/payroll-hooks', () => ({
   usePayPeriod: () => ({
@@ -50,7 +46,6 @@ vi.mock('../../../api/payroll-hooks', () => ({
   useRunPayroll: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useCreatePayrollSalaryPayment: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useAdjustAdvance: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useDeletePayments: () => ({ mutateAsync: deleteMany, isPending: false }),
 }));
 
 vi.mock('../../../api/salary-payment-hooks', () => ({
@@ -72,13 +67,10 @@ vi.mock('../../../api/salary-payment-hooks', () => ({
     isLoading: false,
     refetch: vi.fn(),
   }),
-  useDeleteSalaryPayment: () => ({ mutateAsync: deleteOne, isPending: false }),
 }));
 
 describe('PayPeriodDetailPage', () => {
-  it('renders recorded payments and deletes one after confirmation', async () => {
-    const user = userEvent.setup();
-    deleteOne.mockResolvedValue(undefined);
+  it('renders recorded payments without offering deletion', () => {
     renderWithProviders(<PayPeriodDetailPage />, { route: '/payroll/period-1' });
 
     expect(screen.getByText('Recorded payments')).toBeInTheDocument();
@@ -89,13 +81,6 @@ describe('PayPeriodDetailPage', () => {
     expect(
       screen.getByRole('button', { name: 'Pay partial salary for Asha Rahman' }),
     ).toBeDisabled();
-
-    await user.click(screen.getByRole('button', { name: /^Delete$/i }));
-    expect(screen.getByRole('heading', { name: 'Delete salary payment' })).toBeInTheDocument();
-
-    const deleteButtons = screen.getAllByRole('button', { name: /^Delete$/i });
-    await user.click(deleteButtons[deleteButtons.length - 1]!);
-
-    expect(deleteOne).toHaveBeenCalledWith({ id: 'payment-1', employeeId: 'employee-1' });
+    expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
   });
 });

@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query';
 import { salaryPaymentsApi } from './salary-payments';
 import type { SalaryPayment, CreateSalaryPaymentRequest } from '../types/salary-payments';
+import { payrollKeys } from './payroll-hooks';
 
 export const salaryPaymentKeys = {
   all: ['salary-payments'] as const,
@@ -51,6 +52,7 @@ export function useCreateSalaryPayment(): UseMutationResult<
         queryKey: salaryPaymentKeys.forEmployee(variables.employeeId),
       });
       void queryClient.invalidateQueries({ queryKey: salaryPaymentKeys.all });
+      void queryClient.invalidateQueries({ queryKey: payrollKeys.all });
     },
   });
 }

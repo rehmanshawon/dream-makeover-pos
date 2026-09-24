@@ -410,4 +410,30 @@ describe('PayPeriodsService', () => {
       }),
     );
   });
+
+  it('refuses bulk deletion when the selection contains payroll salary', async () => {
+    const deletePaymentsMock = jest.fn();
+    const queryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([
+        {
+          id: 'payment-regular',
+          payPeriodId: 'period-1',
+          paymentType: SalaryPaymentType.REGULAR,
+        } as SalaryPayment,
+      ]),
+    };
+    const repo = {
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+      delete: deletePaymentsMock,
+    };
+    dataSource.transaction.mockImplementation(async (callback: (manager: unknown) => unknown) =>
+      callback({ getRepository: () => repo }),
+    );
+
+    await expect(service.deletePayments(['payment-regular'])).rejects.toThrow(
+      'Payroll salary payments and advance adjustments cannot be deleted.',
+    );
+    expect(deletePaymentsMock).not.toHaveBeenCalled();
+  });
 });

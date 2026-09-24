@@ -45,6 +45,12 @@ function currentMonthKey(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function canDeleteStaffPayment(payment: SalaryPayment): boolean {
+  return (
+    payment.payPeriodId === null && ['BONUS', 'OVERTIME', 'ADVANCE'].includes(payment.paymentType)
+  );
+}
+
 export function SalaryPaymentHistory({ employee }: SalaryPaymentHistoryProps): JSX.Element {
   const { data, isLoading, error } = useEmployeeSalaryPayments(employee.id);
   const deleteMutation = useDeleteSalaryPayment();
@@ -179,19 +185,20 @@ export function SalaryPaymentHistory({ employee }: SalaryPaymentHistoryProps): J
       key: 'actions',
       header: 'actions',
       align: 'center',
-      render: (p) => (
-        <Button
-          size="sm"
-          variant="ghost"
-          className="button--icon"
-          aria-label="Delete"
-          title="Delete salary payment"
-          onClick={() => setPendingDelete(p)}
-          disabled={deleteMutation.isPending}
-        >
-          <Icon name="trash" size={16} />
-        </Button>
-      ),
+      render: (p) =>
+        canDeleteStaffPayment(p) ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="button--icon"
+            aria-label={`Delete ${SALARY_PAYMENT_TYPE_LABELS[p.paymentType]} for ${employee.fullName}`}
+            title="Delete Staff payment"
+            onClick={() => setPendingDelete(p)}
+            disabled={deleteMutation.isPending}
+          >
+            <Icon name="trash" size={16} />
+          </Button>
+        ) : null,
     },
     {
       key: 'print',

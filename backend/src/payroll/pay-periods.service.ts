@@ -604,22 +604,19 @@ export class PayPeriodsService {
         .where('p.id IN (:...ids)', { ids })
         .getMany();
 
-      // Refuse deletion when any payment belongs to a closed period
-      const periodIds = Array.from(
-        new Set(payments.map((p) => p.payPeriodId).filter(Boolean)),
-      ) as string[];
-
-      if (periodIds.length > 0) {
-        const closedCount = await manager
-          .getRepository(PayPeriod)
-          .createQueryBuilder('pp')
-          .where('pp.id IN (:...ids)', { ids: periodIds })
-          .andWhere('pp.status = :status', { status: PayPeriodStatus.CLOSED })
-          .getCount();
-
-        if (closedCount > 0) {
-          throw new BadRequestException('Cannot delete payments from a closed pay period.');
-        }
+      const containsPayrollPayment = payments.some(
+        (payment) =>
+          payment.payPeriodId !== null ||
+          ![
+            SalaryPaymentType.BONUS,
+            SalaryPaymentType.OVERTIME,
+            SalaryPaymentType.ADVANCE,
+          ].includes(payment.paymentType),
+      );
+      if (containsPayrollPayment) {
+        throw new BadRequestException(
+          'Payroll salary payments and advance adjustments cannot be deleted.',
+        );
       }
 
       const result = await repo.delete(ids);

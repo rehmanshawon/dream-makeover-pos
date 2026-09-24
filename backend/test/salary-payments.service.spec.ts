@@ -205,21 +205,31 @@ describe('SalaryPaymentsService', () => {
     await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
   });
 
-  it('refuses to delete a payment from a closed pay period', async () => {
+  it('refuses to delete a payroll-linked salary payment', async () => {
     const payment = {
       id: 'pay-1',
       employeeId: 'emp-1',
       payPeriodId: 'period-1',
+      paymentType: SalaryPaymentType.REGULAR,
     } as SalaryPayment;
     jest.spyOn(paymentRepo, 'findOne').mockResolvedValue(payment);
-    jest.spyOn(payPeriodRepo, 'findOne').mockResolvedValue({
-      id: 'period-1',
-      status: PayPeriodStatus.CLOSED,
-    } as PayPeriod);
 
-    await expect(service.remove('pay-1')).rejects.toThrow(
-      'Cannot delete payments from a closed pay period.',
-    );
+    await expect(service.remove('pay-1')).rejects.toThrow(BadRequestException);
     expect(paymentRepo.remove).not.toHaveBeenCalled();
+  });
+
+  it('allows deletion of a Staff-originated advance', async () => {
+    const payment = {
+      id: 'pay-advance',
+      employeeId: 'emp-1',
+      payPeriodId: null,
+      paymentType: SalaryPaymentType.ADVANCE,
+    } as SalaryPayment;
+    jest.spyOn(paymentRepo, 'findOne').mockResolvedValue(payment);
+    jest.spyOn(paymentRepo, 'remove').mockResolvedValue(payment);
+
+    await service.remove(payment.id);
+
+    expect(paymentRepo.remove).toHaveBeenCalledWith(payment);
   });
 });

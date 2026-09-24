@@ -112,6 +112,17 @@ export class SalaryPaymentsService {
     const payment = await this.paymentRepository.findOne({ where: { id } });
     if (!payment) throw new NotFoundException('Salary payment not found');
 
+    const isStaffPayment =
+      payment.payPeriodId === null &&
+      [SalaryPaymentType.BONUS, SalaryPaymentType.OVERTIME, SalaryPaymentType.ADVANCE].includes(
+        payment.paymentType,
+      );
+    if (!isStaffPayment) {
+      throw new BadRequestException(
+        'Only bonus, overtime, or advance payments recorded from Staff can be deleted.',
+      );
+    }
+
     if (payment.payPeriodId) {
       const period = await this.payPeriodRepository.findOne({
         where: { id: payment.payPeriodId },

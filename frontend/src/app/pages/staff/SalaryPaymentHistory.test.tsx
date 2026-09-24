@@ -120,10 +120,18 @@ describe('SalaryPaymentHistory', () => {
         deleteCalled = true;
         return new Response(null, { status: 204 });
       }
-      return new Response(JSON.stringify([paymentResponse()]), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify([
+          paymentResponse({
+            paymentType: 'ADVANCE',
+            payPeriodId: null,
+          }),
+        ]),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        },
+      );
     }) as unknown as typeof fetch;
 
     renderWithProviders(<SalaryPaymentHistory employee={EMPLOYEE} />, {
@@ -132,7 +140,7 @@ describe('SalaryPaymentHistory', () => {
     });
 
     await screen.findByText('September salary');
-    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }));
+    await userEvent.click(screen.getByRole('button', { name: 'Delete Advance for Asha Rahman' }));
 
     const dialog = await screen.findByRole('dialog');
     await userEvent.click(within(dialog).getByRole('button', { name: /^delete$/i }));
@@ -140,5 +148,23 @@ describe('SalaryPaymentHistory', () => {
     await vi.waitFor(() => {
       expect(deleteCalled).toBe(true);
     });
+  });
+
+  it('does not offer deletion for payroll salary payments', async () => {
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify([paymentResponse({ payPeriodId: 'period-1' })]), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+    ) as unknown as typeof fetch;
+
+    renderWithProviders(<SalaryPaymentHistory employee={EMPLOYEE} />, {
+      user: ADMIN,
+      token: 'test-token',
+    });
+
+    await screen.findByText('September salary');
+    expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
   });
 });
