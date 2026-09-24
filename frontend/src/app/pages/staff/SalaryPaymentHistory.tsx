@@ -37,6 +37,7 @@ const TYPE_VARIANT: Record<
   BONUS: 'success',
   OVERTIME: 'warning',
   ADVANCE: 'neutral',
+  ADVANCE_ADJUSTMENT: 'accent',
 };
 
 function currentMonthKey(): string {

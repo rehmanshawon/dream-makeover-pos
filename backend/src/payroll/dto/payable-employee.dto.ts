@@ -7,6 +7,7 @@ export class PayableEmployeeDto {
   currentObligationMinor: number;
   carriedArrearsMinor: number;
   totalDueMinor: number;
+  advanceMinor: number;
   alreadyPaidMinor: number;
   remainingMinor: number;
   hasExistingPayment: boolean;

@@ -6,6 +6,7 @@ import type {
   CreatePayPeriodRequest,
   NextReminder,
   CreatePayrollSalaryPaymentRequest,
+  AdjustAdvanceRequest,
 } from '../types/payroll';
 import type { SalaryPayment } from '../types/salary-payments';
 
@@ -45,6 +46,13 @@ export const payrollApi = {
     return api.post<SalaryPayment>(
       `/pay-periods/${periodId}/employees/${payload.employeeId}/salary-payments`,
       payload,
+    );
+  },
+
+  adjustAdvance(periodId: string, payload: AdjustAdvanceRequest): Promise<SalaryPayment> {
+    return api.post<SalaryPayment>(
+      `/pay-periods/${periodId}/employees/${payload.employeeId}/advance-adjustments`,
+      { amountMinor: payload.amountMinor },
     );
   },
 

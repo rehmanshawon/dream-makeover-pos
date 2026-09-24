@@ -14,6 +14,7 @@ import { DeletePaymentsDto } from './dto/delete-payments.dto';
 import { SalaryPaymentResponseDto } from '../salary-payments/dto/salary-payment-response.dto';
 import { CreateSalaryPaymentDto } from '../salary-payments/dto/create-salary-payment.dto';
 import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
+import { AdjustAdvanceDto } from './dto/adjust-advance.dto';
 
 @Controller('pay-periods')
 @UseGuards(JwtAuthGuard)
@@ -65,6 +66,18 @@ export class PayPeriodsController {
       { ...dto, employeeId, paymentType: SalaryPaymentType.REGULAR },
       req.user.username,
     );
+  }
+
+  @Post(':id/employees/:employeeId/advance-adjustments')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async adjustAdvance(
+    @Param('id') periodId: string,
+    @Param('employeeId') employeeId: string,
+    @Body() dto: AdjustAdvanceDto,
+    @Req() req: { user: JwtPayload },
+  ): Promise<SalaryPaymentResponseDto> {
+    return this.service.adjustAdvance(periodId, employeeId, dto, req.user.username);
   }
 
   @Post()

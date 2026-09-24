@@ -23,6 +23,7 @@ import { AddDefaultPaymentMethodToEmployees1700000000019 } from './1700000000019
 import { ReplacePayPeriodsWithYearMonth1700000000020 } from './1700000000020-ReplacePayPeriodsWithYearMonth';
 import { AddPhotoUrlToEmployees1700000000021 } from './1700000000021-AddPhotoUrlToEmployees';
 import { AddSalaryPaymentDisbursementDetails1700000000022 } from './1700000000022-AddSalaryPaymentDisbursementDetails';
+import { AddAdvanceAdjustmentPaymentType1700000000023 } from './1700000000023-AddAdvanceAdjustmentPaymentType';
 
 export const migrations = [
   CreateCustomersTable1700000000000,
@@ -50,4 +51,5 @@ export const migrations = [
   ReplacePayPeriodsWithYearMonth1700000000020,
   AddPhotoUrlToEmployees1700000000021,
   AddSalaryPaymentDisbursementDetails1700000000022,
+  AddAdvanceAdjustmentPaymentType1700000000023,
 ];

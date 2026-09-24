@@ -3,4 +3,5 @@ export enum SalaryPaymentType {
   BONUS = 'BONUS',
   OVERTIME = 'OVERTIME',
   ADVANCE = 'ADVANCE',
+  ADVANCE_ADJUSTMENT = 'ADVANCE_ADJUSTMENT',
 }

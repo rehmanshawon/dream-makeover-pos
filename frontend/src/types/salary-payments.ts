@@ -1,4 +1,4 @@
-export type SalaryPaymentType = 'REGULAR' | 'BONUS' | 'OVERTIME' | 'ADVANCE';
+export type SalaryPaymentType = 'REGULAR' | 'BONUS' | 'OVERTIME' | 'ADVANCE' | 'ADVANCE_ADJUSTMENT';
 
 export type SalaryPaymentMethod = 'CASH' | 'BANK' | 'MOBILE';
 
@@ -37,6 +37,7 @@ export const SALARY_PAYMENT_TYPE_LABELS: Record<SalaryPaymentType, string> = {
   BONUS: 'Bonus',
   OVERTIME: 'Overtime',
   ADVANCE: 'Advance',
+  ADVANCE_ADJUSTMENT: 'Advance adjustment',
 };
 
 export const SALARY_PAYMENT_METHOD_LABELS: Record<SalaryPaymentMethod, string> = {

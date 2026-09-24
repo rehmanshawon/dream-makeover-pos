@@ -13,6 +13,7 @@ import type {
   CreatePayPeriodRequest,
   NextReminder,
   CreatePayrollSalaryPaymentRequest,
+  AdjustAdvanceRequest,
 } from '../types/payroll';
 import type { SalaryPayment } from '../types/salary-payments';
 
@@ -109,6 +110,21 @@ export function useCreatePayrollSalaryPayment(): UseMutationResult<
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ periodId, payload }) => payrollApi.createSalaryPayment(periodId, payload),
+    onSuccess: (_payment, variables) => {
+      void queryClient.invalidateQueries({ queryKey: payrollKeys.payables(variables.periodId) });
+      void queryClient.invalidateQueries({ queryKey: ['salary-payments'] });
+    },
+  });
+}
+
+export function useAdjustAdvance(): UseMutationResult<
+  SalaryPayment,
+  Error,
+  { periodId: string; payload: AdjustAdvanceRequest }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ periodId, payload }) => payrollApi.adjustAdvance(periodId, payload),
     onSuccess: (_payment, variables) => {
       void queryClient.invalidateQueries({ queryKey: payrollKeys.payables(variables.periodId) });
       void queryClient.invalidateQueries({ queryKey: ['salary-payments'] });

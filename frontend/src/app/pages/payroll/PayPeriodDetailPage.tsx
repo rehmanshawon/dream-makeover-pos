@@ -23,6 +23,7 @@ import './PayPeriodDetailPage.css';
 import { Modal } from '@/ui/Modal/Modal';
 import { AttendanceEditor } from './AttendanceEditor';
 import { PayrollSalaryPaymentModal } from './PayrollSalaryPaymentModal';
+import { AdvanceAdjustmentModal } from './AdvanceAdjustmentModal';
 
 export function PayPeriodDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +45,7 @@ export function PayPeriodDetailPage(): JSX.Element {
 
   const [attendanceFor, setAttendanceFor] = useState<PayableEmployee | null>(null);
   const [salaryPaymentFor, setSalaryPaymentFor] = useState<PayableEmployee | null>(null);
+  const [advanceAdjustmentFor, setAdvanceAdjustmentFor] = useState<PayableEmployee | null>(null);
 
   const setConfirmDeleteOne = (payment: SalaryPayment): void => {
     setPendingDelete(payment);
@@ -168,10 +170,34 @@ export function PayPeriodDetailPage(): JSX.Element {
     },
     {
       key: 'remaining',
-      header: 'Remaining',
+      header: 'Due Amount',
       align: 'right',
       render: (e) => (
         <span className="pay-period-detail__remaining">{formatBdt(e.remainingMinor)}</span>
+      ),
+    },
+    {
+      key: 'advance',
+      header: 'Advance',
+      align: 'right',
+      render: (e) => formatBdt(e.advanceMinor),
+    },
+    {
+      key: 'adjust',
+      header: '',
+      align: 'right',
+      render: (e) => (
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={!isOpen || e.advanceMinor <= 0}
+          onClick={(event) => {
+            event.stopPropagation();
+            setAdvanceAdjustmentFor(e);
+          }}
+        >
+          Adjust
+        </Button>
       ),
     },
     {
@@ -381,6 +407,17 @@ export function PayPeriodDetailPage(): JSX.Element {
         employee={salaryPaymentFor}
         onClose={() => {
           setSalaryPaymentFor(null);
+          void payables.refetch();
+          void paymentsQuery.refetch();
+        }}
+      />
+
+      <AdvanceAdjustmentModal
+        open={advanceAdjustmentFor !== null}
+        periodId={p.id}
+        employee={advanceAdjustmentFor}
+        onClose={() => {
+          setAdvanceAdjustmentFor(null);
           void payables.refetch();
           void paymentsQuery.refetch();
         }}

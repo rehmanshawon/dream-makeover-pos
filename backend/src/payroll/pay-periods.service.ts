@@ -18,6 +18,7 @@ import { Employee } from '../employees/employee.entity';
 import { SalaryPayment } from '../salary-payments/salary-payment.entity';
 import { SalaryPaymentResponseDto } from '../salary-payments/dto/salary-payment-response.dto';
 import { CreateSalaryPaymentDto } from '../salary-payments/dto/create-salary-payment.dto';
+import { AdjustAdvanceDto } from './dto/adjust-advance.dto';
 import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
 import { PaymentMethod } from '../salary-payments/payment-method.enum';
 //import { PaymentMethod } from '../salary-payments/payment-method.enum';
@@ -106,7 +107,7 @@ export class PayPeriodsService {
       order: { endDate: 'ASC' },
     });
     const payments = await paymentRepo.find({
-      where: { paymentType: SalaryPaymentType.REGULAR },
+      where: {},
     });
 
     return Promise.all(
@@ -114,22 +115,14 @@ export class PayPeriodsService {
         const obligations = await Promise.all(
           priorPeriods.map((candidate) => this.computePayable(e, candidate)),
         );
-        const totalDueMinor = Math.max(
-          0,
-          obligations.reduce((sum, amount) => sum + amount, 0) -
-            payments
-              .filter((payment) => payment.employeeId === e.id)
-              .reduce((sum, payment) => sum + payment.amountMinor, 0),
-        );
+        const balances = this.calculateBalances(e.id, period, priorPeriods, obligations, payments);
+        const totalDueMinor = balances.salaryDueMinor;
         const currentObligationMinor = obligations[obligations.length - 1] ?? 0;
         const alreadyPaidMinor = payments
           .filter((payment) => payment.employeeId === e.id && payment.payPeriodId === periodId)
           .reduce((sum, payment) => sum + payment.amountMinor, 0);
-        const carriedArrearsMinor = Math.max(
-          0,
-          totalDueMinor - currentObligationMinor - alreadyPaidMinor,
-        );
-        const remainingMinor = totalDueMinor;
+        const carriedArrearsMinor = Math.max(0, totalDueMinor - currentObligationMinor);
+        const remainingMinor = balances.netDueMinor;
         return {
           employeeId: e.id,
           employeeName: e.fullName,
@@ -139,6 +132,7 @@ export class PayPeriodsService {
           currentObligationMinor,
           carriedArrearsMinor,
           totalDueMinor,
+          advanceMinor: balances.advanceMinor,
           alreadyPaidMinor,
           remainingMinor,
           hasExistingPayment: alreadyPaidMinor > 0,
@@ -169,21 +163,18 @@ export class PayPeriodsService {
 
     const periods = await this.periodRepository.find({
       where: { endDate: LessThanOrEqual(period.endDate) },
+      order: { endDate: 'ASC' },
     });
-    const regularPayments = await this.dataSource.getRepository(SalaryPayment).find({
-      where: { employeeId: employee.id, paymentType: SalaryPaymentType.REGULAR },
+    const payments = await this.dataSource.getRepository(SalaryPayment).find({
+      where: { employeeId: employee.id },
     });
     const obligations = await Promise.all(
       periods.map((candidate) => this.computePayable(employee, candidate)),
     );
-    const totalDueMinor = Math.max(
-      0,
-      obligations.reduce((sum, amount) => sum + amount, 0) -
-        regularPayments.reduce((sum, payment) => sum + payment.amountMinor, 0),
-    );
-    if (dto.amountMinor > totalDueMinor) {
+    const balances = this.calculateBalances(employee.id, period, periods, obligations, payments);
+    if (dto.amountMinor > balances.netDueMinor) {
       throw new BadRequestException(
-        `Payment cannot exceed remaining salary due (${totalDueMinor})`,
+        `Payment cannot exceed remaining salary due (${balances.netDueMinor})`,
       );
     }
 
@@ -191,9 +182,58 @@ export class PayPeriodsService {
       ...dto,
       payPeriodId: periodId,
       paymentType: SalaryPaymentType.REGULAR,
+      note: dto.note ?? (dto.amountMinor < balances.netDueMinor ? 'Salary partially paid.' : null),
       paidBy,
     });
     const saved = await this.dataSource.getRepository(SalaryPayment).save(payment);
+    return this.toPaymentResponse(saved);
+  }
+
+  async adjustAdvance(
+    periodId: string,
+    employeeId: string,
+    dto: AdjustAdvanceDto,
+    paidBy: string,
+  ): Promise<SalaryPaymentResponseDto> {
+    const period = await this.periodRepository.findOne({ where: { id: periodId } });
+    if (!period) throw new NotFoundException('Pay period not found');
+    if (period.status === PayPeriodStatus.CLOSED) {
+      throw new BadRequestException('Cannot adjust advances in a closed period');
+    }
+
+    const employee = await this.dataSource.getRepository(Employee).findOne({
+      where: { id: employeeId },
+    });
+    if (!employee) throw new NotFoundException('Employee not found');
+
+    const periods = await this.periodRepository.find({
+      where: { endDate: LessThanOrEqual(period.endDate) },
+      order: { endDate: 'ASC' },
+    });
+    const payments = await this.dataSource.getRepository(SalaryPayment).find({
+      where: { employeeId },
+    });
+    const obligations = await Promise.all(
+      periods.map((candidate) => this.computePayable(employee, candidate)),
+    );
+    const balances = this.calculateBalances(employeeId, period, periods, obligations, payments);
+    if (dto.amountMinor > balances.advanceMinor) {
+      throw new BadRequestException(
+        `Adjustment cannot exceed outstanding advance (${balances.advanceMinor})`,
+      );
+    }
+
+    const adjustment = this.dataSource.getRepository(SalaryPayment).create({
+      employeeId,
+      payPeriodId: periodId,
+      amountMinor: dto.amountMinor,
+      paymentType: SalaryPaymentType.ADVANCE_ADJUSTMENT,
+      paymentMethod: PaymentMethod.CASH,
+      paidOn: period.endDate,
+      note: 'Advance adjusted from salary.',
+      paidBy,
+    });
+    const saved = await this.dataSource.getRepository(SalaryPayment).save(adjustment);
     return this.toPaymentResponse(saved);
   }
 
@@ -312,7 +352,16 @@ export class PayPeriodsService {
           skippedCount += 1;
           continue;
         }
-        const payableMinor = await this.getRemainingDue(e, period);
+        const periods = await this.periodRepository.find({
+          where: { endDate: LessThanOrEqual(period.endDate) },
+          order: { endDate: 'ASC' },
+        });
+        const payments = await paymentRepo.find({ where: { employeeId: e.id } });
+        const obligations = await Promise.all(
+          periods.map((candidate) => this.computePayable(e, candidate)),
+        );
+        const balances = this.calculateBalances(e.id, period, periods, obligations, payments);
+        const payableMinor = balances.netDueMinor;
         if (payableMinor <= 0) {
           skippedCount += 1;
           continue;
@@ -329,6 +378,20 @@ export class PayPeriodsService {
           paidBy: cashier,
         });
         const saved = await paymentRepo.save(payment);
+        if (balances.advanceMinor > 0) {
+          await paymentRepo.save(
+            paymentRepo.create({
+              employeeId: e.id,
+              payPeriodId: periodId,
+              amountMinor: balances.advanceMinor,
+              paymentType: SalaryPaymentType.ADVANCE_ADJUSTMENT,
+              paymentMethod: PaymentMethod.CASH,
+              paidOn: period.endDate,
+              note: 'Advance adjusted from salary.',
+              paidBy: cashier,
+            }),
+          );
+        }
         created.push({
           id: saved.id,
           employeeId: e.id,
@@ -417,17 +480,53 @@ export class PayPeriodsService {
     return `${y}-${m}-${day}`;
   }
 
-  private async getRemainingDue(employee: Employee, period: PayPeriod): Promise<number> {
-    const periods = await this.periodRepository.find({
-      where: { endDate: LessThanOrEqual(period.endDate) },
-    });
-    const allPayments = await this.dataSource.getRepository(SalaryPayment).find({
-      where: { employeeId: employee.id, paymentType: SalaryPaymentType.REGULAR },
-    });
-    const due = (
-      await Promise.all(periods.map((candidate) => this.computePayable(employee, candidate)))
-    ).reduce((sum, amount) => sum + amount, 0);
-    return Math.max(0, due - allPayments.reduce((sum, payment) => sum + payment.amountMinor, 0));
+  private calculateBalances(
+    employeeId: string,
+    period: PayPeriod,
+    periods: PayPeriod[],
+    obligations: number[],
+    payments: SalaryPayment[],
+  ): { salaryDueMinor: number; advanceMinor: number; netDueMinor: number } {
+    const employeePayments = payments.filter((payment) => payment.employeeId === employeeId);
+    const regularPayments = payments.filter(
+      (payment) =>
+        payment.employeeId === employeeId && payment.paymentType === SalaryPaymentType.REGULAR,
+    );
+    const salaryDueMinor = Math.max(
+      0,
+      obligations.reduce((sum, amount) => sum + amount, 0) -
+        regularPayments.reduce((sum, payment) => sum + payment.amountMinor, 0),
+    );
+    const explicitAdvanceMinor = employeePayments
+      .filter(
+        (payment) =>
+          payment.paymentType === SalaryPaymentType.ADVANCE && payment.paidOn < period.startDate,
+      )
+      .reduce((sum, payment) => sum + payment.amountMinor, 0);
+    const adjustmentMinor = employeePayments
+      .filter(
+        (payment) =>
+          payment.paymentType === SalaryPaymentType.ADVANCE_ADJUSTMENT &&
+          payment.payPeriodId !== null &&
+          periods.some((candidate) => candidate.id === payment.payPeriodId),
+      )
+      .reduce((sum, payment) => sum + payment.amountMinor, 0);
+    let cumulativeObligation = 0;
+    let cumulativeRegular = 0;
+    let overpaymentMinor = 0;
+    for (let index = 0; index < periods.length; index += 1) {
+      cumulativeObligation += obligations[index] ?? 0;
+      cumulativeRegular += regularPayments
+        .filter((payment) => payment.payPeriodId === periods[index]?.id)
+        .reduce((sum, payment) => sum + payment.amountMinor, 0);
+      overpaymentMinor = Math.max(overpaymentMinor, cumulativeRegular - cumulativeObligation);
+    }
+    const advanceMinor = Math.max(0, explicitAdvanceMinor + overpaymentMinor - adjustmentMinor);
+    return {
+      salaryDueMinor,
+      advanceMinor,
+      netDueMinor: Math.max(0, salaryDueMinor - advanceMinor),
+    };
   }
 
   private toPaymentResponse(payment: SalaryPayment): SalaryPaymentResponseDto {

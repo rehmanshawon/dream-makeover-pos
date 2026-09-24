@@ -36,7 +36,13 @@ export interface PayableEmployee {
   totalDueMinor: number;
   alreadyPaidMinor: number;
   remainingMinor: number;
+  advanceMinor: number;
   hasExistingPayment: boolean;
+}
+
+export interface AdjustAdvanceRequest {
+  employeeId: string;
+  amountMinor: number;
 }
 
 export interface CreatePayrollSalaryPaymentRequest {

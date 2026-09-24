@@ -33,8 +33,12 @@ vi.mock('../../../api/payroll-hooks', () => ({
         role: 'Stylist',
         monthlySalaryMinor: 3000000,
         payableMinor: 3000000,
+        currentObligationMinor: 3000000,
+        carriedArrearsMinor: 0,
+        totalDueMinor: 3000000,
         alreadyPaidMinor: 3000000,
         remainingMinor: 0,
+        advanceMinor: 0,
         hasExistingPayment: true,
       },
     ],
@@ -45,6 +49,7 @@ vi.mock('../../../api/payroll-hooks', () => ({
   useClosePayPeriod: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useRunPayroll: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useCreatePayrollSalaryPayment: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useAdjustAdvance: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useDeletePayments: () => ({ mutateAsync: deleteMany, isPending: false }),
 }));
 
