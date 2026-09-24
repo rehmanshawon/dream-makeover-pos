@@ -4,6 +4,9 @@ export class PayableEmployeeDto {
   role: string;
   monthlySalaryMinor: number;
   payableMinor: number;
+  currentObligationMinor: number;
+  carriedArrearsMinor: number;
+  totalDueMinor: number;
   alreadyPaidMinor: number;
   remainingMinor: number;
   hasExistingPayment: boolean;

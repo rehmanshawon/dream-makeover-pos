@@ -31,9 +31,24 @@ export interface PayableEmployee {
   role: string;
   monthlySalaryMinor: number;
   payableMinor: number;
+  currentObligationMinor: number;
+  carriedArrearsMinor: number;
+  totalDueMinor: number;
   alreadyPaidMinor: number;
   remainingMinor: number;
   hasExistingPayment: boolean;
+}
+
+export interface CreatePayrollSalaryPaymentRequest {
+  employeeId: string;
+  amountMinor: number;
+  paymentMethod: 'CASH' | 'BANK' | 'MOBILE';
+  paidOn: string;
+  note?: string;
+  checkNumber?: string;
+  bankAccountNumber?: string;
+  mobileWalletProvider?: 'bKash' | 'Rocket' | 'Nagad';
+  mobileWalletNumber?: string;
 }
 
 export interface RunPayrollResult {

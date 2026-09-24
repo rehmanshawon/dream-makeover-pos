@@ -10,6 +10,10 @@ export class SalaryPaymentResponseDto {
   paidOn: string;
   payPeriodId: string | null;
   note: string | null;
+  checkNumber: string | null;
+  bankAccountNumber: string | null;
+  mobileWalletProvider: string | null;
+  mobileWalletNumber: string | null;
   paidBy: string;
   createdAt: Date;
 }

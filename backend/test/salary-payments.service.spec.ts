@@ -53,12 +53,13 @@ describe('SalaryPaymentsService', () => {
     payPeriodRepo = module.get(getRepositoryToken(PayPeriod));
   });
 
-  it('records payment with defaults when optional fields omitted', async () => {
+  it('records a non-regular payment with defaults when optional fields omitted', async () => {
     jest.spyOn(employeeRepo, 'findOne').mockResolvedValue({ id: 'emp-1' } as Employee);
 
     const dto: CreateSalaryPaymentDto = {
       employeeId: 'emp-1',
       amountMinor: 3500000,
+      paymentType: SalaryPaymentType.BONUS,
       paidOn: '2026-01-31',
     };
 
@@ -66,7 +67,7 @@ describe('SalaryPaymentsService', () => {
       id: 'pay-1',
       employeeId: 'emp-1',
       amountMinor: 3500000,
-      paymentType: SalaryPaymentType.REGULAR,
+      paymentType: SalaryPaymentType.BONUS,
       paymentMethod: PaymentMethod.CASH,
       paidOn: '2026-01-31',
       note: null,
@@ -79,7 +80,7 @@ describe('SalaryPaymentsService', () => {
 
     const result = await service.create(dto, 'admin');
 
-    expect(result.paymentType).toBe(SalaryPaymentType.REGULAR);
+    expect(result.paymentType).toBe(SalaryPaymentType.BONUS);
     expect(result.paymentMethod).toBe(PaymentMethod.CASH);
     expect(result.paidBy).toBe('admin');
   });

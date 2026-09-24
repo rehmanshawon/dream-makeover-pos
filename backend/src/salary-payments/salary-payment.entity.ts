@@ -61,6 +61,18 @@ export class SalaryPayment {
   @Column({ type: 'varchar', length: 255, nullable: true })
   note: string | null = null;
 
+  @Column({ name: 'check_number', type: 'varchar', length: 80, nullable: true })
+  checkNumber: string | null = null;
+
+  @Column({ name: 'bank_account_number', type: 'varchar', length: 120, nullable: true })
+  bankAccountNumber: string | null = null;
+
+  @Column({ name: 'mobile_wallet_provider', type: 'varchar', length: 20, nullable: true })
+  mobileWalletProvider: string | null = null;
+
+  @Column({ name: 'mobile_wallet_number', type: 'varchar', length: 30, nullable: true })
+  mobileWalletNumber: string | null = null;
+
   @Column({ name: 'paid_by', type: 'varchar', length: 80 })
   paidBy: string;
 

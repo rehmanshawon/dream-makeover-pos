@@ -12,6 +12,8 @@ import { UserRole } from '../users/user-role.enum';
 import type { JwtPayload } from '../auth/jwt.strategy';
 import { DeletePaymentsDto } from './dto/delete-payments.dto';
 import { SalaryPaymentResponseDto } from '../salary-payments/dto/salary-payment-response.dto';
+import { CreateSalaryPaymentDto } from '../salary-payments/dto/create-salary-payment.dto';
+import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
 
 @Controller('pay-periods')
 @UseGuards(JwtAuthGuard)
@@ -47,6 +49,22 @@ export class PayPeriodsController {
   @Get(':id/payments')
   async getPayments(@Param('id') id: string): Promise<SalaryPaymentResponseDto[]> {
     return this.service.getPaymentsForPeriod(id);
+  }
+
+  @Post(':id/employees/:employeeId/salary-payments')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async createSalaryPayment(
+    @Param('id') periodId: string,
+    @Param('employeeId') employeeId: string,
+    @Body() dto: CreateSalaryPaymentDto,
+    @Req() req: { user: JwtPayload },
+  ): Promise<SalaryPaymentResponseDto> {
+    return this.service.createSalaryPayment(
+      periodId,
+      { ...dto, employeeId, paymentType: SalaryPaymentType.REGULAR },
+      req.user.username,
+    );
   }
 
   @Post()

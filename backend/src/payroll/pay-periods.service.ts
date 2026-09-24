@@ -17,7 +17,9 @@ import { Employee } from '../employees/employee.entity';
 //import { EmployeeStatus } from '../employees/employee-status.enum';
 import { SalaryPayment } from '../salary-payments/salary-payment.entity';
 import { SalaryPaymentResponseDto } from '../salary-payments/dto/salary-payment-response.dto';
+import { CreateSalaryPaymentDto } from '../salary-payments/dto/create-salary-payment.dto';
 import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
+import { PaymentMethod } from '../salary-payments/payment-method.enum';
 //import { PaymentMethod } from '../salary-payments/payment-method.enum';
 import { AttendanceService } from '../attendance/attendance.service';
 
@@ -99,31 +101,100 @@ export class PayPeriodsService {
       order: { fullName: 'ASC' },
     });
 
-    const existingPayments = await paymentRepo.find({
-      where: { payPeriodId: periodId },
+    const priorPeriods = await this.periodRepository.find({
+      where: { endDate: LessThanOrEqual(period.endDate) },
+      order: { endDate: 'ASC' },
     });
-    const paidByEmployee = new Map<string, number>();
-    for (const p of existingPayments) {
-      paidByEmployee.set(p.employeeId, (paidByEmployee.get(p.employeeId) ?? 0) + p.amountMinor);
-    }
+    const payments = await paymentRepo.find({
+      where: { paymentType: SalaryPaymentType.REGULAR },
+    });
 
     return Promise.all(
       employees.map(async (e) => {
-        const payableMinor = await this.computePayable(e, period);
-        const alreadyPaidMinor = paidByEmployee.get(e.id) ?? 0;
-        const remainingMinor = Math.max(0, payableMinor - alreadyPaidMinor);
+        const obligations = await Promise.all(
+          priorPeriods.map((candidate) => this.computePayable(e, candidate)),
+        );
+        const totalDueMinor = Math.max(
+          0,
+          obligations.reduce((sum, amount) => sum + amount, 0) -
+            payments
+              .filter((payment) => payment.employeeId === e.id)
+              .reduce((sum, payment) => sum + payment.amountMinor, 0),
+        );
+        const currentObligationMinor = obligations[obligations.length - 1] ?? 0;
+        const alreadyPaidMinor = payments
+          .filter((payment) => payment.employeeId === e.id && payment.payPeriodId === periodId)
+          .reduce((sum, payment) => sum + payment.amountMinor, 0);
+        const carriedArrearsMinor = Math.max(
+          0,
+          totalDueMinor - currentObligationMinor - alreadyPaidMinor,
+        );
+        const remainingMinor = totalDueMinor;
         return {
           employeeId: e.id,
           employeeName: e.fullName,
           role: e.role,
           monthlySalaryMinor: e.salaryMinor,
-          payableMinor,
+          payableMinor: currentObligationMinor,
+          currentObligationMinor,
+          carriedArrearsMinor,
+          totalDueMinor,
           alreadyPaidMinor,
           remainingMinor,
-          hasExistingPayment: paidByEmployee.has(e.id),
+          hasExistingPayment: alreadyPaidMinor > 0,
         };
       }),
     );
+  }
+
+  async createSalaryPayment(
+    periodId: string,
+    dto: CreateSalaryPaymentDto,
+    paidBy: string,
+  ): Promise<SalaryPaymentResponseDto> {
+    const period = await this.periodRepository.findOne({ where: { id: periodId } });
+    if (!period) throw new NotFoundException('Pay period not found');
+    if (period.status === PayPeriodStatus.CLOSED) {
+      throw new BadRequestException('Cannot record salary payments in a closed period');
+    }
+    if (dto.amountMinor <= 0) throw new BadRequestException('Payment amount must be positive');
+    this.validateDisbursementDetails(dto.paymentMethod ?? PaymentMethod.CASH, dto);
+
+    const employee = await this.dataSource.getRepository(Employee).findOne({
+      where: { id: dto.employeeId },
+    });
+    if (!employee || new Date(employee.joinDate) > new Date(period.endDate)) {
+      throw new BadRequestException('Employee is not eligible for this pay period');
+    }
+
+    const periods = await this.periodRepository.find({
+      where: { endDate: LessThanOrEqual(period.endDate) },
+    });
+    const regularPayments = await this.dataSource.getRepository(SalaryPayment).find({
+      where: { employeeId: employee.id, paymentType: SalaryPaymentType.REGULAR },
+    });
+    const obligations = await Promise.all(
+      periods.map((candidate) => this.computePayable(employee, candidate)),
+    );
+    const totalDueMinor = Math.max(
+      0,
+      obligations.reduce((sum, amount) => sum + amount, 0) -
+        regularPayments.reduce((sum, payment) => sum + payment.amountMinor, 0),
+    );
+    if (dto.amountMinor > totalDueMinor) {
+      throw new BadRequestException(
+        `Payment cannot exceed remaining salary due (${totalDueMinor})`,
+      );
+    }
+
+    const payment = this.dataSource.getRepository(SalaryPayment).create({
+      ...dto,
+      payPeriodId: periodId,
+      paymentType: SalaryPaymentType.REGULAR,
+      paidBy,
+    });
+    const saved = await this.dataSource.getRepository(SalaryPayment).save(payment);
+    return this.toPaymentResponse(saved);
   }
 
   async create(dto: CreatePayPeriodDto): Promise<PayPeriodResponseDto> {
@@ -217,11 +288,6 @@ export class PayPeriodsService {
         where: { joinDate: LessThanOrEqual(period.endDate) },
       });
 
-      const existing = await paymentRepo.find({
-        where: { payPeriodId: periodId },
-      });
-      const paidEmployeeIds = new Set(existing.map((p) => p.employeeId));
-
       const created: Array<{
         id: string;
         employeeId: string;
@@ -232,11 +298,7 @@ export class PayPeriodsService {
       let totalPaidMinor = 0;
 
       for (const e of employees) {
-        if (paidEmployeeIds.has(e.id)) {
-          skippedCount += 1;
-          continue;
-        }
-        const payableMinor = await this.computePayable(e, period);
+        const payableMinor = await this.getRemainingDue(e, period);
         if (payableMinor <= 0) {
           skippedCount += 1;
           continue;
@@ -331,6 +393,47 @@ export class PayPeriodsService {
     return `${y}-${m}-${day}`;
   }
 
+  private async getRemainingDue(employee: Employee, period: PayPeriod): Promise<number> {
+    const periods = await this.periodRepository.find({
+      where: { endDate: LessThanOrEqual(period.endDate) },
+    });
+    const allPayments = await this.dataSource.getRepository(SalaryPayment).find({
+      where: { employeeId: employee.id, paymentType: SalaryPaymentType.REGULAR },
+    });
+    const due = (
+      await Promise.all(periods.map((candidate) => this.computePayable(employee, candidate)))
+    ).reduce((sum, amount) => sum + amount, 0);
+    return Math.max(0, due - allPayments.reduce((sum, payment) => sum + payment.amountMinor, 0));
+  }
+
+  private toPaymentResponse(payment: SalaryPayment): SalaryPaymentResponseDto {
+    return {
+      id: payment.id,
+      employeeId: payment.employeeId,
+      payPeriodId: payment.payPeriodId,
+      amountMinor: payment.amountMinor,
+      paymentType: payment.paymentType,
+      paymentMethod: payment.paymentMethod,
+      paidOn: payment.paidOn,
+      note: payment.note,
+      checkNumber: payment.checkNumber,
+      bankAccountNumber: payment.bankAccountNumber,
+      mobileWalletProvider: payment.mobileWalletProvider,
+      mobileWalletNumber: payment.mobileWalletNumber,
+      paidBy: payment.paidBy,
+      createdAt: payment.createdAt,
+    };
+  }
+
+  private validateDisbursementDetails(method: PaymentMethod, dto: CreateSalaryPaymentDto): void {
+    if (method === PaymentMethod.BANK && !dto.checkNumber && !dto.bankAccountNumber) {
+      throw new BadRequestException('Bank payments require a check number or bank account number.');
+    }
+    if (method === PaymentMethod.MOBILE && (!dto.mobileWalletProvider || !dto.mobileWalletNumber)) {
+      throw new BadRequestException('Mobile payments require a wallet provider and wallet number.');
+    }
+  }
+
   // private async assertNoOverlap(
   //   startDate: string,
   //   endDate: string,
@@ -410,6 +513,10 @@ export class PayPeriodsService {
       paymentMethod: p.paymentMethod,
       paidOn: p.paidOn,
       note: p.note,
+      checkNumber: p.checkNumber,
+      bankAccountNumber: p.bankAccountNumber,
+      mobileWalletProvider: p.mobileWalletProvider,
+      mobileWalletNumber: p.mobileWalletNumber,
       paidBy: p.paidBy,
       createdAt: p.createdAt,
     }));

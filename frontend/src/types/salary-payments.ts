@@ -11,6 +11,10 @@ export interface SalaryPayment {
   paidOn: string;
   payPeriodId: string | null;
   note: string | null;
+  checkNumber: string | null;
+  bankAccountNumber: string | null;
+  mobileWalletProvider: string | null;
+  mobileWalletNumber: string | null;
   paidBy: string;
   createdAt: string;
 }
@@ -22,6 +26,10 @@ export interface CreateSalaryPaymentRequest {
   paymentMethod?: SalaryPaymentMethod;
   paidOn: string;
   note?: string;
+  checkNumber?: string;
+  bankAccountNumber?: string;
+  mobileWalletProvider?: string;
+  mobileWalletNumber?: string;
 }
 
 export const SALARY_PAYMENT_TYPE_LABELS: Record<SalaryPaymentType, string> = {

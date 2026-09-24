@@ -22,6 +22,7 @@ import type { SalaryPayment } from '../../../types/salary-payments';
 import './PayPeriodDetailPage.css';
 import { Modal } from '@/ui/Modal/Modal';
 import { AttendanceEditor } from './AttendanceEditor';
+import { PayrollSalaryPaymentModal } from './PayrollSalaryPaymentModal';
 
 export function PayPeriodDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +43,7 @@ export function PayPeriodDetailPage(): JSX.Element {
   const [actionError, setActionError] = useState<string | null>(null);
 
   const [attendanceFor, setAttendanceFor] = useState<PayableEmployee | null>(null);
+  const [salaryPaymentFor, setSalaryPaymentFor] = useState<PayableEmployee | null>(null);
 
   const setConfirmDeleteOne = (payment: SalaryPayment): void => {
     setPendingDelete(payment);
@@ -173,6 +175,24 @@ export function PayPeriodDetailPage(): JSX.Element {
       ),
     },
     {
+      key: 'pay',
+      header: '',
+      align: 'right',
+      render: (e) => (
+        <Button
+          size="sm"
+          variant="primary"
+          disabled={!isOpen || e.remainingMinor <= 0}
+          onClick={(ev) => {
+            ev.stopPropagation();
+            setSalaryPaymentFor(e);
+          }}
+        >
+          Pay salary
+        </Button>
+      ),
+    },
+    {
       key: 'status',
       header: 'Status',
       render: (e) =>
@@ -241,7 +261,7 @@ export function PayPeriodDetailPage(): JSX.Element {
     },
   ];
 
-  const pendingCount = payables.data?.filter((e) => !e.hasExistingPayment).length ?? 0;
+  const pendingCount = payables.data?.filter((e) => e.remainingMinor > 0).length ?? 0;
 
   return (
     <div className="pay-period-detail">
@@ -349,6 +369,17 @@ export function PayPeriodDetailPage(): JSX.Element {
           <Table columns={paymentColumns} rows={paymentsQuery.data} getRowKey={(p) => p.id} />
         )}
       </Card>
+
+      <PayrollSalaryPaymentModal
+        open={salaryPaymentFor !== null}
+        periodId={p.id}
+        employee={salaryPaymentFor}
+        onClose={() => {
+          setSalaryPaymentFor(null);
+          void payables.refetch();
+          void paymentsQuery.refetch();
+        }}
+      />
 
       {attendanceFor && (
         <Modal

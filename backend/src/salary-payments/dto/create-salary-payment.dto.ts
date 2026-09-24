@@ -28,4 +28,24 @@ export class CreateSalaryPaymentDto {
   @IsString()
   @Length(0, 255)
   note?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 80)
+  checkNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  bankAccountNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 20)
+  mobileWalletProvider?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 30)
+  mobileWalletNumber?: string;
 }

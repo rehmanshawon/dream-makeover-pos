@@ -33,20 +33,29 @@ export class SalaryPaymentsService {
    * Validation of appropriateness is a business process, not a schema rule.
    */
   async create(dto: CreateSalaryPaymentDto, paidBy: string): Promise<SalaryPaymentResponseDto> {
+    const paymentType = dto.paymentType ?? SalaryPaymentType.REGULAR;
     const employee = await this.employeeRepository.findOne({
       where: { id: dto.employeeId },
     });
     if (!employee) {
       throw new NotFoundException('Employee not found');
     }
+    if (paymentType === SalaryPaymentType.REGULAR) {
+      throw new BadRequestException('Regular salary payments must be recorded from a pay period.');
+    }
+    this.validateDisbursementDetails(dto.paymentMethod ?? PaymentMethod.CASH, dto);
 
     const payment = this.paymentRepository.create({
       employeeId: employee.id,
       amountMinor: dto.amountMinor,
-      paymentType: dto.paymentType ?? SalaryPaymentType.REGULAR,
+      paymentType,
       paymentMethod: dto.paymentMethod ?? PaymentMethod.CASH,
       paidOn: dto.paidOn,
       note: dto.note ?? null,
+      checkNumber: dto.checkNumber ?? null,
+      bankAccountNumber: dto.bankAccountNumber ?? null,
+      mobileWalletProvider: dto.mobileWalletProvider ?? null,
+      mobileWalletNumber: dto.mobileWalletNumber ?? null,
       paidBy,
     });
 
@@ -120,8 +129,21 @@ export class SalaryPaymentsService {
       paymentMethod: payment.paymentMethod,
       paidOn: payment.paidOn,
       note: payment.note,
+      checkNumber: payment.checkNumber,
+      bankAccountNumber: payment.bankAccountNumber,
+      mobileWalletProvider: payment.mobileWalletProvider,
+      mobileWalletNumber: payment.mobileWalletNumber,
       paidBy: payment.paidBy,
       createdAt: payment.createdAt,
     };
+  }
+
+  validateDisbursementDetails(method: PaymentMethod, dto: CreateSalaryPaymentDto): void {
+    if (method === PaymentMethod.BANK && !dto.checkNumber && !dto.bankAccountNumber) {
+      throw new BadRequestException('Bank payments require a check number or bank account number.');
+    }
+    if (method === PaymentMethod.MOBILE && (!dto.mobileWalletProvider || !dto.mobileWalletNumber)) {
+      throw new BadRequestException('Mobile payments require a wallet provider and wallet number.');
+    }
   }
 }

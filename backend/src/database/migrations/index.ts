@@ -22,6 +22,7 @@ import { CreateAttendanceTable1700000000018 } from './1700000000018-CreateAttend
 import { AddDefaultPaymentMethodToEmployees1700000000019 } from './1700000000019-AddDefaultPaymentMethodToEmployees';
 import { ReplacePayPeriodsWithYearMonth1700000000020 } from './1700000000020-ReplacePayPeriodsWithYearMonth';
 import { AddPhotoUrlToEmployees1700000000021 } from './1700000000021-AddPhotoUrlToEmployees';
+import { AddSalaryPaymentDisbursementDetails1700000000022 } from './1700000000022-AddSalaryPaymentDisbursementDetails';
 
 export const migrations = [
   CreateCustomersTable1700000000000,
@@ -48,4 +49,5 @@ export const migrations = [
   AddDefaultPaymentMethodToEmployees1700000000019,
   ReplacePayPeriodsWithYearMonth1700000000020,
   AddPhotoUrlToEmployees1700000000021,
+  AddSalaryPaymentDisbursementDetails1700000000022,
 ];

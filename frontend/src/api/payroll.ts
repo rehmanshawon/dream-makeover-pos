@@ -5,7 +5,9 @@ import type {
   RunPayrollResult,
   CreatePayPeriodRequest,
   NextReminder,
+  CreatePayrollSalaryPaymentRequest,
 } from '../types/payroll';
+import type { SalaryPayment } from '../types/salary-payments';
 
 export const payrollApi = {
   listPeriods(): Promise<PayPeriod[]> {
@@ -34,6 +36,16 @@ export const payrollApi = {
 
   runPayroll(id: string): Promise<RunPayrollResult> {
     return api.post<RunPayrollResult>(`/pay-periods/${id}/run`, {});
+  },
+
+  createSalaryPayment(
+    periodId: string,
+    payload: CreatePayrollSalaryPaymentRequest,
+  ): Promise<SalaryPayment> {
+    return api.post<SalaryPayment>(
+      `/pay-periods/${periodId}/employees/${payload.employeeId}/salary-payments`,
+      payload,
+    );
   },
 
   getNextReminder(): Promise<NextReminder> {

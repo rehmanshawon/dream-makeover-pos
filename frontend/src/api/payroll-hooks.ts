@@ -12,7 +12,9 @@ import type {
   RunPayrollResult,
   CreatePayPeriodRequest,
   NextReminder,
+  CreatePayrollSalaryPaymentRequest,
 } from '../types/payroll';
+import type { SalaryPayment } from '../types/salary-payments';
 
 export const payrollKeys = {
   all: ['payroll'] as const,
@@ -95,6 +97,21 @@ export function useRunPayroll(): UseMutationResult<RunPayrollResult, Error, stri
       void queryClient.invalidateQueries({ queryKey: payrollKeys.all });
       void queryClient.invalidateQueries({ queryKey: ['salary-payments'] });
       void queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
+}
+
+export function useCreatePayrollSalaryPayment(): UseMutationResult<
+  SalaryPayment,
+  Error,
+  { periodId: string; payload: CreatePayrollSalaryPaymentRequest }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ periodId, payload }) => payrollApi.createSalaryPayment(periodId, payload),
+    onSuccess: (_payment, variables) => {
+      void queryClient.invalidateQueries({ queryKey: payrollKeys.payables(variables.periodId) });
+      void queryClient.invalidateQueries({ queryKey: ['salary-payments'] });
     },
   });
 }

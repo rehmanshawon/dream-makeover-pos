@@ -12,7 +12,6 @@ import type { SalaryPaymentType, SalaryPaymentMethod } from '../../../types/sala
 import './SalaryPaymentFormModal.css';
 
 const TYPE_OPTIONS: SelectOption[] = [
-  { value: 'REGULAR', label: 'Regular salary' },
   { value: 'BONUS', label: 'Bonus' },
   { value: 'OVERTIME', label: 'Overtime' },
   { value: 'ADVANCE', label: 'Advance' },
@@ -52,7 +51,7 @@ function frequencyNoun(frequency: SalaryFrequency): string {
 function defaultForm(employee: Employee): FormState {
   return {
     amountTaka: minorToTakaInput(employee.salaryMinor),
-    paymentType: 'REGULAR',
+    paymentType: 'BONUS',
     paymentMethod: 'CASH',
     paidOn: todayIso(),
     note: '',
