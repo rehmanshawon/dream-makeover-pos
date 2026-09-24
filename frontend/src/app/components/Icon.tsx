@@ -33,7 +33,8 @@ export type IllustrationIconName =
   | 'payroll'
   | 'settings';
 
-export type UtilityIconName = 'edit' | 'power' | 'trash' | 'calendar-check' | 'adjust' | 'pay';
+export type UtilityIconName =
+  'edit' | 'power' | 'trash' | 'calendar-check' | 'adjust' | 'pay' | 'print';
 
 export type IconName = IllustrationIconName | UtilityIconName;
 
@@ -62,6 +63,7 @@ const UTILITY_ICONS: UtilityIconName[] = [
   'calendar-check',
   'adjust',
   'pay',
+  'print',
 ];
 
 function isUtilityIcon(name: IconName): name is UtilityIconName {
@@ -174,6 +176,13 @@ function renderUtilityIcon(
           <rect x="3" y="5" width="18" height="14" rx="2" />
           <path d="M3 10h18m-13 5h3" />
           <circle cx="17" cy="15" r="1" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    case 'print':
+      return (
+        <svg {...common}>
+          <path d="M7 8V3h10v5M7 17H5a2 2 0 01-2-2v-4a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2h-2" />
+          <path d="M7 14h10v7H7zM17 11h.01" />
         </svg>
       );
   }

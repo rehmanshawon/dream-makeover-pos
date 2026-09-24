@@ -15,7 +15,6 @@ import { formatBdt, formatDate } from '../../../utils/format';
 import {
   SALARY_PAYMENT_TYPE_LABELS,
   SALARY_PAYMENT_METHOD_LABELS,
-  BONUS_TYPE_LABELS,
   type SalaryPayment,
 } from '../../../types/salary-payments';
 
@@ -44,21 +43,6 @@ const TYPE_VARIANT: Record<
 function currentMonthKey(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function paymentDetails(payment: SalaryPayment): string {
-  const details: string[] = [];
-  if (payment.bonusType) details.push(BONUS_TYPE_LABELS[payment.bonusType]);
-  if (payment.overtimeHours !== null && payment.overtimeDate) {
-    details.push(`${payment.overtimeHours} hours on ${formatDate(payment.overtimeDate)}`);
-  }
-  if (payment.paymentMethod === 'BANK' && payment.checkNumber) {
-    details.push(`Cheque ${payment.checkNumber}`);
-  }
-  if (payment.paymentMethod === 'MOBILE' && payment.mobileWalletNumber) {
-    details.push(`Mobile ${payment.mobileWalletNumber}`);
-  }
-  return details.join(' · ') || '—';
 }
 
 export function SalaryPaymentHistory({ employee }: SalaryPaymentHistoryProps): JSX.Element {
@@ -216,12 +200,15 @@ export function SalaryPaymentHistory({ employee }: SalaryPaymentHistoryProps): J
       render: (p) => (
         <Button
           size="sm"
-          variant="ghost"
+          variant="primary"
+          className="button--icon"
+          aria-label={`Print payslip for ${formatDate(p.paidOn)}`}
+          title="Print payslip"
           onClick={() => handlePrint(p)}
           loading={printingId === p.id}
           disabled={printingId !== null && printingId !== p.id}
         >
-          Print
+          <Icon name="print" size={16} />
         </Button>
       ),
     },
