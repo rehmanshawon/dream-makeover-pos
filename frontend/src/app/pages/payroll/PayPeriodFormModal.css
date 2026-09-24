@@ -38,8 +38,8 @@
 
 .pay-period-form__warning {
   padding: var(--space-3);
-  background: var(--color-warning-soft);
+  background: var(--color-danger);
   border-radius: var(--radius-md);
-  color: #8a6200;
+  color: #ffffff;
   font-size: var(--font-size-sm);
 }

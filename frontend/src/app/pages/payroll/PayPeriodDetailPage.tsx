@@ -398,6 +398,10 @@ export function PayPeriodDetailPage(): JSX.Element {
             from={p.startDate}
             to={p.endDate}
             disabled={p.status === 'CLOSED'}
+            onSaved={() => {
+              void payables.refetch();
+            }}
+            onClose={() => setAttendanceFor(null)}
           />
         </Modal>
       )}

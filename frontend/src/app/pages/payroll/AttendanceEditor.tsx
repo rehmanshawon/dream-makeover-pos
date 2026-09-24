@@ -14,6 +14,7 @@ interface AttendanceEditorProps {
   to: string;
   disabled?: boolean;
   onSaved?: () => void;
+  onClose?: () => void;
 }
 
 const STATUS_OPTIONS: SelectOption[] = (Object.keys(ATTENDANCE_LABELS) as AttendanceStatus[]).map(
@@ -59,6 +60,7 @@ export function AttendanceEditor({
   to,
   disabled = false,
   onSaved,
+  onClose,
 }: AttendanceEditorProps): JSX.Element {
   const { data, isLoading, error, refetch } = useAttendance(employeeId, from, to);
 
@@ -207,13 +209,18 @@ export function AttendanceEditor({
             ? `${pending.size} change${pending.size === 1 ? '' : 's'} pending`
             : 'No changes'}
         </span>
-        <Button
-          onClick={handleSave}
-          disabled={disabled || pending.size === 0 || saving}
-          loading={saving}
-        >
-          Save attendance
-        </Button>
+        <div className="attendance-editor__action-buttons">
+          <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
+            Close
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={disabled || pending.size === 0 || saving}
+            loading={saving}
+          >
+            Save attendance
+          </Button>
+        </div>
       </div>
     </div>
   );
