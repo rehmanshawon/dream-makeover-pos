@@ -44,7 +44,7 @@
 
 @media (min-width: 960px) {
   .employee-detail__grid {
-    grid-template-columns: 380px 1fr;
+    grid-template-columns: 240px minmax(0, 1fr);
   }
 }
 

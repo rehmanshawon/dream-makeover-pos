@@ -51,3 +51,7 @@
 .payment-history__amount {
   font-weight: var(--font-weight-semibold);
 }
+
+.payment-history .table {
+  min-width: 760px;
+}
