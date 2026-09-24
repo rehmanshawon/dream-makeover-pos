@@ -41,6 +41,21 @@ export class UpdateEmployeeDto {
 
   @IsOptional()
   @IsString()
+  @Length(0, 50)
+  nidOrBirthCertificate?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 2000)
+  presentAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 2000)
+  permanentAddress?: string;
+
+  @IsOptional()
+  @IsString()
   @Length(0, 2000)
   note?: string;
 

@@ -103,6 +103,20 @@ export function EmployeeDetailPage(): JSX.Element {
                 </div>
               )}
             </div>
+            <dl className="employee-detail__addresses">
+              <div className="employee-detail__fact">
+                <dt>Present address</dt>
+                <dd>{data.presentAddress || '—'}</dd>
+              </div>
+              <div className="employee-detail__fact">
+                <dt>Permanent address</dt>
+                <dd>{data.permanentAddress || '—'}</dd>
+              </div>
+              <div className="employee-detail__fact">
+                <dt>NID / Birth certificate</dt>
+                <dd>{data.nidOrBirthCertificate || '—'}</dd>
+              </div>
+            </dl>
             <dl className="employee-detail__facts">
               <div className="employee-detail__fact">
                 <dt>Salary</dt>

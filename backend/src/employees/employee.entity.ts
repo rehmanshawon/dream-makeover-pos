@@ -69,6 +69,15 @@ export class Employee {
   @Column({ type: 'varchar', length: 30, nullable: true })
   phone: string | null = null;
 
+  @Column({ name: 'nid_or_birth_certificate', type: 'varchar', length: 50, nullable: true })
+  nidOrBirthCertificate: string | null = null;
+
+  @Column({ name: 'present_address', type: 'text', nullable: true })
+  presentAddress: string | null = null;
+
+  @Column({ name: 'permanent_address', type: 'text', nullable: true })
+  permanentAddress: string | null = null;
+
   @Column({ type: 'text', nullable: true })
   note: string | null = null;
 

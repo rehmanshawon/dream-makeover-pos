@@ -46,6 +46,9 @@ describe('EmployeeDetailPage', () => {
             joinDate: '2025-06-15',
             status: 'ACTIVE',
             phone: '01711111111',
+            nidOrBirthCertificate: '1987654321',
+            presentAddress: '12 Present Road',
+            permanentAddress: '34 Permanent Road',
             note: 'Star performer',
             photoUrl: '/uploads/employees/rina.webp',
             createdAt: '2025-06-15T00:00:00.000Z',
@@ -60,6 +63,9 @@ describe('EmployeeDetailPage', () => {
     expect(await screen.findByRole('heading', { name: 'Rina Akter' })).toBeInTheDocument();
     expect(screen.getByText(/35,000\.00/)).toBeInTheDocument();
     expect(screen.getByText('01711111111')).toBeInTheDocument();
+    expect(screen.getByText('12 Present Road')).toBeInTheDocument();
+    expect(screen.getByText('34 Permanent Road')).toBeInTheDocument();
+    expect(screen.getByText('1987654321')).toBeInTheDocument();
     expect(screen.getByText('Star performer')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Rina Akter photograph' })).toHaveAttribute(
       'src',

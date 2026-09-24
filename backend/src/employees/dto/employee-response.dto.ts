@@ -12,6 +12,9 @@ export class EmployeeResponseDto {
   joinDate: string;
   status: EmployeeStatus;
   phone: string | null;
+  nidOrBirthCertificate: string | null;
+  presentAddress: string | null;
+  permanentAddress: string | null;
   note: string | null;
   photoUrl: string | null;
   createdAt: Date;

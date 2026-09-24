@@ -23,6 +23,9 @@ export class EmployeesService {
       joinDate: dto.joinDate,
       status: dto.status ?? EmployeeStatus.ACTIVE,
       phone: dto.phone ?? null,
+      nidOrBirthCertificate: dto.nidOrBirthCertificate?.trim() || null,
+      presentAddress: dto.presentAddress?.trim() || null,
+      permanentAddress: dto.permanentAddress?.trim() || null,
       note: dto.note ?? null,
     });
 
@@ -58,6 +61,14 @@ export class EmployeesService {
     if (dto.salaryMinor !== undefined) employee.salaryMinor = dto.salaryMinor;
     if (dto.salaryFrequency !== undefined) employee.salaryFrequency = dto.salaryFrequency;
     if (dto.phone !== undefined) employee.phone = dto.phone;
+    if (dto.nidOrBirthCertificate !== undefined) {
+      employee.nidOrBirthCertificate = dto.nidOrBirthCertificate.trim() || null;
+    }
+    if (dto.presentAddress !== undefined)
+      employee.presentAddress = dto.presentAddress.trim() || null;
+    if (dto.permanentAddress !== undefined) {
+      employee.permanentAddress = dto.permanentAddress.trim() || null;
+    }
     if (dto.note !== undefined) employee.note = dto.note;
     if (dto.status !== undefined) employee.status = dto.status;
 
@@ -106,6 +117,9 @@ export class EmployeesService {
       status: employee.status,
       defaultPaymentMethod: employee.defaultPaymentMethod,
       phone: employee.phone,
+      nidOrBirthCertificate: employee.nidOrBirthCertificate,
+      presentAddress: employee.presentAddress,
+      permanentAddress: employee.permanentAddress,
       note: employee.note,
       photoUrl: employee.photoUrl,
       createdAt: employee.createdAt,

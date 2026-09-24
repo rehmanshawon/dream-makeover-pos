@@ -40,6 +40,9 @@ describe('EmployeesService', () => {
       salaryMinor: 3500000,
       salaryFrequency: SalaryFrequency.MONTHLY,
       joinDate: '2025-06-15',
+      nidOrBirthCertificate: '1987654321',
+      presentAddress: '12 Present Road',
+      permanentAddress: '34 Permanent Road',
     };
 
     const saved = {
@@ -60,6 +63,9 @@ describe('EmployeesService', () => {
     expect(result.status).toBe(EmployeeStatus.ACTIVE);
     expect(result.salaryMinor).toBe(3500000);
     expect(result.joinDate).toBe('2025-06-15');
+    expect(result.nidOrBirthCertificate).toBe('1987654321');
+    expect(result.presentAddress).toBe('12 Present Road');
+    expect(result.permanentAddress).toBe('34 Permanent Road');
   });
 
   it('throws NotFoundException when employee does not exist', async () => {

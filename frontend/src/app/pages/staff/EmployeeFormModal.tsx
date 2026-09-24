@@ -31,6 +31,9 @@ interface FormState {
   fullName: string;
   role: string;
   phone: string;
+  nidOrBirthCertificate: string;
+  presentAddress: string;
+  permanentAddress: string;
   joinDate: string;
   salaryTaka: string;
   salaryFrequency: SalaryFrequency;
@@ -50,6 +53,9 @@ function emptyForm(): FormState {
     fullName: '',
     role: '',
     phone: '',
+    nidOrBirthCertificate: '',
+    presentAddress: '',
+    permanentAddress: '',
     joinDate: todayIso(),
     salaryTaka: '',
     salaryFrequency: 'MONTHLY',
@@ -63,6 +69,9 @@ function formFromEmployee(employee: Employee): FormState {
     fullName: employee.fullName,
     role: employee.role,
     phone: employee.phone ?? '',
+    nidOrBirthCertificate: employee.nidOrBirthCertificate ?? '',
+    presentAddress: employee.presentAddress ?? '',
+    permanentAddress: employee.permanentAddress ?? '',
     joinDate: employee.joinDate,
     salaryTaka: minorToTakaInput(employee.salaryMinor),
     salaryFrequency: employee.salaryFrequency,
@@ -127,6 +136,9 @@ export function EmployeeFormModal({
 
     const note = form.note.trim();
     const phone = form.phone.trim();
+    const nidOrBirthCertificate = form.nidOrBirthCertificate.trim();
+    const presentAddress = form.presentAddress.trim();
+    const permanentAddress = form.permanentAddress.trim();
 
     try {
       if (isEdit && employee) {
@@ -136,6 +148,9 @@ export function EmployeeFormModal({
             fullName: trimmedName,
             role: trimmedRole,
             phone,
+            nidOrBirthCertificate,
+            presentAddress,
+            permanentAddress,
             salaryMinor: salaryMinor as number,
             salaryFrequency: form.salaryFrequency,
             note,
@@ -150,6 +165,9 @@ export function EmployeeFormModal({
           fullName: trimmedName,
           role: trimmedRole,
           ...(phone ? { phone } : {}),
+          nidOrBirthCertificate,
+          presentAddress,
+          permanentAddress,
           joinDate: form.joinDate,
           salaryMinor: salaryMinor as number,
           salaryFrequency: form.salaryFrequency,
@@ -207,6 +225,27 @@ export function EmployeeFormModal({
             inputMode="tel"
             value={form.phone}
             onChange={(e) => setForm((s) => ({ ...s, phone: e.target.value }))}
+            disabled={submitting}
+          />
+
+          <Input
+            label="NID / Birth certificate (optional)"
+            value={form.nidOrBirthCertificate}
+            onChange={(e) => setForm((s) => ({ ...s, nidOrBirthCertificate: e.target.value }))}
+            disabled={submitting}
+          />
+
+          <Textarea
+            label="Present address (optional)"
+            value={form.presentAddress}
+            onChange={(e) => setForm((s) => ({ ...s, presentAddress: e.target.value }))}
+            disabled={submitting}
+          />
+
+          <Textarea
+            label="Permanent address (optional)"
+            value={form.permanentAddress}
+            onChange={(e) => setForm((s) => ({ ...s, permanentAddress: e.target.value }))}
             disabled={submitting}
           />
 

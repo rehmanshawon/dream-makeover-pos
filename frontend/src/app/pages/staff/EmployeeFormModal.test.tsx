@@ -27,6 +27,9 @@ describe('EmployeeFormModal', () => {
     await user.type(screen.getByLabelText('Full name'), 'Rina Akter');
     await user.type(screen.getByLabelText('Role'), 'Senior Stylist');
     await user.type(screen.getByLabelText('Salary (৳)'), '35000');
+    await user.type(screen.getByLabelText('NID / Birth certificate (optional)'), '1987654321');
+    await user.type(screen.getByLabelText('Present address (optional)'), '12 Present Road');
+    await user.type(screen.getByLabelText('Permanent address (optional)'), '34 Permanent Road');
     await user.upload(
       screen.getByLabelText('Photograph (optional)'),
       new File(['photo'], 'rina.webp', { type: 'image/webp' }),
@@ -34,7 +37,13 @@ describe('EmployeeFormModal', () => {
     await user.click(screen.getByRole('button', { name: 'Create employee' }));
 
     expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({ fullName: 'Rina Akter', role: 'Senior Stylist' }),
+      expect.objectContaining({
+        fullName: 'Rina Akter',
+        role: 'Senior Stylist',
+        nidOrBirthCertificate: '1987654321',
+        presentAddress: '12 Present Road',
+        permanentAddress: '34 Permanent Road',
+      }),
     );
     expect(upload).toHaveBeenCalledWith({
       id: 'employee-1',

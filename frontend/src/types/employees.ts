@@ -10,6 +10,9 @@ export interface Employee {
   joinDate: string;
   status: EmployeeStatus;
   phone: string | null;
+  nidOrBirthCertificate?: string | null;
+  presentAddress?: string | null;
+  permanentAddress?: string | null;
   note: string | null;
   photoUrl: string | null;
   createdAt: string;
@@ -23,6 +26,9 @@ export interface CreateEmployeeRequest {
   salaryFrequency: SalaryFrequency;
   joinDate: string;
   phone?: string;
+  nidOrBirthCertificate?: string;
+  presentAddress?: string;
+  permanentAddress?: string;
   note?: string;
   status?: EmployeeStatus;
 }
@@ -33,6 +39,9 @@ export interface UpdateEmployeeRequest {
   salaryMinor?: number;
   salaryFrequency?: SalaryFrequency;
   phone?: string;
+  nidOrBirthCertificate?: string;
+  presentAddress?: string;
+  permanentAddress?: string;
   note?: string;
   status?: EmployeeStatus;
 }
