@@ -212,9 +212,15 @@ describe('PayPeriodsService', () => {
   it('calculates payables from attendance and subtracts existing payments', async () => {
     const staff = employee();
     periodRepo.findOne!.mockResolvedValue(period());
+    periodRepo.find!.mockResolvedValue([period()]);
     employeeRepo.find!.mockResolvedValue([staff]);
     paymentRepo.find!.mockResolvedValue([
-      { employeeId: staff.id, amountMinor: 100000 } as SalaryPayment,
+      {
+        employeeId: staff.id,
+        amountMinor: 100000,
+        payPeriodId: 'period-1',
+        paymentType: SalaryPaymentType.REGULAR,
+      } as SalaryPayment,
     ]);
     attendanceService.getWorkedDays.mockResolvedValue({ workedDays: 2.5, recordedDays: 3 });
 
@@ -237,6 +243,7 @@ describe('PayPeriodsService', () => {
   it('falls back to calendar days when attendance is unrecorded', async () => {
     const staff = employee({ joinDate: '2026-01-11', salaryFrequency: 'DAILY', salaryMinor: 1000 });
     periodRepo.findOne!.mockResolvedValue(period());
+    periodRepo.find!.mockResolvedValue([period()]);
     employeeRepo.find!.mockResolvedValue([staff]);
     paymentRepo.find!.mockResolvedValue([]);
     attendanceService.getWorkedDays.mockResolvedValue({ workedDays: 0, recordedDays: 0 });
@@ -244,6 +251,54 @@ describe('PayPeriodsService', () => {
     const result = await service.getPayables('period-1');
 
     expect(result[0].payableMinor).toBe(21000);
+  });
+
+  it('uses 30 days for a full monthly salary in a 31-day month', async () => {
+    const staff = employee({ salaryMinor: 3000000 });
+    const january = period();
+    periodRepo.findOne!.mockResolvedValue(january);
+    periodRepo.find!.mockResolvedValue([january]);
+    employeeRepo.find!.mockResolvedValue([staff]);
+    paymentRepo.find!.mockResolvedValue([]);
+    attendanceService.getWorkedDays.mockResolvedValue({ workedDays: 0, recordedDays: 0 });
+
+    const result = await service.getPayables(january.id);
+
+    expect(result[0].payableMinor).toBe(3000000);
+  });
+
+  it('uses 30 days for a full monthly salary in February', async () => {
+    const staff = employee({ salaryMinor: 3000000 });
+    const february = period({
+      id: 'period-2',
+      name: 'February 2026',
+      month: 2,
+      startDate: '2026-02-01',
+      endDate: '2026-02-28',
+    });
+    periodRepo.findOne!.mockResolvedValue(february);
+    periodRepo.find!.mockResolvedValue([february]);
+    employeeRepo.find!.mockResolvedValue([staff]);
+    paymentRepo.find!.mockResolvedValue([]);
+    attendanceService.getWorkedDays.mockResolvedValue({ workedDays: 0, recordedDays: 0 });
+
+    const result = await service.getPayables(february.id);
+
+    expect(result[0].payableMinor).toBe(3000000);
+  });
+
+  it('caps monthly attendance at 30 payable days', async () => {
+    const staff = employee({ salaryMinor: 3000000 });
+    const january = period();
+    periodRepo.findOne!.mockResolvedValue(january);
+    periodRepo.find!.mockResolvedValue([january]);
+    employeeRepo.find!.mockResolvedValue([staff]);
+    paymentRepo.find!.mockResolvedValue([]);
+    attendanceService.getWorkedDays.mockResolvedValue({ workedDays: 31, recordedDays: 31 });
+
+    const result = await service.getPayables(january.id);
+
+    expect(result[0].payableMinor).toBe(3000000);
   });
 
   it('runs payroll once and skips already paid employees', async () => {
@@ -267,6 +322,8 @@ describe('PayPeriodsService', () => {
       }),
     );
     periodRepo.findOne!.mockResolvedValue(period());
+    periodRepo.find!.mockResolvedValue([period()]);
+    paymentRepo.find!.mockResolvedValue([]);
     attendanceService.getWorkedDays.mockResolvedValue({ workedDays: 30, recordedDays: 30 });
 
     const result = await service.runPayroll('period-1', 'admin');

@@ -389,7 +389,15 @@ export class PayPeriodsService {
     );
 
     if (recordedDays > 0) {
-      return Math.round(dailyRate * workedDays);
+      const payableDays =
+        employee.salaryFrequency === 'MONTHLY' ? Math.min(workedDays, 30) : workedDays;
+      return Math.round(dailyRate * payableDays);
+    }
+
+    if (employee.salaryFrequency === 'MONTHLY') {
+      const joinDay = joinDate > periodStart ? joinDate.getDate() : 1;
+      const fixedMonthDays = Math.max(0, 30 - joinDay + 1);
+      return Math.round(dailyRate * fixedMonthDays);
     }
 
     const msPerDay = 24 * 60 * 60 * 1000;
