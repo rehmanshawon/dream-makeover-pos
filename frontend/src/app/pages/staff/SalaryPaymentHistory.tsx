@@ -189,7 +189,7 @@ export function SalaryPaymentHistory({ employee }: SalaryPaymentHistoryProps): J
         canDeleteStaffPayment(p) ? (
           <Button
             size="sm"
-            variant="ghost"
+            variant="danger"
             className="button--icon"
             aria-label={`Delete ${SALARY_PAYMENT_TYPE_LABELS[p.paymentType]} for ${employee.fullName}`}
             title="Delete Staff payment"

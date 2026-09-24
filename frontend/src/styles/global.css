@@ -75,6 +75,7 @@ p {
 button {
   font-family: inherit;
   font-size: inherit;
+  text-transform: uppercase;
   cursor: pointer;
   border: none;
   background: none;

@@ -140,7 +140,9 @@ describe('SalaryPaymentHistory', () => {
     });
 
     await screen.findByText('September salary');
-    await userEvent.click(screen.getByRole('button', { name: 'Delete Advance for Asha Rahman' }));
+    const deleteButton = screen.getByRole('button', { name: 'Delete Advance for Asha Rahman' });
+    expect(deleteButton).toHaveClass('button--danger');
+    await userEvent.click(deleteButton);
 
     const dialog = await screen.findByRole('dialog');
     await userEvent.click(within(dialog).getByRole('button', { name: /^delete$/i }));
