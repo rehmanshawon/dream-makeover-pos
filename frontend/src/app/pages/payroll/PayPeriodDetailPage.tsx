@@ -253,7 +253,7 @@ export function PayPeriodDetailPage(): JSX.Element {
   const paymentColumns: TableColumn<SalaryPayment>[] = [
     {
       key: 'select',
-      header: '',
+      header: 'select',
       render: (p) => (
         <input
           type="checkbox"
@@ -273,27 +273,30 @@ export function PayPeriodDetailPage(): JSX.Element {
     {
       key: 'employeeId',
       header: 'Employee',
+      align: 'center',
       render: (p) => employeeNameLookup.get(p.employeeId) ?? p.employeeId,
     },
     {
       key: 'amount',
       header: 'Amount',
-      align: 'right',
+      align: 'center',
       render: (p) => formatBdt(p.amountMinor),
     },
     {
       key: 'method',
       header: 'Method',
+      align: 'center',
       render: (p) => p.paymentMethod.replace(/_/g, ' '),
     },
     {
       key: 'paidOn',
       header: 'Paid on',
+      align: 'center',
       render: (p) => formatDate(p.paidOn),
     },
     {
       key: 'actions',
-      header: '',
+      header: 'Actions',
       align: 'right',
       render: (p) => (
         <Button size="sm" variant="ghost" onClick={() => setConfirmDeleteOne(p)} disabled={!isOpen}>
