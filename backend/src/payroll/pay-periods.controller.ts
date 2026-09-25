@@ -15,6 +15,7 @@ import { SalaryPaymentResponseDto } from '../salary-payments/dto/salary-payment-
 import { CreateSalaryPaymentDto } from '../salary-payments/dto/create-salary-payment.dto';
 import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
 import { AdjustAdvanceDto } from './dto/adjust-advance.dto';
+import { RunPayrollDto } from './dto/run-payroll.dto';
 
 @Controller('pay-periods')
 @UseGuards(JwtAuthGuard)
@@ -107,8 +108,9 @@ export class PayPeriodsController {
   @Roles(UserRole.ADMIN)
   async run(
     @Param('id') id: string,
+    @Body() dto: RunPayrollDto,
     @Req() req: { user: JwtPayload },
   ): Promise<RunPayrollResponseDto> {
-    return this.service.runPayroll(id, req.user.username);
+    return this.service.runPayroll(id, req.user.username, dto.employeeIds);
   }
 }

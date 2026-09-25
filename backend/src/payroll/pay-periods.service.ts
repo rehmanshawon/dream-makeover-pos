@@ -359,7 +359,11 @@ export class PayPeriodsService {
     return this.toResponse(saved);
   }
 
-  async runPayroll(periodId: string, cashier: string): Promise<RunPayrollResponseDto> {
+  async runPayroll(
+    periodId: string,
+    cashier: string,
+    selectedEmployeeIds?: string[],
+  ): Promise<RunPayrollResponseDto> {
     const period = await this.periodRepository.findOne({ where: { id: periodId } });
     if (!period) throw new NotFoundException('Pay period not found');
     if (period.status === PayPeriodStatus.CLOSED) {
@@ -381,9 +385,19 @@ export class PayPeriodsService {
       const employeeRepo = manager.getRepository(Employee);
       const paymentRepo = manager.getRepository(SalaryPayment);
 
-      const employees = await employeeRepo.find({
+      const eligibleEmployees = await employeeRepo.find({
         where: { joinDate: LessThanOrEqual(period.endDate) },
       });
+      const selectedIds = selectedEmployeeIds ? new Set(selectedEmployeeIds) : null;
+      if (
+        selectedIds &&
+        [...selectedIds].some((employeeId) => !eligibleEmployees.some((e) => e.id === employeeId))
+      ) {
+        throw new BadRequestException('Selected employee is not eligible for this pay period.');
+      }
+      const employees = selectedIds
+        ? eligibleEmployees.filter((employee) => selectedIds.has(employee.id))
+        : eligibleEmployees;
 
       const currentPeriodPayments = await paymentRepo.find({
         where: {

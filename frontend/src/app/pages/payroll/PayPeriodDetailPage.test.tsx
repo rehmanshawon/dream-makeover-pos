@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { PayPeriodDetailPage } from './PayPeriodDetailPage';
 import { renderWithProviders } from '../../../test/render-with-providers';
+
+const { runPayrollMock } = vi.hoisted(() => ({ runPayrollMock: vi.fn() }));
+
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return { ...actual, useParams: () => ({ id: 'period-1' }) };
+});
 
 vi.mock('../../../api/payroll-hooks', () => ({
   usePayPeriod: () => ({
@@ -37,13 +44,28 @@ vi.mock('../../../api/payroll-hooks', () => ({
         advanceMinor: 0,
         hasExistingPayment: true,
       },
+      {
+        employeeId: 'employee-2',
+        employeeName: 'Mina Akter',
+        role: 'Assistant',
+        joinDate: '2026-09-01',
+        monthlySalaryMinor: 2400000,
+        payableMinor: 2400000,
+        currentObligationMinor: 2400000,
+        carriedArrearsMinor: 0,
+        totalDueMinor: 2400000,
+        alreadyPaidMinor: 0,
+        remainingMinor: 2400000,
+        advanceMinor: 0,
+        hasExistingPayment: false,
+      },
     ],
     isLoading: false,
     error: null,
     refetch: vi.fn(),
   }),
   useClosePayPeriod: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useRunPayroll: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useRunPayroll: () => ({ mutateAsync: runPayrollMock, isPending: false }),
   useCreatePayrollSalaryPayment: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useAdjustAdvance: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
@@ -70,6 +92,22 @@ vi.mock('../../../api/salary-payment-hooks', () => ({
 }));
 
 describe('PayPeriodDetailPage', () => {
+  it('runs payroll only for the selected employee', async () => {
+    runPayrollMock.mockResolvedValue({});
+    renderWithProviders(<PayPeriodDetailPage />, { route: '/payroll/period-1' });
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Mina Akter' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run selected (1)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run payroll' }));
+
+    await waitFor(() =>
+      expect(runPayrollMock).toHaveBeenCalledWith({
+        periodId: 'period-1',
+        payload: { employeeIds: ['employee-2'] },
+      }),
+    );
+  });
+
   it('renders recorded payments without offering deletion', () => {
     renderWithProviders(<PayPeriodDetailPage />, { route: '/payroll/period-1' });
 
@@ -77,6 +115,7 @@ describe('PayPeriodDetailPage', () => {
     expect(screen.getAllByText('Asha Rahman')).not.toHaveLength(0);
     expect(screen.getAllByText('৳30,000.00')).not.toHaveLength(0);
     expect(screen.getByRole('button', { name: 'Attendance for Asha Rahman' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Select Asha Rahman' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Adjust advance for Asha Rahman' })).toBeDisabled();
     expect(
       screen.getByRole('button', { name: 'Pay partial salary for Asha Rahman' }),

@@ -65,3 +65,7 @@ export interface RunPayrollResult {
     amountMinor: number;
   }>;
 }
+
+export interface RunPayrollRequest {
+  employeeIds?: string[];
+}

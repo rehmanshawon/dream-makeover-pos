@@ -10,6 +10,7 @@ import type {
   PayPeriod,
   PayableEmployee,
   RunPayrollResult,
+  RunPayrollRequest,
   CreatePayPeriodRequest,
   CreatePayrollSalaryPaymentRequest,
   AdjustAdvanceRequest,
@@ -76,10 +77,14 @@ export function useClosePayPeriod(): UseMutationResult<PayPeriod, Error, string>
   });
 }
 
-export function useRunPayroll(): UseMutationResult<RunPayrollResult, Error, string> {
+export function useRunPayroll(): UseMutationResult<
+  RunPayrollResult,
+  Error,
+  { periodId: string; payload?: RunPayrollRequest }
+> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id) => payrollApi.runPayroll(id),
+    mutationFn: ({ periodId, payload }) => payrollApi.runPayroll(periodId, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: payrollKeys.all });
       void queryClient.invalidateQueries({ queryKey: ['salary-payments'] });

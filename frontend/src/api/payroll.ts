@@ -3,6 +3,7 @@ import type {
   PayPeriod,
   PayableEmployee,
   RunPayrollResult,
+  RunPayrollRequest,
   CreatePayPeriodRequest,
   CreatePayrollSalaryPaymentRequest,
   AdjustAdvanceRequest,
@@ -34,8 +35,8 @@ export const payrollApi = {
     return api.post<PayPeriod>(`/pay-periods/${id}/close`, {});
   },
 
-  runPayroll(id: string): Promise<RunPayrollResult> {
-    return api.post<RunPayrollResult>(`/pay-periods/${id}/run`, {});
+  runPayroll(id: string, payload: RunPayrollRequest = {}): Promise<RunPayrollResult> {
+    return api.post<RunPayrollResult>(`/pay-periods/${id}/run`, payload);
   },
 
   createSalaryPayment(

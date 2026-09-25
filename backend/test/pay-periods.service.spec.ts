@@ -468,6 +468,44 @@ describe('PayPeriodsService', () => {
     jest.useRealTimers();
   });
 
+  it('runs payroll only for selected employees', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-02-01T00:00:00.000Z'));
+    const selected = employee();
+    const unselected = employee({ id: 'employee-2', fullName: 'Unselected Employee' });
+    const savedPayment = {
+      id: 'payment-selected',
+      employeeId: selected.id,
+      amountMinor: 3000000,
+    } as SalaryPayment;
+    const managerEmployeeRepo = {
+      find: jest.fn().mockResolvedValue([selected, unselected]),
+    };
+    const managerPaymentRepo = {
+      find: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockReturnValue(savedPayment),
+      save: jest.fn().mockResolvedValue(savedPayment),
+    };
+    dataSource.transaction.mockImplementation(async (callback: (manager: unknown) => unknown) =>
+      callback({
+        getRepository: (entity: unknown) =>
+          entity === Employee ? managerEmployeeRepo : managerPaymentRepo,
+      }),
+    );
+    periodRepo.findOne!.mockResolvedValue(period());
+    periodRepo.find!.mockResolvedValue([period()]);
+    attendanceService.getWorkedDays.mockResolvedValue({ workedDays: 30, recordedDays: 30 });
+
+    const result = await service.runPayroll('period-1', 'admin', [selected.id]);
+
+    expect(result.createdCount).toBe(1);
+    expect(result.payments.map((payment) => payment.employeeId)).toEqual([selected.id]);
+    expect(managerPaymentRepo.create).toHaveBeenCalledTimes(1);
+    expect(managerPaymentRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ employeeId: selected.id }),
+    );
+    jest.useRealTimers();
+  });
+
   it('rejects a payroll run before the period ends', async () => {
     jest.useFakeTimers().setSystemTime(new Date('2026-01-15T12:00:00.000Z'));
     periodRepo.findOne!.mockResolvedValue(period());

@@ -35,6 +35,8 @@ export function PayPeriodDetailPage(): JSX.Element {
   const isOpen = period.data?.status === 'OPEN';
 
   const [confirmRun, setConfirmRun] = useState(false);
+  const [runSelection, setRunSelection] = useState<string[] | null>(null);
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
   const [confirmClose, setConfirmClose] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -46,8 +48,13 @@ export function PayPeriodDetailPage(): JSX.Element {
     if (!id) return;
     setActionError(null);
     try {
-      await runMutation.mutateAsync(id);
+      await runMutation.mutateAsync({
+        periodId: id,
+        ...(runSelection ? { payload: { employeeIds: runSelection } } : {}),
+      });
       setConfirmRun(false);
+      setRunSelection(null);
+      setSelectedEmployeeIds([]);
       void payables.refetch();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : 'Unable to run payroll.');
@@ -91,7 +98,51 @@ export function PayPeriodDetailPage(): JSX.Element {
 
   const p = period.data;
 
+  const batchEligibleEmployees =
+    payables.data?.filter(
+      (employee) => !employee.hasExistingPayment && employee.remainingMinor > 0,
+    ) ?? [];
+  const batchEligibleIds = batchEligibleEmployees.map((employee) => employee.employeeId);
+  const selectedIds = selectedEmployeeIds.filter((employeeId) =>
+    batchEligibleIds.includes(employeeId),
+  );
+  const payrollRunEnabled = isOpen && p.payrollRunAvailable !== false;
+  const toggleEmployee = (employeeId: string, checked: boolean): void => {
+    setSelectedEmployeeIds((current) =>
+      checked
+        ? [...new Set([...current, employeeId])]
+        : current.filter((selectedId) => selectedId !== employeeId),
+    );
+  };
+
   const columns: TableColumn<PayableEmployee>[] = [
+    {
+      key: 'select',
+      header: (
+        <input
+          type="checkbox"
+          aria-label="Select all pending employees"
+          checked={batchEligibleIds.length > 0 && selectedIds.length === batchEligibleIds.length}
+          disabled={!payrollRunEnabled || batchEligibleIds.length === 0}
+          onChange={(event) => setSelectedEmployeeIds(event.target.checked ? batchEligibleIds : [])}
+        />
+      ),
+      align: 'center',
+      width: '44px',
+      render: (employee) => {
+        const eligible = !employee.hasExistingPayment && employee.remainingMinor > 0;
+        return (
+          <input
+            type="checkbox"
+            aria-label={`Select ${employee.employeeName}`}
+            checked={eligible && selectedIds.includes(employee.employeeId)}
+            disabled={!payrollRunEnabled || !eligible}
+            onClick={(event) => event.stopPropagation()}
+            onChange={(event) => toggleEmployee(employee.employeeId, event.target.checked)}
+          />
+        );
+      },
+    },
     { key: 'name', header: 'Employee', render: (e) => e.employeeName },
     { key: 'role', header: 'Role', align: 'center', render: (e) => e.role },
     {
@@ -230,8 +281,7 @@ export function PayPeriodDetailPage(): JSX.Element {
     },
   ];
 
-  const pendingCount =
-    payables.data?.filter((e) => !e.hasExistingPayment && e.remainingMinor > 0).length ?? 0;
+  const pendingCount = batchEligibleEmployees.length;
 
   return (
     <div className="pay-period-detail">
@@ -251,17 +301,33 @@ export function PayPeriodDetailPage(): JSX.Element {
               <>
                 <Button
                   variant="secondary"
-                  onClick={() => setConfirmRun(true)}
-                  disabled={
-                    p.payrollRunAvailable === false || pendingCount === 0 || runMutation.isPending
-                  }
+                  onClick={() => {
+                    setRunSelection(selectedIds);
+                    setConfirmRun(true);
+                  }}
+                  disabled={!payrollRunEnabled || selectedIds.length === 0 || runMutation.isPending}
                   title={
-                    p.payrollRunAvailable === false
+                    !payrollRunEnabled
                       ? 'Payroll can be run in the following business month'
                       : undefined
                   }
                 >
-                  Run payroll ({pendingCount})
+                  Run selected ({selectedIds.length})
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setRunSelection(null);
+                    setConfirmRun(true);
+                  }}
+                  disabled={!payrollRunEnabled || pendingCount === 0 || runMutation.isPending}
+                  title={
+                    !payrollRunEnabled
+                      ? 'Payroll can be run in the following business month'
+                      : undefined
+                  }
+                >
+                  Run all pending ({pendingCount})
                 </Button>
                 <Button
                   variant="ghost"
@@ -388,11 +454,14 @@ export function PayPeriodDetailPage(): JSX.Element {
       <ConfirmDialog
         open={confirmRun}
         title="Run payroll"
-        message={`This will pay the full salary due for ${pendingCount} employees without a manual salary payment in this period. Employees with partial payments will be skipped. Continue?`}
+        message={`This will pay the full salary due for ${runSelection ? runSelection.length : pendingCount} employees without a manual salary payment in this period. Employees with partial payments will be skipped. Continue?`}
         confirmLabel="Run payroll"
         loading={runMutation.isPending}
         onConfirm={handleRun}
-        onCancel={() => setConfirmRun(false)}
+        onCancel={() => {
+          setConfirmRun(false);
+          setRunSelection(null);
+        }}
       />
 
       <ConfirmDialog
