@@ -108,6 +108,81 @@ describe('AttendanceService', () => {
     });
   });
 
+  it('should count only days on or after a mid-month joining date', async () => {
+    jest.spyOn(employeeRepository, 'findOne').mockResolvedValue({
+      id: 'employee-1',
+      joinDate: '2026-02-11',
+    } as Employee);
+    jest
+      .spyOn(repository, 'find')
+      .mockResolvedValue([
+        { date: '2026-02-11', status: 'PRESENT' } as Attendance,
+        { date: '2026-02-12', status: 'ABSENT' } as Attendance,
+      ]);
+
+    await expect(service.getMonthlySummary('employee-1', 2026, 2)).resolves.toEqual({
+      present: 1,
+      absent: 1,
+      halfDay: 0,
+      leave: 0,
+      notRecorded: 16,
+      totalDaysInMonth: 18,
+    });
+    expect(repository.find).toHaveBeenCalledWith({
+      where: { employeeId: 'employee-1', date: expect.anything() },
+    });
+  });
+
+  it('should clip attendance range reads to the joining date', async () => {
+    jest.spyOn(employeeRepository, 'findOne').mockResolvedValue({
+      id: 'employee-1',
+      joinDate: '2026-02-11',
+    } as Employee);
+    jest.spyOn(repository, 'find').mockResolvedValue([]);
+
+    await service.findForEmployee('employee-1', '2026-02-01', '2026-02-28');
+
+    expect(repository.find).toHaveBeenCalledWith({
+      where: { employeeId: 'employee-1', date: expect.anything() },
+      order: { date: 'ASC' },
+    });
+  });
+
+  it('should reject single attendance before the joining date', async () => {
+    jest.spyOn(employeeRepository, 'findOne').mockResolvedValue({
+      id: 'employee-1',
+      joinDate: '2026-02-11',
+    } as Employee);
+    const saveSpy = jest.spyOn(repository, 'save');
+
+    await expect(
+      service.upsert('employee-1', '2026-02-10', { status: 'PRESENT' }, 'admin'),
+    ).rejects.toThrow('before the employee joining date');
+    expect(saveSpy).not.toHaveBeenCalled();
+  });
+
+  it('should reject a bulk attendance batch containing a pre-join date', async () => {
+    jest.spyOn(employeeRepository, 'findOne').mockResolvedValue({
+      id: 'employee-1',
+      joinDate: '2026-02-11',
+    } as Employee);
+    const saveSpy = jest.spyOn(repository, 'save');
+
+    await expect(
+      service.upsertBulk(
+        'employee-1',
+        {
+          entries: [
+            { date: '2026-02-11', status: 'PRESENT' },
+            { date: '2026-02-10', status: 'PRESENT' },
+          ],
+        },
+        'admin',
+      ),
+    ).rejects.toThrow('before the employee joining date');
+    expect(saveSpy).not.toHaveBeenCalled();
+  });
+
   it('should reject monthly summary for a missing employee', async () => {
     jest.spyOn(employeeRepository, 'findOne').mockResolvedValue(null);
 

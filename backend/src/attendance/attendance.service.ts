@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { Attendance } from './attendance.entity';
@@ -30,10 +30,13 @@ export class AttendanceService {
     });
     if (!employee) throw new NotFoundException('Employee not found');
 
+    const effectiveFrom = from < employee.joinDate ? employee.joinDate : from;
+    if (effectiveFrom > to) return [];
+
     const records = await this.attendanceRepository.find({
       where: {
         employeeId,
-        date: Between(from, to),
+        date: Between(effectiveFrom, to),
       },
       order: { date: 'ASC' },
     });
@@ -53,6 +56,11 @@ export class AttendanceService {
       where: { id: employeeId },
     });
     if (!employee) throw new NotFoundException('Employee not found');
+    if (date < employee.joinDate) {
+      throw new BadRequestException(
+        'Attendance cannot be recorded before the employee joining date.',
+      );
+    }
 
     let record = await this.attendanceRepository.findOne({
       where: { employeeId, date },
@@ -88,6 +96,12 @@ export class AttendanceService {
       where: { id: employeeId },
     });
     if (!employee) throw new NotFoundException('Employee not found');
+    const preJoinEntry = dto.entries.find((entry) => entry.date < employee.joinDate);
+    if (preJoinEntry) {
+      throw new BadRequestException(
+        'Attendance cannot be recorded before the employee joining date.',
+      );
+    }
 
     const results: AttendanceResponseDto[] = [];
     for (const entry of dto.entries) {
@@ -161,12 +175,22 @@ export class AttendanceService {
     if (!employee) throw new NotFoundException('Employee not found');
 
     const daysInMonth = new Date(year, month, 0).getDate();
-    const from = `${year}-${String(month).padStart(2, '0')}-01`;
+    const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
     const to = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+    const from = employee.joinDate > monthStart ? employee.joinDate : monthStart;
+    const eligibleDays =
+      from > to
+        ? 0
+        : Math.floor(
+            (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000,
+          ) + 1;
 
-    const records = await this.attendanceRepository.find({
-      where: { employeeId, date: Between(from, to) },
-    });
+    const records =
+      eligibleDays === 0
+        ? []
+        : await this.attendanceRepository.find({
+            where: { employeeId, date: Between(from, to) },
+          });
 
     let present = 0;
     let absent = 0;
@@ -185,8 +209,8 @@ export class AttendanceService {
       absent,
       halfDay,
       leave,
-      notRecorded: daysInMonth - records.length,
-      totalDaysInMonth: daysInMonth,
+      notRecorded: eligibleDays - records.length,
+      totalDaysInMonth: eligibleDays,
     };
   }
 

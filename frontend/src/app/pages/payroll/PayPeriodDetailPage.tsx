@@ -252,7 +252,14 @@ export function PayPeriodDetailPage(): JSX.Element {
                 <Button
                   variant="secondary"
                   onClick={() => setConfirmRun(true)}
-                  disabled={pendingCount === 0 || runMutation.isPending}
+                  disabled={
+                    p.payrollRunAvailable === false || pendingCount === 0 || runMutation.isPending
+                  }
+                  title={
+                    p.payrollRunAvailable === false
+                      ? 'Payroll can be run in the following business month'
+                      : undefined
+                  }
                 >
                   Run payroll ({pendingCount})
                 </Button>
@@ -271,6 +278,13 @@ export function PayPeriodDetailPage(): JSX.Element {
         {p.status === 'CLOSED' && p.closedAt && (
           <p className="pay-period-detail__closed-info">
             Closed on {formatDateTime(p.closedAt)} by {p.closedBy}.
+          </p>
+        )}
+
+        {isOpen && p.payrollRunAvailable === false && (
+          <p className="pay-period-detail__run-notice" role="status">
+            Full payroll can be run in the following business month. Use Partial Pay for employees
+            who leave before then.
           </p>
         )}
 
@@ -361,6 +375,7 @@ export function PayPeriodDetailPage(): JSX.Element {
             employeeId={attendanceFor.employeeId}
             from={p.startDate}
             to={p.endDate}
+            joinDate={attendanceFor.joinDate ?? p.startDate}
             disabled={p.status === 'CLOSED'}
             onSaved={() => {
               void payables.refetch();

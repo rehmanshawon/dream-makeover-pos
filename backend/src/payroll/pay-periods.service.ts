@@ -57,6 +57,18 @@ function nextMonth(year: number, month: number): { year: number; month: number }
   return { year, month: month + 1 };
 }
 
+function businessYearMonth(date: Date, timeZone: string): { year: number; month: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: 'numeric',
+  }).formatToParts(date);
+  return {
+    year: Number(parts.find((part) => part.type === 'year')?.value),
+    month: Number(parts.find((part) => part.type === 'month')?.value),
+  };
+}
+
 @Injectable()
 export class PayPeriodsService {
   constructor(
@@ -183,6 +195,7 @@ export class PayPeriodsService {
           employeeId: e.id,
           employeeName: e.fullName,
           role: e.role,
+          joinDate: e.joinDate,
           monthlySalaryMinor: e.salaryMinor,
           payableMinor: currentObligationMinor,
           currentObligationMinor,
@@ -351,6 +364,17 @@ export class PayPeriodsService {
     if (!period) throw new NotFoundException('Pay period not found');
     if (period.status === PayPeriodStatus.CLOSED) {
       throw new BadRequestException('Cannot run payroll on a closed period');
+    }
+    const timeZone = process.env.BUSINESS_TIME_ZONE ?? 'Asia/Dhaka';
+    const currentBusinessMonth = businessYearMonth(new Date(), timeZone);
+    const eligibleBusinessMonth = nextMonth(period.year, period.month);
+    if (
+      currentBusinessMonth.year !== eligibleBusinessMonth.year ||
+      currentBusinessMonth.month !== eligibleBusinessMonth.month
+    ) {
+      throw new BadRequestException(
+        `Payroll for ${period.name} can only be run in the following business month (${timeZone}).`,
+      );
     }
 
     return await this.dataSource.transaction(async (manager) => {
@@ -702,10 +726,22 @@ export class PayPeriodsService {
       startDate: period.startDate,
       endDate: period.endDate,
       status: period.status,
+      payrollRunAvailable: this.isPayrollRunAvailable(period),
       closedAt: period.closedAt,
       closedBy: period.closedBy,
       createdAt: period.createdAt,
       updatedAt: period.updatedAt,
     };
+  }
+
+  private isPayrollRunAvailable(period: PayPeriod): boolean {
+    if (period.status === PayPeriodStatus.CLOSED) return false;
+    const timeZone = process.env.BUSINESS_TIME_ZONE ?? 'Asia/Dhaka';
+    const currentBusinessMonth = businessYearMonth(new Date(), timeZone);
+    const eligibleBusinessMonth = nextMonth(period.year, period.month);
+    return (
+      currentBusinessMonth.year === eligibleBusinessMonth.year &&
+      currentBusinessMonth.month === eligibleBusinessMonth.month
+    );
   }
 }

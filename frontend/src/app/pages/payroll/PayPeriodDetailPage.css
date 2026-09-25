@@ -41,6 +41,12 @@
   margin: 0 0 var(--space-3);
 }
 
+.pay-period-detail__run-notice {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
 .pay-period-detail__remaining {
   font-weight: var(--font-weight-semibold);
   color: var(--color-accent);

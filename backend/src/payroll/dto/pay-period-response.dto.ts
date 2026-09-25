@@ -6,6 +6,7 @@ export class PayPeriodResponseDto {
   startDate: string;
   endDate: string;
   status: PayPeriodStatus;
+  payrollRunAvailable: boolean;
   closedAt: Date | null;
   closedBy: string | null;
   createdAt: Date;

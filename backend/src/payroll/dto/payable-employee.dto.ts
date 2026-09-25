@@ -2,6 +2,7 @@ export class PayableEmployeeDto {
   employeeId: string;
   employeeName: string;
   role: string;
+  joinDate: string;
   monthlySalaryMinor: number;
   payableMinor: number;
   currentObligationMinor: number;

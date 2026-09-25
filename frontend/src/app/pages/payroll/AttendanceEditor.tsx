@@ -11,6 +11,7 @@ interface AttendanceEditorProps {
   employeeId: string;
   from: string;
   to: string;
+  joinDate?: string;
   disabled?: boolean;
   onSaved?: () => void;
   onClose?: () => void;
@@ -55,25 +56,27 @@ export function AttendanceEditor({
   employeeId,
   from,
   to,
+  joinDate,
   disabled = false,
   onSaved,
   onClose,
 }: AttendanceEditorProps): JSX.Element {
-  const { data, isLoading, error, refetch } = useAttendance(employeeId, from, to);
+  const effectiveFrom = joinDate && joinDate > from ? joinDate : from;
+  const { data, isLoading, error, refetch } = useAttendance(employeeId, effectiveFrom, to);
 
   const [pending, setPending] = useState<Map<string, AttendanceStatus | ''>>(new Map());
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const [periodYear = 0, periodMonth = 0] = from.split('-').map(Number);
+  const [periodYear = 0, periodMonth = 0] = effectiveFrom.split('-').map(Number);
   const summaryQuery = useAttendanceSummary(employeeId, periodYear, periodMonth);
 
   useEffect(() => {
     setPending(new Map());
     setSaveError(null);
     setSaved(false);
-  }, [employeeId, from, to]);
+  }, [employeeId, effectiveFrom, to]);
 
   const committedByDate = useMemo(() => {
     const map = new Map<string, AttendanceStatus>();
@@ -84,8 +87,8 @@ export function AttendanceEditor({
   const dates = useMemo(() => {
     const today = todayAsIso();
     const visibleTo = to < today ? to : today;
-    return from <= visibleTo ? enumerateDates(from, visibleTo) : [];
-  }, [from, to]);
+    return effectiveFrom <= visibleTo ? enumerateDates(effectiveFrom, visibleTo) : [];
+  }, [effectiveFrom, to]);
 
   const valueFor = (date: string): string => {
     if (pending.has(date)) return pending.get(date) as string;

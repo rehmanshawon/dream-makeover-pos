@@ -8,6 +8,7 @@ export interface PayPeriod {
   startDate: string;
   endDate: string;
   status: PayPeriodStatus;
+  payrollRunAvailable?: boolean;
   closedAt: string | null;
   closedBy: string | null;
   createdAt: string;
@@ -23,6 +24,7 @@ export interface PayableEmployee {
   employeeId: string;
   employeeName: string;
   role: string;
+  joinDate?: string;
   monthlySalaryMinor: number;
   payableMinor: number;
   currentObligationMinor: number;

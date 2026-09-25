@@ -83,7 +83,9 @@ describe('PayPeriodsService', () => {
     const result = await service.findAll();
 
     expect(periodRepo.find).toHaveBeenCalledWith({ order: { startDate: 'DESC' } });
-    expect(result).toEqual(records.map(({ year: _year, month: _month, ...record }) => record));
+    expect(result).toMatchObject(
+      records.map(({ year: _year, month: _month, ...record }) => record),
+    );
   });
 
   it('creates an open period from year and month', async () => {
@@ -265,11 +267,32 @@ describe('PayPeriodsService', () => {
     );
     expect(result[0]).toMatchObject({
       employeeId: staff.id,
+      joinDate: staff.joinDate,
       payableMinor: 2950000,
       alreadyPaidMinor: 100000,
       remainingMinor: 2850000,
       hasExistingPayment: true,
     });
+  });
+
+  it('makes full payroll available only in the following business month', async () => {
+    const previousTimeZone = process.env.BUSINESS_TIME_ZONE;
+    process.env.BUSINESS_TIME_ZONE = 'Asia/Dhaka';
+    jest.useFakeTimers().setSystemTime(new Date('2026-01-31T12:00:00Z'));
+    periodRepo.findOne!.mockResolvedValue(period());
+
+    await expect(service.findById('period-1')).resolves.toMatchObject({
+      payrollRunAvailable: false,
+    });
+
+    jest.setSystemTime(new Date('2026-02-01T00:00:00Z'));
+    await expect(service.findById('period-1')).resolves.toMatchObject({
+      payrollRunAvailable: true,
+    });
+
+    jest.useRealTimers();
+    if (previousTimeZone === undefined) delete process.env.BUSINESS_TIME_ZONE;
+    else process.env.BUSINESS_TIME_ZONE = previousTimeZone;
   });
 
   it('deducts absent days from the fixed 30-day monthly salary', async () => {
@@ -401,6 +424,7 @@ describe('PayPeriodsService', () => {
   });
 
   it('runs payroll once and skips already paid employees', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-02-01T00:00:00.000Z'));
     const staff = employee();
     const existing = employee({ id: 'employee-2', fullName: 'Already Paid' });
     const savedPayment = {
@@ -441,6 +465,18 @@ describe('PayPeriodsService', () => {
         paidBy: 'admin',
       }),
     );
+    jest.useRealTimers();
+  });
+
+  it('rejects a payroll run before the period ends', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-01-15T12:00:00.000Z'));
+    periodRepo.findOne!.mockResolvedValue(period());
+
+    await expect(service.runPayroll('period-1', 'admin')).rejects.toThrow(
+      'can only be run in the following business month',
+    );
+    expect(dataSource.transaction).not.toHaveBeenCalled();
+    jest.useRealTimers();
   });
 
   it('refuses bulk deletion when the selection contains payroll salary', async () => {
