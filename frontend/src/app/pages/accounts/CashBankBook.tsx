@@ -38,6 +38,7 @@ const typeLabels: Record<AccountingVoucherType, string> = {
   OWNER_WITHDRAWAL: 'Owner withdrawal',
   CASH_BANK_TRANSFER: 'Cash / bank transfer',
   EXPENSE_PAYMENT: 'Expense payment',
+  SALE_RECEIPT: 'POS sale',
 };
 
 const manualTypeLabels: Record<ManualAccountingVoucherType, string> = {
@@ -131,7 +132,8 @@ export function CashBankBook(): JSX.Element {
       subtitle="Record owner funds and transfers between business cash and bank."
     >
       <p className="cash-bank-book__scope" role="note">
-        Expenses are posted automatically. POS sales and payroll are not posted to this ledger yet.
+        POS sales and expenses are posted automatically. Payroll and inventory costs are not posted
+        to this ledger yet.
       </p>
 
       {accounts.isLoading ? (

@@ -32,7 +32,7 @@ Configure `TIME_SYNC_URL`, `PAYROLL_OFFLINE_GRACE_HOURS`, and `PAYROLL_TIME_WARN
 
 ## Accounting Journal (Initial Scope)
 
-The Accounts area includes a double-entry cash/bank journal for owner contributions, owner withdrawals, and cash-to-bank transfers. New and existing operating expenses are also posted automatically by category and payment method; expense changes update their linked journal entry in the same transaction. Cash, bank, and mobile-wallet payments credit asset accounts; card and other payments credit payable/clearing accounts. Expense vouchers balance their debit and credit lines and save with the source expense in one database transaction. POS sales, inventory costs, and payroll are not yet posted here, so the ledger is not yet a complete business balance. Expense and manual voucher changes require trusted time; POS checkout remains available while posting is time-locked.
+The Accounts area includes a double-entry cash/bank journal for owner contributions, owner withdrawals, and cash-to-bank transfers. POS sales are posted automatically as cash received, sales revenue (after discounts), and VAT payable; operating expenses are posted automatically by category and payment method. Sale entries are created in the same database transaction as checkout. Expense changes update their linked journal entry in the same transaction. Cash, bank, and mobile-wallet payments credit asset accounts; card and other payments credit payable/clearing accounts. Inventory costs and payroll are not yet posted here, so the ledger is not yet a complete business balance. Expense and manual voucher changes require trusted time; POS checkout remains available while posting is time-locked.
 
 ## Scripts
 ```bash

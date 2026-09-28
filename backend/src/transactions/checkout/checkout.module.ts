@@ -10,6 +10,7 @@ import { CheckoutController } from './checkout.controller';
 import { AuthCommonModule } from '../../auth/auth-common.module';
 import { InvoiceNumberService } from '../invoice-number.service';
 import { InventoryModule } from '../../inventory/inventory.module';
+import { AccountingModule } from '../../accounting/accounting.module';
 import { Package } from '../../packages/package.entity';
 import { PackageItem } from '../../packages/package-item.entity';
 
@@ -26,6 +27,7 @@ import { PackageItem } from '../../packages/package-item.entity';
     ]),
     AuthCommonModule,
     InventoryModule,
+    AccountingModule,
   ],
   controllers: [CheckoutController],
   providers: [CheckoutService, InvoiceNumberService],

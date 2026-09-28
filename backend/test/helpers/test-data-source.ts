@@ -16,10 +16,16 @@ import { SalaryPayment } from '../../src/salary-payments/salary-payment.entity';
 import { Expense } from '../../src/expenses/expense.entity';
 import { Category } from '../../src/categories/category.entity';
 import { CategoryKind } from '../../src/categories/category-kind.enum';
+import { Account } from '../../src/accounting/account.entity';
+import { AccountType } from '../../src/accounting/account-type.enum';
+import { JournalEntry } from '../../src/accounting/journal-entry.entity';
+import { JournalLine } from '../../src/accounting/journal-line.entity';
 
 export const TEST_PRODUCT_CATEGORY_ID = '11111111-1111-4111-8111-111111111111';
 export const TEST_SERVICE_CATEGORY_ID = '22222222-2222-4222-8222-222222222222';
 const TEST_TABLES = [
+  'accounting_journal_lines',
+  'accounting_journal_entries',
   'transaction_items',
   'transactions',
   'stock_movements',
@@ -35,6 +41,150 @@ const TEST_TABLES = [
   'employees',
   'expenses',
   'categories',
+  'accounting_accounts',
+];
+
+const TEST_ACCOUNTING_ACCOUNTS: Account[] = [
+  {
+    id: '00000000-0000-4000-8000-000000000001',
+    code: 'CASH',
+    name: 'Cash on hand',
+    type: AccountType.ASSET,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000002',
+    code: 'BANK',
+    name: 'Business bank',
+    type: AccountType.ASSET,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000003',
+    code: 'OWNER_CAPITAL',
+    name: 'Owner capital',
+    type: AccountType.EQUITY,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000004',
+    code: 'OWNER_DRAWINGS',
+    name: 'Owner drawings',
+    type: AccountType.CONTRA_EQUITY,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000005',
+    code: 'MOBILE_WALLET',
+    name: 'Mobile wallet',
+    type: AccountType.ASSET,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000006',
+    code: 'CARD_PAYABLE',
+    name: 'Card payable',
+    type: AccountType.LIABILITY,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000007',
+    code: 'OTHER_PAYABLE',
+    name: 'Other payable / clearing',
+    type: AccountType.LIABILITY,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000008',
+    code: 'EXPENSE_ELECTRICITY',
+    name: 'Electricity expense',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000009',
+    code: 'EXPENSE_WATER',
+    name: 'Water expense',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000010',
+    code: 'EXPENSE_INTERNET',
+    name: 'Internet expense',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000011',
+    code: 'EXPENSE_RENT',
+    name: 'Rent expense',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000012',
+    code: 'EXPENSE_MAINTENANCE',
+    name: 'Maintenance expense',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000013',
+    code: 'EXPENSE_CLEANING',
+    name: 'Cleaning expense',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000014',
+    code: 'EXPENSE_STATIONERY',
+    name: 'Stationery expense',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000015',
+    code: 'EXPENSE_TRANSPORTATION',
+    name: 'Transportation expense',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000016',
+    code: 'EXPENSE_MARKETING',
+    name: 'Marketing expense',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000017',
+    code: 'EXPENSE_EQUIPMENT',
+    name: 'Equipment expense',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000018',
+    code: 'EXPENSE_MISC',
+    name: 'Miscellaneous expense',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000019',
+    code: 'SALES_REVENUE',
+    name: 'Sales revenue',
+    type: AccountType.REVENUE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000020',
+    code: 'VAT_PAYABLE',
+    name: 'VAT payable',
+    type: AccountType.LIABILITY,
+    isSystem: true,
+  },
 ];
 
 /**
@@ -83,6 +233,9 @@ export async function createTestDataSource(): Promise<DataSource> {
       Category,
       PayPeriod,
       Attendance,
+      Account,
+      JournalEntry,
+      JournalLine,
     ],
     synchronize: false,
     dropSchema: false,
@@ -131,6 +284,16 @@ export async function createTestDataSource(): Promise<DataSource> {
     ADD CONSTRAINT fk_attendance_employee
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
 `);
+  await dataSource.query(`
+  ALTER TABLE accounting_journal_entries
+    ADD CONSTRAINT fk_accounting_journal_entries_expense
+    FOREIGN KEY (source_expense_id) REFERENCES expenses(id) ON DELETE RESTRICT
+`);
+  await dataSource.query(`
+  ALTER TABLE accounting_journal_entries
+    ADD CONSTRAINT fk_accounting_journal_entries_transaction
+    FOREIGN KEY (source_transaction_id) REFERENCES transactions(id) ON DELETE RESTRICT
+`);
   return dataSource;
 }
 
@@ -146,6 +309,7 @@ export async function truncateAllTables(dataSource: DataSource): Promise<void> {
   }
   await dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
   await seedDefaultCategories(dataSource);
+  await seedDefaultAccountingAccounts(dataSource);
 }
 
 async function seedDefaultCategories(dataSource: DataSource): Promise<void> {
@@ -163,6 +327,10 @@ async function seedDefaultCategories(dataSource: DataSource): Promise<void> {
       kind: CategoryKind.SERVICE,
     },
   ]);
+}
+
+async function seedDefaultAccountingAccounts(dataSource: DataSource): Promise<void> {
+  await dataSource.getRepository(Account).save(TEST_ACCOUNTING_ACCOUNTS);
 }
 
 /**

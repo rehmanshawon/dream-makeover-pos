@@ -30,6 +30,18 @@ function createService() {
       name: 'Electricity expense',
       type: AccountType.EXPENSE,
     } as Account,
+    {
+      id: 'revenue-id',
+      code: 'SALES_REVENUE',
+      name: 'Sales revenue',
+      type: AccountType.REVENUE,
+    } as Account,
+    {
+      id: 'vat-id',
+      code: 'VAT_PAYABLE',
+      name: 'VAT payable',
+      type: AccountType.LIABILITY,
+    } as Account,
   ];
   const lineRepository = {
     create: jest.fn((value: Partial<JournalLine>) => value as JournalLine),
@@ -159,6 +171,33 @@ describe('AccountingService', () => {
     expect(lineRepository.save).toHaveBeenCalledWith([
       expect.objectContaining({ accountId: 'electricity-id', debitMinor: 42000, creditMinor: 0 }),
       expect.objectContaining({ accountId: 'bank-id', debitMinor: 0, creditMinor: 42000 }),
+    ]);
+  });
+
+  it('posts POS sale total to cash and separates revenue from VAT', async () => {
+    const { service, entryRepository, lineRepository, manager } = createService();
+
+    await service.createSaleEntry(manager as EntityManager, {
+      sourceTransactionId: 'transaction-1',
+      entryDate: '2026-09-28',
+      invoiceId: 'DM-20260928-0001',
+      totalMinor: 110000,
+      revenueMinor: 100000,
+      vatMinor: 10000,
+      createdBy: 'admin',
+    });
+
+    expect(entryRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entryType: JournalEntryType.SALE_RECEIPT,
+        sourceTransactionId: 'transaction-1',
+        reference: 'DM-20260928-0001',
+      }),
+    );
+    expect(lineRepository.save).toHaveBeenCalledWith([
+      expect.objectContaining({ accountId: 'cash-id', debitMinor: 110000, creditMinor: 0 }),
+      expect.objectContaining({ accountId: 'revenue-id', debitMinor: 0, creditMinor: 100000 }),
+      expect.objectContaining({ accountId: 'vat-id', debitMinor: 0, creditMinor: 10000 }),
     ]);
   });
 

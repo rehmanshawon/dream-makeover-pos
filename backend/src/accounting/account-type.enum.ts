@@ -4,4 +4,5 @@ export enum AccountType {
   CONTRA_EQUITY = 'CONTRA_EQUITY',
   LIABILITY = 'LIABILITY',
   EXPENSE = 'EXPENSE',
+  REVENUE = 'REVENUE',
 }

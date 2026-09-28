@@ -23,6 +23,8 @@ import {
 } from './helpers/test-data-source';
 import { Package } from '../src/packages/package.entity';
 import { PackageItem } from '../src/packages/package-item.entity';
+import { JournalEntry } from '../src/accounting/journal-entry.entity';
+import { JournalEntryType } from '../src/accounting/journal-entry-type.enum';
 
 describe('Checkout (integration)', () => {
   let app: INestApplication;
@@ -174,6 +176,20 @@ describe('Checkout (integration)', () => {
       where: { transactionId: response.body.transactionId },
     });
     expect(items).toHaveLength(2);
+
+    const saleEntry = await dataSource.getRepository(JournalEntry).findOne({
+      where: { sourceTransactionId: response.body.transactionId },
+      relations: { lines: { account: true } },
+    });
+    expect(saleEntry?.entryType).toBe(JournalEntryType.SALE_RECEIPT);
+    expect(saleEntry?.reference).toBe(response.body.invoiceId);
+    expect(saleEntry?.lines).toHaveLength(2);
+    expect(saleEntry?.lines).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ debitMinor: 570000, creditMinor: 0 }),
+        expect.objectContaining({ debitMinor: 0, creditMinor: 570000 }),
+      ]),
+    );
   });
 
   it('should roll back when stock is insufficient', async () => {

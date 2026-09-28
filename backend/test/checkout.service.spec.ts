@@ -16,6 +16,7 @@ import { Package } from '../src/packages/package.entity';
 import { PackageItem } from '../src/packages/package-item.entity';
 import { InventoryService } from '../src/inventory/inventory.service';
 import { StockMovementReason } from '../src/inventory/stock-movement-reason.enum';
+import { AccountingService } from '../src/accounting/accounting.service';
 
 describe('CheckoutService', () => {
   let service: CheckoutService;
@@ -29,6 +30,7 @@ describe('CheckoutService', () => {
   let packageItemRepo: any;
   let invoiceNumberService: InvoiceNumberService;
   let inventoryService: InventoryService;
+  let accountingService: AccountingService;
 
   beforeEach(async () => {
     const mockManager = {
@@ -95,12 +97,17 @@ describe('CheckoutService', () => {
       })),
     } as unknown as InventoryService;
 
+    accountingService = {
+      createSaleEntry: jest.fn(),
+    } as unknown as AccountingService;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CheckoutService,
         { provide: DataSource, useValue: dataSource },
         { provide: InvoiceNumberService, useValue: invoiceNumberService },
         { provide: InventoryService, useValue: inventoryService },
+        { provide: AccountingService, useValue: accountingService },
       ],
     }).compile();
 
@@ -134,7 +141,11 @@ describe('CheckoutService', () => {
     customerRepo.save.mockResolvedValue(customer);
 
     // Mock transaction save
-    const savedTransaction = { id: 't1', invoiceId: 'INV-123' } as Transaction;
+    const savedTransaction = {
+      id: 't1',
+      invoiceId: 'INV-123',
+      createdAt: new Date('2026-09-28T12:34:56.000Z'),
+    } as Transaction;
     transactionRepo.create.mockReturnValue({} as Transaction);
     transactionRepo.save.mockResolvedValue(savedTransaction);
 
@@ -167,6 +178,21 @@ describe('CheckoutService', () => {
     );
     expect(result.loyaltyPointsEarned).toBe(6); // 69000 / 10000 = 6.9 -> 6
     expect(result.cashier).toBe('admin');
+    expect(accountingService.createSaleEntry).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        sourceTransactionId: 't1',
+        entryDate: '2026-09-28',
+        totalMinor: 69000,
+        revenueMinor: 69000,
+        vatMinor: 0,
+        createdBy: 'admin',
+      }),
+    );
+    expect(accountingService.createSaleEntry).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ totalMinor: 70000 }),
+    );
     expect(result.customer).not.toBeNull();
     expect(result.customer?.name).toBe('Test Customer');
     expect(result.customer?.totalPointsAfterSale).toBe(6);

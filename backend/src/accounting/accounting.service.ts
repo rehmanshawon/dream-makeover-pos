@@ -204,6 +204,82 @@ export class AccountingService {
     await entryRepo.remove(entry);
   }
 
+  async createSaleEntry(
+    manager: EntityManager,
+    sale: {
+      sourceTransactionId: string;
+      entryDate: string;
+      invoiceId: string;
+      totalMinor: number;
+      revenueMinor: number;
+      vatMinor: number;
+      createdBy: string;
+    },
+  ): Promise<void> {
+    if (sale.totalMinor === 0) return;
+
+    const accountRepo = manager.getRepository(Account);
+    const [cashAccount, revenueAccount, vatAccount] = await Promise.all([
+      accountRepo.findOne({ where: { code: 'CASH' } }),
+      sale.revenueMinor > 0
+        ? accountRepo.findOne({ where: { code: 'SALES_REVENUE' } })
+        : Promise.resolve(null),
+      sale.vatMinor > 0
+        ? accountRepo.findOne({ where: { code: 'VAT_PAYABLE' } })
+        : Promise.resolve(null),
+    ]);
+    if (
+      !cashAccount ||
+      (sale.revenueMinor > 0 && !revenueAccount) ||
+      (sale.vatMinor > 0 && !vatAccount)
+    ) {
+      throw new Error('A required sales accounting account is missing.');
+    }
+
+    const entryRepo = manager.getRepository(JournalEntry);
+    const lineRepo = manager.getRepository(JournalLine);
+    const entry = await entryRepo.save(
+      entryRepo.create({
+        entryType: JournalEntryType.SALE_RECEIPT,
+        entryDate: sale.entryDate,
+        memo: `POS sale ${sale.invoiceId}`,
+        reference: sale.invoiceId,
+        sourceTransactionId: sale.sourceTransactionId,
+        createdBy: sale.createdBy,
+      }),
+    );
+
+    const lines = [
+      lineRepo.create({
+        entryId: entry.id,
+        accountId: cashAccount.id,
+        debitMinor: sale.totalMinor,
+        creditMinor: 0,
+      }),
+    ];
+    if (revenueAccount && sale.revenueMinor > 0) {
+      lines.push(
+        lineRepo.create({
+          entryId: entry.id,
+          accountId: revenueAccount.id,
+          debitMinor: 0,
+          creditMinor: sale.revenueMinor,
+        }),
+      );
+    }
+    if (vatAccount && sale.vatMinor > 0) {
+      lines.push(
+        lineRepo.create({
+          entryId: entry.id,
+          accountId: vatAccount.id,
+          debitMinor: 0,
+          creditMinor: sale.vatMinor,
+        }),
+      );
+    }
+    await lineRepo.save(lines);
+  }
+
   private resolvePostings(dto: CreateVoucherDto): {
     defaultMemo: string;
     debitMinor: number;

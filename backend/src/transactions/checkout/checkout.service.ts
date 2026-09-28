@@ -17,6 +17,7 @@ import { Package } from '../../packages/package.entity';
 import { PackageItem } from '../../packages/package-item.entity';
 import { InventoryService } from '../../inventory/inventory.service';
 import { StockMovementReason } from '../../inventory/stock-movement-reason.enum';
+import { AccountingService } from '../../accounting/accounting.service';
 
 @Injectable()
 export class CheckoutService {
@@ -25,6 +26,7 @@ export class CheckoutService {
 
     private readonly invoiceNumberService: InvoiceNumberService,
     private readonly inventoryService: InventoryService,
+    private readonly accountingService: AccountingService,
   ) {}
 
   async checkout(dto: CheckoutRequestDto, cashierName: string): Promise<CheckoutResponseDto> {
@@ -200,6 +202,16 @@ export class CheckoutService {
         cashier: cashierName,
       });
       const savedTransaction = await transactionRepo.save(transaction);
+
+      await this.accountingService.createSaleEntry(manager, {
+        sourceTransactionId: savedTransaction.id,
+        entryDate: (savedTransaction.createdAt ?? new Date()).toISOString().slice(0, 10),
+        invoiceId,
+        totalMinor,
+        revenueMinor: subtotalMinor - dto.discountMinor,
+        vatMinor,
+        createdBy: cashierName,
+      });
 
       for (const item of itemsToSave) {
         item.transactionId = savedTransaction.id;

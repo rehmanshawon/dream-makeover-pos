@@ -1,9 +1,17 @@
-export type AccountingAccountType = 'ASSET' | 'EQUITY' | 'CONTRA_EQUITY' | 'LIABILITY' | 'EXPENSE';
+export type AccountingAccountType =
+  'ASSET' | 'EQUITY' | 'CONTRA_EQUITY' | 'LIABILITY' | 'EXPENSE' | 'REVENUE';
 
 export type AccountingVoucherType =
-  'OWNER_CONTRIBUTION' | 'OWNER_WITHDRAWAL' | 'CASH_BANK_TRANSFER' | 'EXPENSE_PAYMENT';
+  | 'OWNER_CONTRIBUTION'
+  | 'OWNER_WITHDRAWAL'
+  | 'CASH_BANK_TRANSFER'
+  | 'EXPENSE_PAYMENT'
+  | 'SALE_RECEIPT';
 
-export type ManualAccountingVoucherType = Exclude<AccountingVoucherType, 'EXPENSE_PAYMENT'>;
+export type ManualAccountingVoucherType = Exclude<
+  AccountingVoucherType,
+  'EXPENSE_PAYMENT' | 'SALE_RECEIPT'
+>;
 
 export interface AccountingAccount {
   id: string;
