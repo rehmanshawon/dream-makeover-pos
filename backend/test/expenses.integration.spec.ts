@@ -11,6 +11,7 @@ import { UserRole } from '../src/users/user-role.enum';
 import { Expense } from '../src/expenses/expense.entity';
 import { ExpenseCategory } from '../src/expenses/expense-category.enum';
 import { ExpensePaymentMethod } from '../src/expenses/expense-payment-method.enum';
+import { TimeTrustGuard } from '../src/time-trust/time-trust.guard';
 import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
 
 describe('Expenses (integration)', () => {
@@ -60,6 +61,8 @@ describe('Expenses (integration)', () => {
     })
       .overrideProvider(DataSource)
       .useValue(dataSource)
+      .overrideGuard(TimeTrustGuard)
+      .useValue({ canActivate: () => true })
       .compile();
 
     app = moduleFixture.createNestApplication();

@@ -1,6 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import {
+  Repository,
+  Between,
+  MoreThanOrEqual,
+  LessThanOrEqual,
+  DataSource,
+  EntityManager,
+} from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ExpensesService } from '../src/expenses/expenses.service';
@@ -8,10 +15,13 @@ import { Expense } from '../src/expenses/expense.entity';
 import { ExpenseCategory } from '../src/expenses/expense-category.enum';
 import { ExpensePaymentMethod } from '../src/expenses/expense-payment-method.enum';
 import { CreateExpenseDto } from '../src/expenses/dto/create-expense.dto';
+import { AccountingService } from '../src/accounting/accounting.service';
 
 describe('ExpensesService', () => {
   let service: ExpensesService;
   let repository: Repository<Expense>;
+  let manager: EntityManager;
+  let accountingService: AccountingService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -27,11 +37,30 @@ describe('ExpensesService', () => {
             remove: jest.fn(),
           },
         },
+        {
+          provide: DataSource,
+          useValue: {
+            transaction: jest.fn((work: (transactionManager: EntityManager) => Promise<unknown>) =>
+              work(manager),
+            ),
+          },
+        },
+        {
+          provide: AccountingService,
+          useValue: {
+            upsertExpenseEntry: jest.fn(),
+            removeExpenseEntry: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get(ExpensesService);
     repository = module.get(getRepositoryToken(Expense));
+    manager = {
+      getRepository: jest.fn(() => repository),
+    } as unknown as EntityManager;
+    accountingService = module.get(AccountingService);
   });
 
   it('creates expense with defaults when optional fields omitted', async () => {
@@ -61,6 +90,15 @@ describe('ExpensesService', () => {
     expect(result.category).toBe(ExpenseCategory.ELECTRICITY);
     expect(result.paymentMethod).toBe(ExpensePaymentMethod.CASH);
     expect(result.createdBy).toBe('admin');
+    expect(accountingService.upsertExpenseEntry).toHaveBeenCalledWith(
+      manager,
+      expect.objectContaining({
+        sourceExpenseId: 'exp-1',
+        amountMinor: 250000,
+        expenseAccountCode: 'EXPENSE_ELECTRICITY',
+        paymentAccountCode: 'CASH',
+      }),
+    );
   });
 
   it('uses createdBy from the second argument, not the DTO', async () => {
@@ -167,10 +205,29 @@ describe('ExpensesService', () => {
     expect(result.amountMinor).toBe(300000);
     expect(result.payee).toBe('DESCO');
     expect(result.category).toBe(ExpenseCategory.ELECTRICITY);
+    expect(accountingService.upsertExpenseEntry).toHaveBeenCalledWith(
+      manager,
+      expect.objectContaining({
+        sourceExpenseId: 'exp-1',
+        amountMinor: 300000,
+        expenseAccountCode: 'EXPENSE_ELECTRICITY',
+      }),
+    );
   });
 
   it('throws NotFoundException on remove when missing', async () => {
     jest.spyOn(repository, 'findOne').mockResolvedValue(null);
     await expect(service.remove('missing')).rejects.toThrow(NotFoundException);
+  });
+
+  it('removes the linked accounting entry in the same transaction as the expense', async () => {
+    const expense = { id: 'exp-3' } as Expense;
+    jest.spyOn(repository, 'findOne').mockResolvedValue(expense);
+    jest.spyOn(repository, 'remove').mockResolvedValue(expense);
+
+    await service.remove('exp-3');
+
+    expect(accountingService.removeExpenseEntry).toHaveBeenCalledWith(manager, 'exp-3');
+    expect(repository.remove).toHaveBeenCalledWith(expense);
   });
 });

@@ -21,6 +21,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
 import { JwtPayload } from '../auth/jwt.strategy';
+import { TimeTrustGuard } from '../time-trust/time-trust.guard';
 
 /**
  * Expense endpoints. All routes require ADMIN role.
@@ -35,6 +36,7 @@ export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
   @Post()
+  @UseGuards(TimeTrustGuard)
   async create(
     @Body() dto: CreateExpenseDto,
     @Req() req: { user: JwtPayload },
@@ -53,6 +55,7 @@ export class ExpensesController {
   }
 
   @Patch(':id')
+  @UseGuards(TimeTrustGuard)
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateExpenseDto,
@@ -61,6 +64,7 @@ export class ExpensesController {
   }
 
   @Delete(':id')
+  @UseGuards(TimeTrustGuard)
   @HttpCode(204)
   async remove(@Param('id') id: string): Promise<void> {
     return this.expensesService.remove(id);

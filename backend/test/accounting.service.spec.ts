@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, jest } from '@jest/globals';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { Account } from '../src/accounting/account.entity';
 import { AccountType } from '../src/accounting/account-type.enum';
 import { AccountingService } from '../src/accounting/accounting.service';
@@ -24,10 +24,17 @@ function createService() {
       name: 'Owner drawings',
       type: AccountType.CONTRA_EQUITY,
     } as Account,
+    {
+      id: 'electricity-id',
+      code: 'EXPENSE_ELECTRICITY',
+      name: 'Electricity expense',
+      type: AccountType.EXPENSE,
+    } as Account,
   ];
   const lineRepository = {
     create: jest.fn((value: Partial<JournalLine>) => value as JournalLine),
     save: jest.fn(async (value: JournalLine[]) => value),
+    delete: jest.fn(async () => ({ affected: 0, raw: [] })),
   };
   const createdEntry: JournalEntry = {
     id: 'entry-1',
@@ -69,7 +76,7 @@ function createService() {
     accountRepository as never,
     entryRepository as never,
   );
-  return { service, dataSource, entryRepository, lineRepository };
+  return { service, dataSource, entryRepository, lineRepository, manager };
 }
 
 describe('AccountingService', () => {
@@ -125,6 +132,33 @@ describe('AccountingService', () => {
     expect(transfer.lineRepository.save).toHaveBeenCalledWith([
       expect.objectContaining({ accountId: 'bank-id', debitMinor: 80000, creditMinor: 0 }),
       expect.objectContaining({ accountId: 'cash-id', debitMinor: 0, creditMinor: 80000 }),
+    ]);
+  });
+
+  it('posts an expense as a debit to its category and a credit to its payment account', async () => {
+    const { service, entryRepository, lineRepository, manager } = createService();
+    entryRepository.findOne.mockResolvedValueOnce(null);
+
+    await service.upsertExpenseEntry(manager as EntityManager, {
+      sourceExpenseId: 'expense-1',
+      entryDate: '2026-09-28',
+      amountMinor: 42000,
+      expenseAccountCode: 'EXPENSE_ELECTRICITY',
+      paymentAccountCode: 'BANK',
+      memo: 'Expense: electricity - Utility provider',
+      reference: 'INV-42',
+      createdBy: 'admin',
+    });
+
+    expect(entryRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entryType: JournalEntryType.EXPENSE_PAYMENT,
+        sourceExpenseId: 'expense-1',
+      }),
+    );
+    expect(lineRepository.save).toHaveBeenCalledWith([
+      expect.objectContaining({ accountId: 'electricity-id', debitMinor: 42000, creditMinor: 0 }),
+      expect.objectContaining({ accountId: 'bank-id', debitMinor: 0, creditMinor: 42000 }),
     ]);
   });
 

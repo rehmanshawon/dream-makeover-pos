@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { Account } from './account.entity';
 import { AccountType } from './account-type.enum';
 import { JournalEntry } from './journal-entry.entity';
@@ -45,7 +45,9 @@ export class AccountingService {
       const debits = Number(totals?.debitMinor ?? 0);
       const credits = Number(totals?.creditMinor ?? 0);
       const debitNormal =
-        account.type === AccountType.ASSET || account.type === AccountType.CONTRA_EQUITY;
+        account.type === AccountType.ASSET ||
+        account.type === AccountType.CONTRA_EQUITY ||
+        account.type === AccountType.EXPENSE;
       return {
         id: account.id,
         code: account.code,
@@ -134,6 +136,72 @@ export class AccountingService {
       if (!saved) throw new Error('Posted journal entry could not be reloaded.');
       return saved;
     });
+  }
+
+  async upsertExpenseEntry(
+    manager: EntityManager,
+    posting: {
+      sourceExpenseId: string;
+      entryDate: string;
+      amountMinor: number;
+      expenseAccountCode: string;
+      paymentAccountCode: string;
+      memo: string;
+      reference: string | null;
+      createdBy: string;
+    },
+  ): Promise<void> {
+    const accountRepo = manager.getRepository(Account);
+    const [expenseAccount, paymentAccount] = await Promise.all([
+      accountRepo.findOne({ where: { code: posting.expenseAccountCode } }),
+      accountRepo.findOne({ where: { code: posting.paymentAccountCode } }),
+    ]);
+    if (!expenseAccount || !paymentAccount) {
+      throw new Error('A required expense accounting account is missing.');
+    }
+
+    const entryRepo = manager.getRepository(JournalEntry);
+    const lineRepo = manager.getRepository(JournalLine);
+    let entry = await entryRepo.findOne({ where: { sourceExpenseId: posting.sourceExpenseId } });
+    if (entry) {
+      await lineRepo.delete({ entryId: entry.id });
+    } else {
+      entry = entryRepo.create({
+        entryType: JournalEntryType.EXPENSE_PAYMENT,
+        sourceExpenseId: posting.sourceExpenseId,
+      });
+    }
+
+    entry.entryType = JournalEntryType.EXPENSE_PAYMENT;
+    entry.entryDate = posting.entryDate;
+    entry.memo = posting.memo;
+    entry.reference = posting.reference;
+    entry.createdBy = posting.createdBy;
+    const savedEntry = await entryRepo.save(entry);
+    await lineRepo.save([
+      lineRepo.create({
+        entryId: savedEntry.id,
+        accountId: expenseAccount.id,
+        debitMinor: posting.amountMinor,
+        creditMinor: 0,
+      }),
+      lineRepo.create({
+        entryId: savedEntry.id,
+        accountId: paymentAccount.id,
+        debitMinor: 0,
+        creditMinor: posting.amountMinor,
+      }),
+    ]);
+  }
+
+  async removeExpenseEntry(manager: EntityManager, sourceExpenseId: string): Promise<void> {
+    const entryRepo = manager.getRepository(JournalEntry);
+    const entry = await entryRepo.findOne({ where: { sourceExpenseId } });
+    if (!entry) return;
+
+    const lineRepo = manager.getRepository(JournalLine);
+    await lineRepo.delete({ entryId: entry.id });
+    await entryRepo.remove(entry);
   }
 
   private resolvePostings(dto: CreateVoucherDto): {

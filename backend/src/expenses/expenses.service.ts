@@ -7,12 +7,24 @@ import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { ExpenseQueryDto } from './dto/expense-query.dto';
 import { ExpenseResponseDto } from './dto/expense-response.dto';
 import { ExpensePaymentMethod } from './expense-payment-method.enum';
+import { DataSource, EntityManager } from 'typeorm';
+import { AccountingService } from '../accounting/accounting.service';
+
+const PAYMENT_ACCOUNT_CODE: Record<ExpensePaymentMethod, string> = {
+  [ExpensePaymentMethod.CASH]: 'CASH',
+  [ExpensePaymentMethod.BANK]: 'BANK',
+  [ExpensePaymentMethod.MOBILE]: 'MOBILE_WALLET',
+  [ExpensePaymentMethod.CARD]: 'CARD_PAYABLE',
+  [ExpensePaymentMethod.OTHER]: 'OTHER_PAYABLE',
+};
 
 @Injectable()
 export class ExpensesService {
   constructor(
     @InjectRepository(Expense)
     private readonly expenseRepository: Repository<Expense>,
+    private readonly dataSource: DataSource,
+    private readonly accountingService: AccountingService,
   ) {}
 
   /**
@@ -22,19 +34,22 @@ export class ExpensesService {
    * This ensures the audit trail cannot be spoofed by the client.
    */
   async create(dto: CreateExpenseDto, createdBy: string): Promise<ExpenseResponseDto> {
-    const expense = this.expenseRepository.create({
-      category: dto.category,
-      amountMinor: dto.amountMinor,
-      expenseDate: dto.expenseDate,
-      paymentMethod: dto.paymentMethod ?? ExpensePaymentMethod.CASH,
-      payee: dto.payee ?? null,
-      reference: dto.reference ?? null,
-      note: dto.note ?? null,
-      createdBy,
+    return this.dataSource.transaction(async (manager) => {
+      const repository = manager.getRepository(Expense);
+      const expense = repository.create({
+        category: dto.category,
+        amountMinor: dto.amountMinor,
+        expenseDate: dto.expenseDate,
+        paymentMethod: dto.paymentMethod ?? ExpensePaymentMethod.CASH,
+        payee: dto.payee ?? null,
+        reference: dto.reference ?? null,
+        note: dto.note ?? null,
+        createdBy,
+      });
+      const saved = await repository.save(expense);
+      await this.postExpense(manager, saved);
+      return this.toResponseDto(saved);
     });
-
-    const saved = await this.expenseRepository.save(expense);
-    return this.toResponseDto(saved);
   }
 
   /**
@@ -86,35 +101,56 @@ export class ExpensesService {
    * `createdBy` is never modified: it reflects the original recorder.
    */
   async update(id: string, dto: UpdateExpenseDto): Promise<ExpenseResponseDto> {
-    const expense = await this.expenseRepository.findOne({ where: { id } });
-    if (!expense) {
-      throw new NotFoundException('Expense not found');
-    }
+    return this.dataSource.transaction(async (manager) => {
+      const repository = manager.getRepository(Expense);
+      const expense = await repository.findOne({ where: { id } });
+      if (!expense) {
+        throw new NotFoundException('Expense not found');
+      }
 
-    if (dto.category !== undefined) expense.category = dto.category;
-    if (dto.amountMinor !== undefined) expense.amountMinor = dto.amountMinor;
-    if (dto.expenseDate !== undefined) expense.expenseDate = dto.expenseDate;
-    if (dto.paymentMethod !== undefined) expense.paymentMethod = dto.paymentMethod;
-    if (dto.payee !== undefined) expense.payee = dto.payee;
-    if (dto.reference !== undefined) expense.reference = dto.reference;
-    if (dto.note !== undefined) expense.note = dto.note;
+      if (dto.category !== undefined) expense.category = dto.category;
+      if (dto.amountMinor !== undefined) expense.amountMinor = dto.amountMinor;
+      if (dto.expenseDate !== undefined) expense.expenseDate = dto.expenseDate;
+      if (dto.paymentMethod !== undefined) expense.paymentMethod = dto.paymentMethod;
+      if (dto.payee !== undefined) expense.payee = dto.payee;
+      if (dto.reference !== undefined) expense.reference = dto.reference;
+      if (dto.note !== undefined) expense.note = dto.note;
 
-    const saved = await this.expenseRepository.save(expense);
-    return this.toResponseDto(saved);
+      const saved = await repository.save(expense);
+      await this.postExpense(manager, saved);
+      return this.toResponseDto(saved);
+    });
   }
 
   /**
    * Physically removes an expense.
    *
-   * We do not implement reversal entries. A mistaken expense is simply
-   * deleted. This is a deliberate trade-off for a small business context.
+   * The linked journal entry is removed in the same transaction to keep the
+   * current expense and ledger views consistent with the existing delete flow.
    */
   async remove(id: string): Promise<void> {
-    const expense = await this.expenseRepository.findOne({ where: { id } });
-    if (!expense) {
-      throw new NotFoundException('Expense not found');
-    }
-    await this.expenseRepository.remove(expense);
+    await this.dataSource.transaction(async (manager) => {
+      const repository = manager.getRepository(Expense);
+      const expense = await repository.findOne({ where: { id } });
+      if (!expense) {
+        throw new NotFoundException('Expense not found');
+      }
+      await this.accountingService.removeExpenseEntry(manager, expense.id);
+      await repository.remove(expense);
+    });
+  }
+
+  private async postExpense(manager: EntityManager, expense: Expense): Promise<void> {
+    await this.accountingService.upsertExpenseEntry(manager, {
+      sourceExpenseId: expense.id,
+      entryDate: expense.expenseDate,
+      amountMinor: expense.amountMinor,
+      expenseAccountCode: `EXPENSE_${expense.category}`,
+      paymentAccountCode: PAYMENT_ACCOUNT_CODE[expense.paymentMethod],
+      memo: `Expense: ${expense.category.toLowerCase()}${expense.payee ? ` - ${expense.payee}` : ''}`,
+      reference: expense.reference,
+      createdBy: expense.createdBy,
+    });
   }
 
   private toResponseDto(expense: Expense): ExpenseResponseDto {

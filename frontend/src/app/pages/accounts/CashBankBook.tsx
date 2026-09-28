@@ -9,6 +9,7 @@ import { ApiError } from '../../../api/api-error';
 import type {
   AccountingJournalEntry,
   AccountingVoucherType,
+  ManualAccountingVoucherType,
   CreateAccountingVoucherRequest,
 } from '../../../types/accounting';
 import { Button } from '../../../ui/Button';
@@ -36,11 +37,18 @@ const typeLabels: Record<AccountingVoucherType, string> = {
   OWNER_CONTRIBUTION: 'Owner deposit',
   OWNER_WITHDRAWAL: 'Owner withdrawal',
   CASH_BANK_TRANSFER: 'Cash / bank transfer',
+  EXPENSE_PAYMENT: 'Expense payment',
+};
+
+const manualTypeLabels: Record<ManualAccountingVoucherType, string> = {
+  OWNER_CONTRIBUTION: 'Owner deposit',
+  OWNER_WITHDRAWAL: 'Owner withdrawal',
+  CASH_BANK_TRANSFER: 'Cash / bank transfer',
 };
 
 export function CashBankBook(): JSX.Element {
   const today = todayLocal();
-  const [entryType, setEntryType] = useState<AccountingVoucherType>('OWNER_CONTRIBUTION');
+  const [entryType, setEntryType] = useState<ManualAccountingVoucherType>('OWNER_CONTRIBUTION');
   const [entryDate, setEntryDate] = useState(today);
   const [amount, setAmount] = useState('');
   const [cashBankAccountCode, setCashBankAccountCode] = useState<'CASH' | 'BANK'>('BANK');
@@ -123,8 +131,7 @@ export function CashBankBook(): JSX.Element {
       subtitle="Record owner funds and transfers between business cash and bank."
     >
       <p className="cash-bank-book__scope" role="note">
-        These balances include only vouchers recorded here. POS sales, expenses, and payroll are not
-        posted to this ledger yet.
+        Expenses are posted automatically. POS sales and payroll are not posted to this ledger yet.
       </p>
 
       {accounts.isLoading ? (
@@ -150,8 +157,8 @@ export function CashBankBook(): JSX.Element {
         <Select
           label="Voucher type"
           value={entryType}
-          onChange={(event) => setEntryType(event.target.value as AccountingVoucherType)}
-          options={Object.entries(typeLabels).map(([value, label]) => ({ value, label }))}
+          onChange={(event) => setEntryType(event.target.value as ManualAccountingVoucherType)}
+          options={Object.entries(manualTypeLabels).map(([value, label]) => ({ value, label }))}
         />
         <Input
           label="Date"

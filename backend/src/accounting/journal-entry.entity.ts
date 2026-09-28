@@ -11,6 +11,7 @@ import { JournalLine } from './journal-line.entity';
 
 @Entity('accounting_journal_entries')
 @Index('idx_accounting_journal_entries_date', ['entryDate', 'createdAt'])
+@Index('uq_accounting_journal_entries_source_expense', ['sourceExpenseId'], { unique: true })
 export class JournalEntry {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -26,6 +27,9 @@ export class JournalEntry {
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   reference: string | null;
+
+  @Column({ name: 'source_expense_id', type: 'char', length: 36, nullable: true })
+  sourceExpenseId: string | null;
 
   @Column({ name: 'created_by', type: 'varchar', length: 80 })
   createdBy: string;

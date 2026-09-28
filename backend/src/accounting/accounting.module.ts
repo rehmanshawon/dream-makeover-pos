@@ -11,5 +11,6 @@ import { AccountingService } from './accounting.service';
   imports: [TypeOrmModule.forFeature([Account, JournalEntry, JournalLine]), AuthCommonModule],
   controllers: [AccountingController],
   providers: [AccountingService],
+  exports: [AccountingService],
 })
 export class AccountingModule {}

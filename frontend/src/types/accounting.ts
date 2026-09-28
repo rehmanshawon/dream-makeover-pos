@@ -1,7 +1,9 @@
-export type AccountingAccountType = 'ASSET' | 'EQUITY' | 'CONTRA_EQUITY';
+export type AccountingAccountType = 'ASSET' | 'EQUITY' | 'CONTRA_EQUITY' | 'LIABILITY' | 'EXPENSE';
 
 export type AccountingVoucherType =
-  'OWNER_CONTRIBUTION' | 'OWNER_WITHDRAWAL' | 'CASH_BANK_TRANSFER';
+  'OWNER_CONTRIBUTION' | 'OWNER_WITHDRAWAL' | 'CASH_BANK_TRANSFER' | 'EXPENSE_PAYMENT';
+
+export type ManualAccountingVoucherType = Exclude<AccountingVoucherType, 'EXPENSE_PAYMENT'>;
 
 export interface AccountingAccount {
   id: string;
@@ -30,7 +32,7 @@ export interface AccountingJournalEntry {
 }
 
 export interface CreateAccountingVoucherRequest {
-  entryType: AccountingVoucherType;
+  entryType: ManualAccountingVoucherType;
   entryDate: string;
   amountMinor: number;
   memo?: string;
