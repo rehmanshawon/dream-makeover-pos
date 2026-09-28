@@ -15,6 +15,7 @@ import {
 import { formatBdt } from '../../../utils/format';
 import { ProfitAndLossTable } from './ProfitAndLossTable';
 import './AccountsPage.css';
+import { CashBankBook } from './CashBankBook';
 
 function initialRange(): DateRangeValue {
   return {
@@ -47,6 +48,8 @@ export function AccountsPage(): JSX.Element {
           <DateRangeFilter value={range} onChange={setRange} />
         </div>
       </Card>
+
+      <CashBankBook />
 
       <section className="accounts-page__summary" aria-label="Headline metrics">
         <KpiCard

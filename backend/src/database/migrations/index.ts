@@ -26,6 +26,7 @@ import { AddSalaryPaymentDisbursementDetails1700000000022 } from './170000000002
 import { AddAdvanceAdjustmentPaymentType1700000000023 } from './1700000000023-AddAdvanceAdjustmentPaymentType';
 import { AddSalaryPaymentBonusAndOvertimeDetails1700000000024 } from './1700000000024-AddSalaryPaymentBonusAndOvertimeDetails';
 import { AddEmployeeIdentityAndAddresses1700000000025 } from './1700000000025-AddEmployeeIdentityAndAddresses';
+import { CreateAccountingJournal1700000000026 } from './1700000000026-CreateAccountingJournal';
 
 export const migrations = [
   CreateCustomersTable1700000000000,
@@ -56,4 +57,5 @@ export const migrations = [
   AddAdvanceAdjustmentPaymentType1700000000023,
   AddSalaryPaymentBonusAndOvertimeDetails1700000000024,
   AddEmployeeIdentityAndAddresses1700000000025,
+  CreateAccountingJournal1700000000026,
 ];

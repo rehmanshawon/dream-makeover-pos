@@ -18,6 +18,7 @@ import { ExpensesModule } from './expenses/expenses.module';
 import { PayrollModule } from './payroll/payroll.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { TimeTrustModule } from './time-trust/time-trust.module';
+import { AccountingModule } from './accounting/accounting.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { TimeTrustModule } from './time-trust/time-trust.module';
     PayrollModule,
     AttendanceModule,
     TimeTrustModule,
+    AccountingModule,
   ],
 })
 export class AppModule {}

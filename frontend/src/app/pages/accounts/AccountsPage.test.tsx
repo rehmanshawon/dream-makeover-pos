@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { Route, Routes } from 'react-router-dom';
 import { renderWithProviders } from '../../../test/render-with-providers';
 import { AccountsPage } from './AccountsPage';
@@ -51,8 +51,70 @@ describe('AccountsPage', () => {
   });
 
   function mockEndpoints(): void {
-    globalThis.fetch = vi.fn(async (input) => {
+    globalThis.fetch = vi.fn(async (input, init) => {
       const url = typeof input === 'string' ? input : (input as Request).url;
+
+      if (url.endsWith('/accounting/accounts')) {
+        return new Response(
+          JSON.stringify([
+            { id: 'cash', code: 'CASH', name: 'Cash on hand', type: 'ASSET', balanceMinor: 0 },
+            { id: 'bank', code: 'BANK', name: 'Business bank', type: 'ASSET', balanceMinor: 0 },
+            {
+              id: 'capital',
+              code: 'OWNER_CAPITAL',
+              name: 'Owner capital',
+              type: 'EQUITY',
+              balanceMinor: 0,
+            },
+            {
+              id: 'drawings',
+              code: 'OWNER_DRAWINGS',
+              name: 'Owner drawings',
+              type: 'CONTRA_EQUITY',
+              balanceMinor: 0,
+            },
+          ]),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
+
+      if (url.includes('/accounting/journal')) {
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+
+      if (url.endsWith('/accounting/vouchers') && init?.method === 'POST') {
+        return new Response(
+          JSON.stringify({
+            id: 'journal-1',
+            entryType: 'OWNER_CONTRIBUTION',
+            entryDate: '2026-09-28',
+            memo: 'Owner contribution to bank',
+            reference: null,
+            createdBy: 'admin',
+            createdAt: '2026-09-28T10:00:00.000Z',
+            lines: [],
+          }),
+          { status: 201, headers: { 'content-type': 'application/json' } },
+        );
+      }
+
+      if (url.endsWith('/system/time-trust')) {
+        return new Response(
+          JSON.stringify({
+            state: 'ONLINE',
+            payrollAllowed: true,
+            warning: false,
+            message: null,
+            lastVerifiedAt: '2026-09-28T10:00:00.000Z',
+            offlineForMs: 0,
+            remainingMs: 28800000,
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
 
       if (url.includes('/reports/financial-summary')) {
         return new Response(JSON.stringify(summaryResponse()), {
@@ -106,6 +168,29 @@ describe('AccountsPage', () => {
     expect(screen.getByText(/gross profit/i)).toBeInTheDocument();
     expect(screen.getByText(/operating expenses/i)).toBeInTheDocument();
     expect(screen.getByText(/net operating result/i)).toBeInTheDocument();
+  });
+
+  it('records an owner deposit as a cash/bank voucher', async () => {
+    mockEndpoints();
+    renderPage();
+
+    fireEvent.change(await screen.findByLabelText(/amount \(bdt\)/i), {
+      target: { value: '1250.50' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /post voucher/i }));
+
+    await waitFor(() => {
+      const voucherRequest = vi.mocked(globalThis.fetch).mock.calls.find(([input, init]) => {
+        const url = typeof input === 'string' ? input : (input as Request).url;
+        return url.endsWith('/accounting/vouchers') && init?.method === 'POST';
+      });
+      expect(voucherRequest).toBeDefined();
+      expect(JSON.parse(String(voucherRequest?.[1]?.body))).toMatchObject({
+        entryType: 'OWNER_CONTRIBUTION',
+        amountMinor: 125050,
+        cashBankAccountCode: 'BANK',
+      });
+    });
   });
 
   it('renders the profit and loss statement sections', async () => {
