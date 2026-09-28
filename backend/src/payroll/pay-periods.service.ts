@@ -23,6 +23,7 @@ import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
 import { PaymentMethod } from '../salary-payments/payment-method.enum';
 //import { PaymentMethod } from '../salary-payments/payment-method.enum';
 import { AttendanceService } from '../attendance/attendance.service';
+import { TimeTrustService } from '../time-trust/time-trust.service';
 
 const MONTH_NAMES = [
   'January',
@@ -76,6 +77,7 @@ export class PayPeriodsService {
     private readonly periodRepository: Repository<PayPeriod>,
     private readonly dataSource: DataSource,
     private readonly attendanceService: AttendanceService,
+    private readonly timeTrustService: TimeTrustService,
   ) {}
 
   async findAll(): Promise<PayPeriodResponseDto[]> {
@@ -308,7 +310,12 @@ export class PayPeriodsService {
 
   async create(dto: CreatePayPeriodDto): Promise<PayPeriodResponseDto> {
     // Reject far-future months
-    const now = new Date();
+    const now = this.timeTrustService.getTrustedNow();
+    if (!now) {
+      throw new BadRequestException(
+        'Pay periods cannot be managed until trusted time is available.',
+      );
+    }
     const current = { year: now.getFullYear(), month: now.getMonth() + 1 };
     const allowed = nextMonth(current.year, current.month);
     const requested = { year: dto.year, month: dto.month };
@@ -370,7 +377,11 @@ export class PayPeriodsService {
       throw new BadRequestException('Cannot run payroll on a closed period');
     }
     const timeZone = process.env.BUSINESS_TIME_ZONE ?? 'Asia/Dhaka';
-    const currentBusinessMonth = businessYearMonth(new Date(), timeZone);
+    const trustedNow = this.timeTrustService.getTrustedNow();
+    if (!trustedNow) {
+      throw new BadRequestException('Payroll is locked until trusted time is verified.');
+    }
+    const currentBusinessMonth = businessYearMonth(trustedNow, timeZone);
     const eligibleBusinessMonth = nextMonth(period.year, period.month);
     if (
       currentBusinessMonth.year !== eligibleBusinessMonth.year ||

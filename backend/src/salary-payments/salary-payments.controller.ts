@@ -17,6 +17,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
 import { JwtPayload } from '../auth/jwt.strategy';
+import { TimeTrustGuard } from '../time-trust/time-trust.guard';
 
 /**
  * Salary payment endpoints. All routes require ADMIN role.
@@ -24,7 +25,7 @@ import { JwtPayload } from '../auth/jwt.strategy';
  * Salary data is confidential and can only be managed by administrators.
  */
 @Controller('salary-payments')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, TimeTrustGuard)
 @Roles(UserRole.ADMIN)
 export class SalaryPaymentsController {
   constructor(private readonly salaryPaymentsService: SalaryPaymentsService) {}

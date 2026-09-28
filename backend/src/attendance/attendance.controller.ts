@@ -20,9 +20,10 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
 import type { JwtPayload } from '../auth/jwt.strategy';
+import { TimeTrustGuard } from '../time-trust/time-trust.guard';
 
 @Controller('attendance')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, TimeTrustGuard)
 @Roles(UserRole.ADMIN)
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}

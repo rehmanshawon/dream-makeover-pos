@@ -11,6 +11,7 @@ import { SalaryPayment } from '../src/salary-payments/salary-payment.entity';
 import { SalaryPaymentType } from '../src/salary-payments/salary-payment-type.enum';
 import { PaymentMethod } from '../src/salary-payments/payment-method.enum';
 import { AttendanceService } from '../src/attendance/attendance.service';
+import { TimeTrustService } from '../src/time-trust/time-trust.service';
 
 const period = (overrides: Partial<PayPeriod> = {}): PayPeriod =>
   ({
@@ -45,6 +46,7 @@ describe('PayPeriodsService', () => {
   let paymentRepo: jest.Mocked<Partial<Repository<SalaryPayment>>>;
   let dataSource: { getRepository: jest.Mock; transaction: jest.Mock };
   let attendanceService: { getWorkedDays: jest.Mock };
+  let timeTrustService: { getTrustedNow: jest.Mock };
 
   beforeEach(async () => {
     periodRepo = {
@@ -57,6 +59,7 @@ describe('PayPeriodsService', () => {
     employeeRepo = { find: jest.fn() };
     paymentRepo = { find: jest.fn(), findOne: jest.fn(), create: jest.fn(), save: jest.fn() };
     attendanceService = { getWorkedDays: jest.fn() };
+    timeTrustService = { getTrustedNow: jest.fn(() => new Date()) };
     dataSource = {
       getRepository: jest.fn((entity: unknown) =>
         entity === Employee ? employeeRepo : paymentRepo,
@@ -70,6 +73,7 @@ describe('PayPeriodsService', () => {
         { provide: getRepositoryToken(PayPeriod), useValue: periodRepo },
         { provide: DataSource, useValue: dataSource },
         { provide: AttendanceService, useValue: attendanceService },
+        { provide: TimeTrustService, useValue: timeTrustService },
       ],
     }).compile();
 

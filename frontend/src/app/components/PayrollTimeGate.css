@@ -1,0 +1,16 @@
+.payroll-time-gate {
+  margin: var(--space-6);
+  padding: var(--space-6);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+  color: var(--color-text);
+}
+
+.payroll-time-gate h2 {
+  margin-bottom: var(--space-3);
+}
+
+.payroll-time-gate p + p {
+  margin-top: var(--space-2);
+}

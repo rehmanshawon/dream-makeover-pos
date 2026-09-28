@@ -1,9 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import { Route, Routes } from 'react-router-dom';
 import { AppLayout } from './AppLayout';
 import type { AuthenticatedUser } from '../auth/AuthContext';
 import { renderWithProviders } from '../../test/render-with-providers';
+import { usePayrollTimeTrust } from '../../api/time-trust-hooks';
+
+vi.mock('../../api/time-trust-hooks', () => ({
+  usePayrollTimeTrust: vi.fn(),
+}));
+
+const mockedUsePayrollTimeTrust = vi.mocked(usePayrollTimeTrust);
 
 const ADMIN: AuthenticatedUser = {
   id: '1',
@@ -25,6 +32,22 @@ function renderLayout(initialPath: string): void {
 }
 
 describe('AppLayout', () => {
+  beforeEach(() => {
+    mockedUsePayrollTimeTrust.mockReturnValue({
+      data: {
+        state: 'ONLINE',
+        payrollAllowed: true,
+        warning: false,
+        message: null,
+        lastVerifiedAt: '2026-09-25T12:00:00.000Z',
+        offlineForMs: 0,
+        remainingMs: 28_800_000,
+      },
+      isLoading: false,
+      isError: false,
+    } as ReturnType<typeof usePayrollTimeTrust>);
+  });
+
   it('renders the POS page title in the topbar when at /pos', () => {
     renderLayout('/pos');
     expect(screen.getByRole('heading', { name: /new sale/i, level: 1 })).toBeInTheDocument();
@@ -48,5 +71,26 @@ describe('AppLayout', () => {
   it('does not render the obsolete manual pay-period reminder banner', () => {
     renderLayout('/pos');
     expect(screen.queryByText(/pay period has not been created yet/i)).not.toBeInTheDocument();
+  });
+
+  it('warns about expiring time trust while keeping POS available', () => {
+    mockedUsePayrollTimeTrust.mockReturnValue({
+      data: {
+        state: 'OFFLINE_WARNING',
+        payrollAllowed: true,
+        warning: true,
+        message: 'Network time is unavailable.',
+        lastVerifiedAt: '2026-09-25T12:00:00.000Z',
+        offlineForMs: 6 * 60 * 60_000,
+        remainingMs: 2 * 60 * 60_000,
+      },
+      isLoading: false,
+      isError: false,
+    } as ReturnType<typeof usePayrollTimeTrust>);
+
+    renderLayout('/pos');
+
+    expect(screen.getByRole('status')).toHaveTextContent('About 2 hour(s) remain');
+    expect(screen.getByText('POS Page Content')).toBeInTheDocument();
   });
 });

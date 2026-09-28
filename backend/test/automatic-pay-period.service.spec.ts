@@ -24,7 +24,11 @@ describe('AutomaticPayPeriodService', () => {
       ensureMissingPeriodsThrough: jest.fn(async () => undefined),
       ensurePeriodExists: jest.fn(async () => currentPeriod),
     } as unknown as PayPeriodsService;
-    const service = new AutomaticPayPeriodService(payPeriodsService);
+    const timeTrustService = {
+      getStatus: jest.fn(() => ({ payrollAllowed: true })),
+      getTrustedNow: jest.fn(() => new Date('2026-10-01T00:00:00.000Z')),
+    } as never;
+    const service = new AutomaticPayPeriodService(payPeriodsService, timeTrustService);
 
     await service.onModuleInit();
     service.onModuleDestroy();
@@ -39,6 +43,24 @@ describe('AutomaticPayPeriodService', () => {
     );
   });
 
+  it('does not create or catch up periods while trusted time is unavailable', async () => {
+    const payPeriodsService = {
+      ensureMissingPeriodsThrough: jest.fn(async () => undefined),
+      ensurePeriodExists: jest.fn(async () => ({ id: 'period', name: 'Period' })),
+    } as unknown as PayPeriodsService;
+    const timeTrustService = {
+      getStatus: jest.fn(() => ({ payrollAllowed: false })),
+      getTrustedNow: jest.fn(() => null),
+    } as never;
+    const service = new AutomaticPayPeriodService(payPeriodsService, timeTrustService);
+
+    await service.onModuleInit();
+    service.onModuleDestroy();
+
+    expect(payPeriodsService.ensureMissingPeriodsThrough).not.toHaveBeenCalled();
+    expect(payPeriodsService.ensurePeriodExists).not.toHaveBeenCalled();
+  });
+
   it('ensures the new period when the business timezone reaches the first day', async () => {
     const previousTimeZone = process.env.BUSINESS_TIME_ZONE;
     process.env.BUSINESS_TIME_ZONE = 'Asia/Dhaka';
@@ -51,7 +73,11 @@ describe('AutomaticPayPeriodService', () => {
         name: `${year}-${month}`,
       })),
     } as unknown as PayPeriodsService;
-    const service = new AutomaticPayPeriodService(payPeriodsService);
+    const timeTrustService = {
+      getStatus: jest.fn(() => ({ payrollAllowed: true })),
+      getTrustedNow: jest.fn(() => new Date()),
+    } as never;
+    const service = new AutomaticPayPeriodService(payPeriodsService, timeTrustService);
 
     await service.onModuleInit();
     expect(payPeriodsService.ensurePeriodExists).toHaveBeenLastCalledWith(2026, 9);

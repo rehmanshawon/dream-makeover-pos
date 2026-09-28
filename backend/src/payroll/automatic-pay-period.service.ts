@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PayPeriodsService } from './pay-periods.service';
+import { TimeTrustService } from '../time-trust/time-trust.service';
 
 const CHECK_INTERVAL_MS = 60_000;
 
@@ -25,11 +26,17 @@ export class AutomaticPayPeriodService implements OnModuleInit, OnModuleDestroy 
   private checking = false;
   private catchUpComplete = false;
 
-  constructor(private readonly payPeriodsService: PayPeriodsService) {}
+  constructor(
+    private readonly payPeriodsService: PayPeriodsService,
+    private readonly timeTrustService: TimeTrustService,
+  ) {}
 
   async onModuleInit(): Promise<void> {
-    this.catchUpComplete = await this.catchUpMissingPeriods();
-    await this.ensureCurrentPeriod();
+    if (this.timeTrustService.getStatus().payrollAllowed) {
+      const trustedNow = this.timeTrustService.getTrustedNow();
+      if (trustedNow) this.catchUpComplete = await this.catchUpMissingPeriods(trustedNow);
+      await this.ensureCurrentPeriod();
+    }
     this.timer = setInterval(() => {
       void this.scheduledCheck();
     }, CHECK_INTERVAL_MS);
@@ -40,11 +47,14 @@ export class AutomaticPayPeriodService implements OnModuleInit, OnModuleDestroy 
     if (this.timer) clearInterval(this.timer);
   }
 
-  async ensureCurrentPeriod(date = new Date()): Promise<void> {
+  async ensureCurrentPeriod(): Promise<void> {
     if (this.checking) return;
     this.checking = true;
     try {
-      await this.ensurePeriodForDate(date);
+      if (this.timeTrustService.getStatus().payrollAllowed) {
+        const trustedNow = this.timeTrustService.getTrustedNow();
+        if (trustedNow) await this.ensurePeriodForDate(trustedNow);
+      }
     } catch (error) {
       this.logger.error(
         'Unable to ensure the current business-month pay period; it will retry shortly.',
@@ -59,8 +69,13 @@ export class AutomaticPayPeriodService implements OnModuleInit, OnModuleDestroy 
     if (this.checking) return;
     this.checking = true;
     try {
-      if (!this.catchUpComplete) this.catchUpComplete = await this.catchUpMissingPeriods();
-      await this.ensurePeriodForDate(new Date());
+      if (!this.timeTrustService.getStatus().payrollAllowed) return;
+      const trustedNow = this.timeTrustService.getTrustedNow();
+      if (!trustedNow) return;
+      if (!this.catchUpComplete) {
+        this.catchUpComplete = await this.catchUpMissingPeriods(trustedNow);
+      }
+      await this.ensurePeriodForDate(trustedNow);
     } catch (error) {
       this.logger.error(
         'Unable to ensure the current business-month pay period; it will retry shortly.',
@@ -77,7 +92,7 @@ export class AutomaticPayPeriodService implements OnModuleInit, OnModuleDestroy 
     this.logger.log(`Pay period ready: ${period.name} (${this.timeZone}).`);
   }
 
-  private async catchUpMissingPeriods(date = new Date()): Promise<boolean> {
+  private async catchUpMissingPeriods(date: Date): Promise<boolean> {
     try {
       const { year, month } = businessYearMonth(date, this.timeZone);
       await this.payPeriodsService.ensureMissingPeriodsThrough(year, month);

@@ -24,6 +24,7 @@ import { ExpenditurePage } from './app/pages/expenditure/ExpenditurePage';
 import { SettingsPage } from './app/pages/settings/SettingsPage';
 import { PayPeriodDetailPage } from './app/pages/payroll/PayPeriodDetailPage';
 import { PayrollPage } from './app/pages/payroll/PayrollPage';
+import { PayrollTimeGate } from './app/components/PayrollTimeGate';
 
 /**
  * Top-level application. Provides auth context and routing.
@@ -120,7 +121,9 @@ export function App(): JSX.Element {
               path="payroll"
               element={
                 <AdminRoute>
-                  <PayrollPage />
+                  <PayrollTimeGate>
+                    <PayrollPage />
+                  </PayrollTimeGate>
                 </AdminRoute>
               }
             />
@@ -128,7 +131,9 @@ export function App(): JSX.Element {
               path="payroll/:id"
               element={
                 <AdminRoute>
-                  <PayPeriodDetailPage />
+                  <PayrollTimeGate>
+                    <PayPeriodDetailPage />
+                  </PayrollTimeGate>
                 </AdminRoute>
               }
             />

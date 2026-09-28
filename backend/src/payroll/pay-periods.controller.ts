@@ -16,9 +16,10 @@ import { CreateSalaryPaymentDto } from '../salary-payments/dto/create-salary-pay
 import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
 import { AdjustAdvanceDto } from './dto/adjust-advance.dto';
 import { RunPayrollDto } from './dto/run-payroll.dto';
+import { TimeTrustGuard } from '../time-trust/time-trust.guard';
 
 @Controller('pay-periods')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, TimeTrustGuard)
 export class PayPeriodsController {
   constructor(private readonly service: PayPeriodsService) {}
 
