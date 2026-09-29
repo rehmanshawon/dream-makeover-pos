@@ -50,6 +50,15 @@ export function ProfitAndLossTable({ summary }: ProfitAndLossTableProps): JSX.El
           <span className="pl-table__amount">{formatBdt(summary.revenue.packageSalesMinor)}</span>
         </div>
 
+        {(summary.revenue.otherIncomeMinor ?? 0) > 0 && (
+          <div className="pl-table__row" role="row">
+            <span className="pl-table__label">Inventory gains</span>
+            <span className="pl-table__amount">
+              {formatBdt(summary.revenue.otherIncomeMinor ?? 0)}
+            </span>
+          </div>
+        )}
+
         <div className="pl-table__row pl-table__row--subtotal" role="row">
           <span className="pl-table__label">Gross revenue</span>
           <span className="pl-table__amount">{formatBdt(grossRevenue)}</span>
@@ -106,8 +115,18 @@ export function ProfitAndLossTable({ summary }: ProfitAndLossTableProps): JSX.El
           </div>
         ))}
 
+        {(summary.expenses.inventoryAdjustmentLossesMinor ?? 0) > 0 && (
+          <div className="pl-table__row" role="row">
+            <span className="pl-table__label">Inventory adjustment losses</span>
+            <span className="pl-table__amount">
+              {formatBdt(summary.expenses.inventoryAdjustmentLossesMinor ?? 0)}
+            </span>
+          </div>
+        )}
+
         {summary.expenses.salaryPaymentsMinor === 0 &&
-          summary.expenses.shopExpensesByCategory.length === 0 && (
+          summary.expenses.shopExpensesByCategory.length === 0 &&
+          (summary.expenses.inventoryAdjustmentLossesMinor ?? 0) === 0 && (
             <div className="pl-table__row" role="row">
               <span className="pl-table__label pl-table__label--muted">No expenses recorded</span>
               <span className="pl-table__amount pl-table__amount--muted">{formatBdt(0)}</span>

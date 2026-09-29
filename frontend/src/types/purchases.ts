@@ -21,3 +21,33 @@ export interface Purchase {
   totalMinor: number;
   createdAt: string;
 }
+
+export interface ReturnablePurchaseLine {
+  purchaseId: string;
+  purchaseDate: string;
+  supplierName: string | null;
+  paymentMethod: PurchasePaymentMethod;
+  purchaseLineId: string;
+  productId: string;
+  productName: string;
+  productStock: number;
+  quantity: number;
+  returnedQuantity: number;
+  remainingQuantity: number;
+  unitCostMinor: number;
+}
+
+export interface CreateSupplierReturnRequest {
+  purchaseId: string;
+  returnDate: string;
+  refundMethod: PurchasePaymentMethod;
+  note?: string;
+  lines: Array<{ purchaseLineId: string; quantity: number }>;
+}
+
+export interface SupplierReturnResult {
+  id: string;
+  creditMinor: number;
+  inventoryValueMinor: number;
+  varianceMinor: number;
+}

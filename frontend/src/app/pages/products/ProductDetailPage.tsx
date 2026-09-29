@@ -16,6 +16,8 @@ import { Icon } from '../../components/Icon';
 import { ProductFormModal } from './ProductFormModal';
 import { StockInModal } from './StockInModal';
 import { AdjustStockModal } from './AdjustStockModal';
+import { SupplierReturnModal } from './SupplierReturnModal';
+import { CostRevaluationModal } from './CostRevaluationModal';
 import './ProductDetailPage.css';
 
 type StockStatus = 'out' | 'low' | 'ok';
@@ -44,6 +46,7 @@ const REASON_LABEL: Record<StockMovement['reason'], string> = {
   ADJUSTMENT: 'Adjustment',
   RETURN: 'Return',
   PURCHASE: 'Purchase',
+  SUPPLIER_RETURN: 'Supplier return',
 };
 
 export function ProductDetailPage(): JSX.Element {
@@ -53,6 +56,8 @@ export function ProductDetailPage(): JSX.Element {
   const [editOpen, setEditOpen] = useState(false);
   const [stockInOpen, setStockInOpen] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
+  const [supplierReturnOpen, setSupplierReturnOpen] = useState(false);
+  const [revaluationOpen, setRevaluationOpen] = useState(false);
   const history = useProductStockHistory(id);
 
   if (isLoading) {
@@ -155,6 +160,12 @@ export function ProductDetailPage(): JSX.Element {
                   <Button size="sm" variant="secondary" onClick={() => setAdjustOpen(true)}>
                     Adjust
                   </Button>
+                  <Button size="sm" variant="secondary" onClick={() => setSupplierReturnOpen(true)}>
+                    Return to supplier
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={() => setRevaluationOpen(true)}>
+                    Revalue cost
+                  </Button>
                 </>
               )}
             </div>
@@ -231,6 +242,20 @@ export function ProductDetailPage(): JSX.Element {
             productName={data.name}
             currentStock={data.stock}
             onClose={() => setAdjustOpen(false)}
+          />
+          <SupplierReturnModal
+            open={supplierReturnOpen}
+            productId={data.id}
+            productName={data.name}
+            onClose={() => setSupplierReturnOpen(false)}
+          />
+          <CostRevaluationModal
+            open={revaluationOpen}
+            productId={data.id}
+            productName={data.name}
+            currentStock={data.stock}
+            currentUnitCostMinor={data.purchaseCostMinor ?? 0}
+            onClose={() => setRevaluationOpen(false)}
           />
         </>
       )}

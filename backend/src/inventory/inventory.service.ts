@@ -10,6 +10,8 @@ import { LowStockProductDto } from './dto/low-stock-product.dto';
 import { InventoryStatsDto } from './dto/inventory-stats.dto';
 import { CategoriesService } from '../categories/categories.service';
 import { AccountingService } from '../accounting/accounting.service';
+import { CostRevaluation } from './cost-revaluation.entity';
+import { CreateCostRevaluationDto } from './dto/create-cost-revaluation.dto';
 
 /**
  * InventoryService — the single writer for product stock.
@@ -368,6 +370,88 @@ export class InventoryService {
     return this.toResponse(saved);
   }
 
+  async removeSupplierReturn(
+    manager: EntityManager,
+    input: {
+      productId: string;
+      quantity: number;
+      referenceId: string;
+      createdBy: string;
+    },
+  ): Promise<{ movement: StockMovementResponseDto; inventoryValueMinor: number }> {
+    const productRepo = manager.getRepository(Product);
+    const product = await productRepo.findOne({
+      where: { id: input.productId },
+      lock: { mode: 'pessimistic_write' },
+    });
+    if (!product) throw new NotFoundException('Product not found');
+    if (product.stock < input.quantity) {
+      throw new BadRequestException(`Insufficient stock to return ${product.name} to supplier.`);
+    }
+    const inventoryValueMinor = product.purchaseCostMinor * input.quantity;
+    if (!Number.isSafeInteger(inventoryValueMinor)) {
+      throw new BadRequestException('Supplier return value exceeds supported accounting limits.');
+    }
+    product.stock -= input.quantity;
+    await productRepo.save(product);
+    const movementRepo = manager.getRepository(StockMovement);
+    const movement = await movementRepo.save(
+      movementRepo.create({
+        productId: product.id,
+        delta: -input.quantity,
+        reason: StockMovementReason.SUPPLIER_RETURN,
+        referenceId: input.referenceId,
+        note: 'Supplier return',
+        createdBy: input.createdBy,
+      }),
+    );
+    return { movement: this.toResponse(movement), inventoryValueMinor };
+  }
+
+  async revalueCost(dto: CreateCostRevaluationDto, createdBy: string): Promise<CostRevaluation> {
+    if (!this.isRealDate(dto.effectiveDate)) {
+      throw new BadRequestException('effectiveDate must be a valid calendar date.');
+    }
+    return this.dataSource.transaction(async (manager) => {
+      const productRepo = manager.getRepository(Product);
+      const product = await productRepo.findOne({
+        where: { id: dto.productId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!product) throw new NotFoundException('Product not found');
+      if (product.purchaseCostMinor === dto.newUnitCostMinor) {
+        throw new BadRequestException('New unit cost must differ from the current cost.');
+      }
+      const inventoryValueDeltaMinor =
+        product.stock * (dto.newUnitCostMinor - product.purchaseCostMinor);
+      if (!Number.isSafeInteger(inventoryValueDeltaMinor)) {
+        throw new BadRequestException('Revaluation exceeds supported accounting limits.');
+      }
+      const revaluationRepo = manager.getRepository(CostRevaluation);
+      const revaluation = await revaluationRepo.save(
+        revaluationRepo.create({
+          productId: product.id,
+          effectiveDate: dto.effectiveDate,
+          stockSnapshot: product.stock,
+          previousUnitCostMinor: product.purchaseCostMinor,
+          newUnitCostMinor: dto.newUnitCostMinor,
+          inventoryValueDeltaMinor,
+          note: dto.note?.trim() || null,
+          createdBy,
+        }),
+      );
+      product.purchaseCostMinor = dto.newUnitCostMinor;
+      await productRepo.save(product);
+      await this.accountingService.createInventoryRevaluationEntry(manager, {
+        sourceCostRevaluationId: revaluation.id,
+        effectiveDate: revaluation.effectiveDate,
+        inventoryValueDeltaMinor,
+        createdBy,
+      });
+      return revaluation;
+    });
+  }
+
   private toResponse(movement: StockMovement): StockMovementResponseDto {
     return {
       id: movement.id,
@@ -379,5 +463,18 @@ export class InventoryService {
       createdBy: movement.createdBy,
       createdAt: movement.createdAt,
     };
+  }
+
+  private isRealDate(value: string): boolean {
+    const [yearText, monthText, dayText] = value.split('-');
+    const year = Number(yearText);
+    const month = Number(monthText);
+    const day = Number(dayText);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return (
+      date.getUTCFullYear() === year &&
+      date.getUTCMonth() === month - 1 &&
+      date.getUTCDate() === day
+    );
   }
 }

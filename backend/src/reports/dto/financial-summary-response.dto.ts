@@ -2,6 +2,7 @@ export class RevenueByTypeDto {
   productSalesMinor: number;
   serviceSalesMinor: number;
   packageSalesMinor: number;
+  otherIncomeMinor: number;
   totalRevenueMinor: number;
 }
 
@@ -13,6 +14,7 @@ export class ExpenseByCategoryDto {
 export class ExpenseBreakdownDto {
   salaryPaymentsMinor: number;
   shopExpensesMinor: number;
+  inventoryAdjustmentLossesMinor: number;
   totalOperatingExpensesMinor: number;
   shopExpensesByCategory: ExpenseByCategoryDto[];
 }

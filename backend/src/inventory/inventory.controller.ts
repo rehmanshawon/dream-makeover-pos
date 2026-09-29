@@ -10,6 +10,8 @@ import { UserRole } from '../users/user-role.enum';
 import { JwtPayload } from '../auth/jwt.strategy';
 import { LowStockProductDto } from './dto/low-stock-product.dto';
 import { InventoryStatsDto } from './dto/inventory-stats.dto';
+import { CreateCostRevaluationDto } from './dto/create-cost-revaluation.dto';
+import { TimeTrustGuard } from '../time-trust/time-trust.guard';
 
 @Controller('inventory')
 export class InventoryController {
@@ -35,6 +37,13 @@ export class InventoryController {
     @Req() req: { user: JwtPayload },
   ): Promise<StockMovementResponseDto> {
     return this.inventoryService.adjust(dto, req.user.username);
+  }
+
+  @Post('revaluations')
+  @UseGuards(JwtAuthGuard, RolesGuard, TimeTrustGuard)
+  @Roles(UserRole.ADMIN)
+  async revalueCost(@Body() dto: CreateCostRevaluationDto, @Req() req: { user: JwtPayload }) {
+    return this.inventoryService.revalueCost(dto, req.user.username);
   }
 
   @Get('low-stock')

@@ -11,6 +11,7 @@ import { AccountingJournalQueryDto } from './dto/accounting-journal-query.dto';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
 import { PaymentMethod } from '../salary-payments/payment-method.enum';
+import { PurchasePaymentMethod } from '../purchases/purchase-payment-method.enum';
 
 interface AccountBalanceRow {
   accountId: string;
@@ -433,15 +434,167 @@ export class AccountingService {
         }),
       );
     }
-    lines.push(
-      lineRepo.create({
-        entryId: entry.id,
-        accountId: accounts.get(refundAccountCode)!.id,
-        debitMinor: 0,
-        creditMinor: salesReturn.refundMinor,
+    if (salesReturn.refundMinor > 0) {
+      if (salesReturn.refundMinor > 0) {
+        lines.push(
+          lineRepo.create({
+            entryId: entry.id,
+            accountId: accounts.get(refundAccountCode)!.id,
+            debitMinor: 0,
+            creditMinor: salesReturn.refundMinor,
+          }),
+        );
+      }
+    }
+    await lineRepo.save(lines);
+  }
+
+  async createSupplierReturnEntry(
+    manager: EntityManager,
+    supplierReturn: {
+      sourceSupplierReturnId: string;
+      returnDate: string;
+      refundMethod: PurchasePaymentMethod;
+      creditMinor: number;
+      inventoryValueMinor: number;
+      createdBy: string;
+    },
+  ): Promise<void> {
+    const settlementAccountCode = {
+      [PurchasePaymentMethod.CASH]: 'CASH',
+      [PurchasePaymentMethod.BANK]: 'BANK',
+      [PurchasePaymentMethod.MOBILE]: 'MOBILE_WALLET',
+      [PurchasePaymentMethod.CREDIT]: 'ACCOUNTS_PAYABLE',
+    }[supplierReturn.refundMethod];
+    const varianceMinor = Math.abs(supplierReturn.creditMinor - supplierReturn.inventoryValueMinor);
+    const varianceAccountCode =
+      supplierReturn.creditMinor > supplierReturn.inventoryValueMinor
+        ? 'SUPPLIER_RETURN_GAIN'
+        : 'SUPPLIER_RETURN_LOSS';
+    const codes = ['INVENTORY', settlementAccountCode];
+    if (varianceMinor > 0) codes.push(varianceAccountCode);
+    const accountRepo = manager.getRepository(Account);
+    const foundAccounts = await Promise.all(
+      [...new Set(codes)].map((code) => accountRepo.findOne({ where: { code } })),
+    );
+    const accounts = new Map(
+      foundAccounts
+        .filter((account): account is Account => account !== null)
+        .map((account) => [account.code, account]),
+    );
+    if (accounts.size !== new Set(codes).size) {
+      throw new Error('A required supplier return accounting account is missing.');
+    }
+
+    const entryRepo = manager.getRepository(JournalEntry);
+    const lineRepo = manager.getRepository(JournalLine);
+    const entry = await entryRepo.save(
+      entryRepo.create({
+        entryType: JournalEntryType.SUPPLIER_RETURN,
+        entryDate: supplierReturn.returnDate,
+        memo: 'Supplier inventory return',
+        reference: supplierReturn.sourceSupplierReturnId,
+        sourceSupplierReturnId: supplierReturn.sourceSupplierReturnId,
+        createdBy: supplierReturn.createdBy,
       }),
     );
+    const lines = [
+      lineRepo.create({
+        entryId: entry.id,
+        accountId: accounts.get(settlementAccountCode)!.id,
+        debitMinor: supplierReturn.creditMinor,
+        creditMinor: 0,
+      }),
+    ];
+    if (supplierReturn.inventoryValueMinor > 0) {
+      lines.push(
+        lineRepo.create({
+          entryId: entry.id,
+          accountId: accounts.get('INVENTORY')!.id,
+          debitMinor: 0,
+          creditMinor: supplierReturn.inventoryValueMinor,
+        }),
+      );
+    }
+    if (varianceMinor > 0) {
+      const loss = supplierReturn.creditMinor < supplierReturn.inventoryValueMinor;
+      lines.push(
+        lineRepo.create({
+          entryId: entry.id,
+          accountId: accounts.get(varianceAccountCode)!.id,
+          debitMinor: loss ? varianceMinor : 0,
+          creditMinor: loss ? 0 : varianceMinor,
+        }),
+      );
+    }
     await lineRepo.save(lines);
+  }
+
+  async createInventoryRevaluationEntry(
+    manager: EntityManager,
+    revaluation: {
+      sourceCostRevaluationId: string;
+      effectiveDate: string;
+      inventoryValueDeltaMinor: number;
+      createdBy: string;
+    },
+  ): Promise<void> {
+    if (revaluation.inventoryValueDeltaMinor === 0) return;
+    const increase = revaluation.inventoryValueDeltaMinor > 0;
+    const varianceCode = increase ? 'INVENTORY_REVALUATION_GAIN' : 'INVENTORY_REVALUATION_LOSS';
+    const accountRepo = manager.getRepository(Account);
+    const [inventory, variance] = await Promise.all([
+      accountRepo.findOne({ where: { code: 'INVENTORY' } }),
+      accountRepo.findOne({ where: { code: varianceCode } }),
+    ]);
+    if (!inventory || !variance) {
+      throw new Error('A required inventory revaluation accounting account is missing.');
+    }
+    const entryRepo = manager.getRepository(JournalEntry);
+    const lineRepo = manager.getRepository(JournalLine);
+    const entry = await entryRepo.save(
+      entryRepo.create({
+        entryType: JournalEntryType.INVENTORY_REVALUATION,
+        entryDate: revaluation.effectiveDate,
+        memo: increase
+          ? 'Inventory cost revaluation increase'
+          : 'Inventory cost revaluation decrease',
+        reference: revaluation.sourceCostRevaluationId,
+        sourceCostRevaluationId: revaluation.sourceCostRevaluationId,
+        createdBy: revaluation.createdBy,
+      }),
+    );
+    await lineRepo.save(
+      increase
+        ? [
+            lineRepo.create({
+              entryId: entry.id,
+              accountId: inventory.id,
+              debitMinor: revaluation.inventoryValueDeltaMinor,
+              creditMinor: 0,
+            }),
+            lineRepo.create({
+              entryId: entry.id,
+              accountId: variance.id,
+              debitMinor: 0,
+              creditMinor: revaluation.inventoryValueDeltaMinor,
+            }),
+          ]
+        : [
+            lineRepo.create({
+              entryId: entry.id,
+              accountId: variance.id,
+              debitMinor: -revaluation.inventoryValueDeltaMinor,
+              creditMinor: 0,
+            }),
+            lineRepo.create({
+              entryId: entry.id,
+              accountId: inventory.id,
+              debitMinor: 0,
+              creditMinor: -revaluation.inventoryValueDeltaMinor,
+            }),
+          ],
+    );
   }
 
   async createSaleEntry(

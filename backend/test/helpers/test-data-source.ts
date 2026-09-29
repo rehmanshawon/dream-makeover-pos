@@ -24,12 +24,18 @@ import { Purchase } from '../../src/purchases/purchase.entity';
 import { PurchaseLine } from '../../src/purchases/purchase-line.entity';
 import { SalesReturn } from '../../src/returns/sales-return.entity';
 import { SalesReturnLine } from '../../src/returns/sales-return-line.entity';
+import { SupplierReturn } from '../../src/purchases/supplier-return.entity';
+import { SupplierReturnLine } from '../../src/purchases/supplier-return-line.entity';
+import { CostRevaluation } from '../../src/inventory/cost-revaluation.entity';
 
 export const TEST_PRODUCT_CATEGORY_ID = '11111111-1111-4111-8111-111111111111';
 export const TEST_SERVICE_CATEGORY_ID = '22222222-2222-4222-8222-222222222222';
 const TEST_TABLES = [
   'accounting_journal_lines',
   'accounting_journal_entries',
+  'supplier_return_lines',
+  'supplier_returns',
+  'inventory_cost_revaluations',
   'sales_return_lines',
   'sales_returns',
   'purchase_lines',
@@ -249,6 +255,34 @@ const TEST_ACCOUNTING_ACCOUNTS: Account[] = [
     type: AccountType.REVENUE,
     isSystem: true,
   },
+  {
+    id: '00000000-0000-4000-8000-000000000029',
+    code: 'SUPPLIER_RETURN_LOSS',
+    name: 'Supplier return variance loss',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000030',
+    code: 'SUPPLIER_RETURN_GAIN',
+    name: 'Supplier return variance gain',
+    type: AccountType.REVENUE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000031',
+    code: 'INVENTORY_REVALUATION_LOSS',
+    name: 'Inventory revaluation loss',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000032',
+    code: 'INVENTORY_REVALUATION_GAIN',
+    name: 'Inventory revaluation gain',
+    type: AccountType.REVENUE,
+    isSystem: true,
+  },
 ];
 
 /**
@@ -302,8 +336,11 @@ export async function createTestDataSource(): Promise<DataSource> {
       JournalLine,
       Purchase,
       PurchaseLine,
+      SupplierReturn,
+      SupplierReturnLine,
       SalesReturn,
       SalesReturnLine,
+      CostRevaluation,
     ],
     synchronize: false,
     dropSchema: false,
@@ -381,6 +418,16 @@ export async function createTestDataSource(): Promise<DataSource> {
   ALTER TABLE accounting_journal_entries
     ADD CONSTRAINT fk_accounting_journal_entries_sales_return
     FOREIGN KEY (source_sales_return_id) REFERENCES sales_returns(id) ON DELETE RESTRICT
+`);
+  await dataSource.query(`
+  ALTER TABLE accounting_journal_entries
+    ADD CONSTRAINT fk_accounting_journal_entries_supplier_return
+    FOREIGN KEY (source_supplier_return_id) REFERENCES supplier_returns(id) ON DELETE RESTRICT
+`);
+  await dataSource.query(`
+  ALTER TABLE accounting_journal_entries
+    ADD CONSTRAINT fk_accounting_journal_entries_cost_revaluation
+    FOREIGN KEY (source_cost_revaluation_id) REFERENCES inventory_cost_revaluations(id) ON DELETE RESTRICT
 `);
   return dataSource;
 }

@@ -22,7 +22,8 @@ export interface CreateProductRequest {
   minimumStockThreshold: number;
 }
 
-export type StockMovementReason = 'SALE' | 'STOCK_IN' | 'ADJUSTMENT' | 'RETURN' | 'PURCHASE';
+export type StockMovementReason =
+  'SALE' | 'STOCK_IN' | 'ADJUSTMENT' | 'RETURN' | 'PURCHASE' | 'SUPPLIER_RETURN';
 
 export interface StockMovement {
   id: string;

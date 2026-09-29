@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { renderWithProviders } from '../../../test/render-with-providers';
 import { ProductDetailPage } from './ProductDetailPage';
@@ -32,8 +33,35 @@ describe('ProductDetailPage', () => {
   });
 
   function mockProductAndHistory(): void {
-    globalThis.fetch = vi.fn(async (input) => {
+    globalThis.fetch = vi.fn(async (input, init?: RequestInit) => {
       const url = typeof input === 'string' ? input : (input as Request).url;
+      if (init?.method === 'POST') {
+        return new Response(JSON.stringify({ id: 'op-1' }), {
+          status: 201,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (url.includes('/purchases/returnable-lines/')) {
+        return new Response(
+          JSON.stringify([
+            {
+              purchaseId: 'purchase-1',
+              purchaseDate: '2026-09-20',
+              supplierName: 'Beauty Supply Co',
+              paymentMethod: 'CREDIT',
+              purchaseLineId: 'line-1',
+              productId: 'p1',
+              productName: 'Lipstick',
+              productStock: 10,
+              quantity: 5,
+              returnedQuantity: 1,
+              remainingQuantity: 4,
+              unitCostMinor: 80000,
+            },
+          ]),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
       if (url.endsWith('/history')) {
         return new Response(
           JSON.stringify([
@@ -102,5 +130,61 @@ describe('ProductDetailPage', () => {
     await screen.findAllByText('Lipstick'); // Ensures all instances of 'Lipstick' are found
 
     expect(screen.getByText(/purchase cost/i)).toBeInTheDocument();
+  });
+
+  it('offers supplier return and cost revaluation actions only to admins', async () => {
+    mockProductAndHistory();
+    renderPage(ADMIN);
+    expect(await screen.findByRole('button', { name: 'Return to supplier' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Revalue cost' })).toBeInTheDocument();
+
+    mockProductAndHistory();
+    renderPage(STAFF);
+    await screen.findAllByText('Lipstick');
+    expect(screen.queryByRole('button', { name: 'Return to supplier' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Revalue cost' })).not.toBeInTheDocument();
+  });
+
+  it('posts a supplier return against a selected purchase line', async () => {
+    mockProductAndHistory();
+    const user = userEvent.setup();
+    renderPage(ADMIN);
+
+    await user.click(await screen.findByRole('button', { name: 'Return to supplier' }));
+    await user.selectOptions(await screen.findByLabelText('Purchase line'), 'line-1');
+    await user.click(await screen.findByRole('button', { name: 'Post supplier return' }));
+
+    await waitFor(() => {
+      const postCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.find(
+        ([, init]) => (init as RequestInit | undefined)?.method === 'POST',
+      );
+      expect(JSON.parse(String((postCall?.[1] as RequestInit).body))).toMatchObject({
+        purchaseId: 'purchase-1',
+        refundMethod: 'CREDIT',
+        lines: [{ purchaseLineId: 'line-1', quantity: 1 }],
+      });
+    });
+  });
+
+  it('posts a cost revaluation in minor units', async () => {
+    mockProductAndHistory();
+    const user = userEvent.setup();
+    renderPage(ADMIN);
+
+    await user.click(await screen.findByRole('button', { name: 'Revalue cost' }));
+    const input = await screen.findByLabelText('New unit cost (BDT)');
+    await user.clear(input);
+    await user.type(input, '900.00');
+    await user.click(screen.getByRole('button', { name: 'Post revaluation' }));
+
+    await waitFor(() => {
+      const postCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.find(
+        ([, init]) => (init as RequestInit | undefined)?.method === 'POST',
+      );
+      expect(JSON.parse(String((postCall?.[1] as RequestInit).body))).toMatchObject({
+        productId: 'p1',
+        newUnitCostMinor: 90000,
+      });
+    });
   });
 });

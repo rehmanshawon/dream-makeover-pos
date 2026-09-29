@@ -7,6 +7,7 @@ import { SalaryPayment } from '../salary-payments/salary-payment.entity';
 import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
 import { SalesReturn } from '../returns/sales-return.entity';
 import { SalesReturnLine } from '../returns/sales-return-line.entity';
+import { JournalLine } from '../accounting/journal-line.entity';
 import { DateRangeQueryDto, DateRangePreset, DateRange } from './dto/date-range-query.dto';
 import {
   ExpenseBreakdownDto,
@@ -189,14 +190,17 @@ export class FinancialSummaryService {
       .select('COALESCE(SUM(salesReturn.refund_minor), 0)', 'total')
       .where('salesReturn.return_date >= :from AND salesReturn.return_date <= :to', range)
       .getRawOne<{ total: string | number | null }>();
+    const otherIncomeMinor = await this.computeInventoryGains(range);
     const totalRevenueMinor =
       (transactionTotals?.total ? Number(transactionTotals.total) : 0) -
-      Number(returnedRefunds?.total ?? 0);
+      Number(returnedRefunds?.total ?? 0) +
+      otherIncomeMinor;
 
     return {
       productSalesMinor: productSalesMinor - Number(returnedProductRevenue?.total ?? 0),
       serviceSalesMinor,
       packageSalesMinor,
+      otherIncomeMinor,
       totalRevenueMinor,
     };
   }
@@ -270,13 +274,42 @@ export class FinancialSummaryService {
     }));
 
     const shopExpensesMinor = shopExpensesByCategory.reduce((sum, row) => sum + row.amountMinor, 0);
+    const inventoryLosses = await this.dataSource
+      .getRepository(JournalLine)
+      .createQueryBuilder('line')
+      .innerJoin('line.entry', 'entry')
+      .innerJoin('line.account', 'account')
+      .select('COALESCE(SUM(line.debit_minor - line.credit_minor), 0)', 'total')
+      .where('entry.entry_date >= :from AND entry.entry_date <= :to', range)
+      .andWhere('account.code IN (:...codes)', {
+        codes: ['INVENTORY_SHRINKAGE', 'SUPPLIER_RETURN_LOSS', 'INVENTORY_REVALUATION_LOSS'],
+      })
+      .getRawOne<{ total: string | number | null }>();
+    const inventoryAdjustmentLossesMinor = Number(inventoryLosses?.total ?? 0);
 
     return {
       salaryPaymentsMinor,
       shopExpensesMinor,
-      totalOperatingExpensesMinor: salaryPaymentsMinor + shopExpensesMinor,
+      inventoryAdjustmentLossesMinor,
+      totalOperatingExpensesMinor:
+        salaryPaymentsMinor + shopExpensesMinor + inventoryAdjustmentLossesMinor,
       shopExpensesByCategory,
     };
+  }
+
+  private async computeInventoryGains(range: DateRange): Promise<number> {
+    const result = await this.dataSource
+      .getRepository(JournalLine)
+      .createQueryBuilder('line')
+      .innerJoin('line.entry', 'entry')
+      .innerJoin('line.account', 'account')
+      .select('COALESCE(SUM(line.credit_minor - line.debit_minor), 0)', 'total')
+      .where('entry.entry_date >= :from AND entry.entry_date <= :to', range)
+      .andWhere('account.code IN (:...codes)', {
+        codes: ['INVENTORY_ADJUSTMENT_GAIN', 'SUPPLIER_RETURN_GAIN', 'INVENTORY_REVALUATION_GAIN'],
+      })
+      .getRawOne<{ total: string | number | null }>();
+    return Number(result?.total ?? 0);
   }
 
   /**

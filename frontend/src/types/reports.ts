@@ -2,6 +2,7 @@ export interface RevenueByType {
   productSalesMinor: number;
   serviceSalesMinor: number;
   packageSalesMinor: number;
+  otherIncomeMinor?: number;
   totalRevenueMinor: number;
 }
 
@@ -13,6 +14,7 @@ export interface ExpenseByCategory {
 export interface ExpenseBreakdown {
   salaryPaymentsMinor: number;
   shopExpensesMinor: number;
+  inventoryAdjustmentLossesMinor?: number;
   totalOperatingExpensesMinor: number;
   shopExpensesByCategory: ExpenseByCategory[];
 }

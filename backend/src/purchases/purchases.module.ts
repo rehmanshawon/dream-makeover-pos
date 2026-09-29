@@ -6,12 +6,14 @@ import { AccountingModule } from '../accounting/accounting.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { Purchase } from './purchase.entity';
 import { PurchaseLine } from './purchase-line.entity';
+import { SupplierReturn } from './supplier-return.entity';
+import { SupplierReturnLine } from './supplier-return-line.entity';
 import { PurchasesController } from './purchases.controller';
 import { PurchasesService } from './purchases.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Purchase, PurchaseLine]),
+    TypeOrmModule.forFeature([Purchase, PurchaseLine, SupplierReturn, SupplierReturnLine]),
     AuthCommonModule,
     TimeTrustModule,
     AccountingModule,
