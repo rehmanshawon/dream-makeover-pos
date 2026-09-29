@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PayPeriod } from '../payroll/pay-period.entity';
 import { PayPeriodStatus } from '../payroll/pay-period-status.enum';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { SalaryPayment } from './salary-payment.entity';
 import { Employee } from '../employees/employee.entity';
 import { CreateSalaryPaymentDto } from './dto/create-salary-payment.dto';
@@ -10,6 +10,7 @@ import { SalaryPaymentResponseDto } from './dto/salary-payment-response.dto';
 import { SalaryPaymentType } from './salary-payment-type.enum';
 import { PaymentMethod } from './payment-method.enum';
 import { BonusType } from './bonus-type.enum';
+import { AccountingService } from '../accounting/accounting.service';
 
 @Injectable()
 export class SalaryPaymentsService {
@@ -20,6 +21,8 @@ export class SalaryPaymentsService {
     private readonly employeeRepository: Repository<Employee>,
     @InjectRepository(PayPeriod)
     private readonly payPeriodRepository: Repository<PayPeriod>,
+    private readonly dataSource: DataSource,
+    private readonly accountingService: AccountingService,
   ) {}
 
   /**
@@ -41,30 +44,47 @@ export class SalaryPaymentsService {
     if (!employee) {
       throw new NotFoundException('Employee not found');
     }
-    if (paymentType === SalaryPaymentType.REGULAR) {
-      throw new BadRequestException('Regular salary payments must be recorded from a pay period.');
+    if (
+      paymentType === SalaryPaymentType.REGULAR ||
+      paymentType === SalaryPaymentType.ADVANCE_ADJUSTMENT
+    ) {
+      throw new BadRequestException(
+        'Regular salary and advance adjustments must be recorded from a pay period.',
+      );
     }
     this.validatePaymentDetails(paymentType, dto);
     this.validateDisbursementDetails(dto.paymentMethod ?? PaymentMethod.CASH, dto);
 
-    const payment = this.paymentRepository.create({
-      employeeId: employee.id,
-      amountMinor: dto.amountMinor,
-      paymentType,
-      paymentMethod: dto.paymentMethod ?? PaymentMethod.CASH,
-      paidOn: dto.paidOn,
-      note: dto.note ?? null,
-      bonusType: dto.bonusType ?? null,
-      overtimeHours: dto.overtimeHours ?? null,
-      overtimeDate: dto.overtimeDate ?? null,
-      checkNumber: dto.checkNumber ?? null,
-      bankAccountNumber: dto.bankAccountNumber ?? null,
-      mobileWalletProvider: dto.mobileWalletProvider ?? null,
-      mobileWalletNumber: dto.mobileWalletNumber ?? null,
-      paidBy,
+    const saved = await this.dataSource.transaction(async (manager) => {
+      const paymentRepo = manager.getRepository(SalaryPayment);
+      const payment = paymentRepo.create({
+        employeeId: employee.id,
+        amountMinor: dto.amountMinor,
+        paymentType,
+        paymentMethod: dto.paymentMethod ?? PaymentMethod.CASH,
+        paidOn: dto.paidOn,
+        note: dto.note ?? null,
+        bonusType: dto.bonusType ?? null,
+        overtimeHours: dto.overtimeHours ?? null,
+        overtimeDate: dto.overtimeDate ?? null,
+        checkNumber: dto.checkNumber ?? null,
+        bankAccountNumber: dto.bankAccountNumber ?? null,
+        mobileWalletProvider: dto.mobileWalletProvider ?? null,
+        mobileWalletNumber: dto.mobileWalletNumber ?? null,
+        paidBy,
+      });
+      const savedPayment = await paymentRepo.save(payment);
+      await this.accountingService.createSalaryPaymentEntry(manager, {
+        sourceSalaryPaymentId: savedPayment.id,
+        entryDate: savedPayment.paidOn,
+        amountMinor: savedPayment.amountMinor,
+        paymentType: savedPayment.paymentType,
+        paymentMethod: savedPayment.paymentMethod,
+        employeeName: employee.fullName,
+        createdBy: paidBy,
+      });
+      return savedPayment;
     });
-
-    const saved = await this.paymentRepository.save(payment);
     return this.toResponseDto(saved);
   }
 
@@ -98,16 +118,7 @@ export class SalaryPaymentsService {
     return this.toResponseDto(payment);
   }
 
-  /**
-   * Deletes a salary payment. This is a deliberate tradeoff:
-   *
-   * We do not implement reversal entries. A mistaken payment is simply
-   * removed. This keeps the workflow simple for a small salon.
-   *
-   * If audit requirements grow, this method should be replaced with a
-   * reversal mechanism. The current API surface allows that change
-   * without altering the schema.
-   */
+  /** Removes an allowed staff-entered payment and its linked journal entry atomically. */
   async remove(id: string): Promise<void> {
     const payment = await this.paymentRepository.findOne({ where: { id } });
     if (!payment) throw new NotFoundException('Salary payment not found');
@@ -132,7 +143,10 @@ export class SalaryPaymentsService {
       }
     }
 
-    await this.paymentRepository.remove(payment);
+    await this.dataSource.transaction(async (manager) => {
+      await this.accountingService.removeSalaryPaymentEntry(manager, payment.id);
+      await manager.getRepository(SalaryPayment).remove(payment);
+    });
   }
 
   private toResponseDto(payment: SalaryPayment): SalaryPaymentResponseDto {

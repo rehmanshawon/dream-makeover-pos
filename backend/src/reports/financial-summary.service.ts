@@ -4,6 +4,7 @@ import { Transaction } from '../transactions/transaction.entity';
 import { TransactionItem, TransactionItemType } from '../transactions/transaction-item.entity';
 import { Expense } from '../expenses/expense.entity';
 import { SalaryPayment } from '../salary-payments/salary-payment.entity';
+import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
 import { DateRangeQueryDto, DateRangePreset, DateRange } from './dto/date-range-query.dto';
 import {
   ExpenseBreakdownDto,
@@ -221,6 +222,7 @@ export class FinancialSummaryService {
         from: range.from,
         to: range.to,
       })
+      .andWhere('sp.payment_type != :advanceType', { advanceType: SalaryPaymentType.ADVANCE })
       .getRawOne();
 
     const salaryPaymentsMinor = salaryRow?.total ? Number(salaryRow.total) : 0;

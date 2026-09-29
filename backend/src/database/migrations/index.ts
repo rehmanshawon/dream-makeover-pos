@@ -31,6 +31,7 @@ import { PostExpensesToAccounting1700000000027 } from './1700000000027-PostExpen
 import { PostSalesToAccounting1700000000028 } from './1700000000028-PostSalesToAccounting';
 import { AddPurchasesAndCostAccounting1700000000029 } from './1700000000029-AddPurchasesAndCostAccounting';
 import { CompleteInventoryCostAccounting1700000000030 } from './1700000000030-CompleteInventoryCostAccounting';
+import { PostPayrollPaymentsToAccounting1700000000031 } from './1700000000031-PostPayrollPaymentsToAccounting';
 
 export const migrations = [
   CreateCustomersTable1700000000000,
@@ -66,4 +67,5 @@ export const migrations = [
   PostSalesToAccounting1700000000028,
   AddPurchasesAndCostAccounting1700000000029,
   CompleteInventoryCostAccounting1700000000030,
+  PostPayrollPaymentsToAccounting1700000000031,
 ];

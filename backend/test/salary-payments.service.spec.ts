@@ -12,17 +12,35 @@ import { Employee } from '../src/employees/employee.entity';
 import { CreateSalaryPaymentDto } from '../src/salary-payments/dto/create-salary-payment.dto';
 import { PayPeriod } from '../src/payroll/pay-period.entity';
 import { PayPeriodStatus } from '../src/payroll/pay-period-status.enum';
+import { DataSource } from 'typeorm';
+import { AccountingService } from '../src/accounting/accounting.service';
 
 describe('SalaryPaymentsService', () => {
   let service: SalaryPaymentsService;
   let paymentRepo: Repository<SalaryPayment>;
   let employeeRepo: Repository<Employee>;
   let payPeriodRepo: Repository<PayPeriod>;
+  let dataSource: { transaction: jest.Mock };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SalaryPaymentsService,
+        {
+          provide: DataSource,
+          useValue: {
+            transaction: jest.fn((callback: (manager: unknown) => unknown) =>
+              callback({ getRepository: () => paymentRepo }),
+            ),
+          },
+        },
+        {
+          provide: AccountingService,
+          useValue: {
+            createSalaryPaymentEntry: jest.fn(),
+            removeSalaryPaymentEntry: jest.fn(),
+          },
+        },
         {
           provide: getRepositoryToken(SalaryPayment),
           useValue: {
@@ -52,6 +70,7 @@ describe('SalaryPaymentsService', () => {
     paymentRepo = module.get(getRepositoryToken(SalaryPayment));
     employeeRepo = module.get(getRepositoryToken(Employee));
     payPeriodRepo = module.get(getRepositoryToken(PayPeriod));
+    dataSource = module.get(DataSource);
   });
 
   it('records a non-regular payment with defaults when optional fields omitted', async () => {

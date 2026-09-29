@@ -12,6 +12,7 @@ import { SalaryPaymentType } from '../src/salary-payments/salary-payment-type.en
 import { PaymentMethod } from '../src/salary-payments/payment-method.enum';
 import { AttendanceService } from '../src/attendance/attendance.service';
 import { TimeTrustService } from '../src/time-trust/time-trust.service';
+import { AccountingService } from '../src/accounting/accounting.service';
 
 const period = (overrides: Partial<PayPeriod> = {}): PayPeriod =>
   ({
@@ -74,6 +75,13 @@ describe('PayPeriodsService', () => {
         { provide: DataSource, useValue: dataSource },
         { provide: AttendanceService, useValue: attendanceService },
         { provide: TimeTrustService, useValue: timeTrustService },
+        {
+          provide: AccountingService,
+          useValue: {
+            createSalaryPaymentEntry: jest.fn(),
+            removeSalaryPaymentEntry: jest.fn(),
+          },
+        },
       ],
     }).compile();
 

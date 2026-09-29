@@ -24,6 +24,7 @@ import { PaymentMethod } from '../salary-payments/payment-method.enum';
 //import { PaymentMethod } from '../salary-payments/payment-method.enum';
 import { AttendanceService } from '../attendance/attendance.service';
 import { TimeTrustService } from '../time-trust/time-trust.service';
+import { AccountingService } from '../accounting/accounting.service';
 
 const MONTH_NAMES = [
   'January',
@@ -78,6 +79,7 @@ export class PayPeriodsService {
     private readonly dataSource: DataSource,
     private readonly attendanceService: AttendanceService,
     private readonly timeTrustService: TimeTrustService,
+    private readonly accountingService: AccountingService,
   ) {}
 
   async findAll(): Promise<PayPeriodResponseDto[]> {
@@ -249,14 +251,28 @@ export class PayPeriodsService {
       );
     }
 
-    const payment = this.dataSource.getRepository(SalaryPayment).create({
-      ...dto,
-      payPeriodId: periodId,
-      paymentType: SalaryPaymentType.REGULAR,
-      note: dto.note ?? (dto.amountMinor < balances.netDueMinor ? 'Salary partially paid.' : null),
-      paidBy,
+    const saved = await this.dataSource.transaction(async (manager) => {
+      const paymentRepo = manager.getRepository(SalaryPayment);
+      const payment = paymentRepo.create({
+        ...dto,
+        payPeriodId: periodId,
+        paymentType: SalaryPaymentType.REGULAR,
+        note:
+          dto.note ?? (dto.amountMinor < balances.netDueMinor ? 'Salary partially paid.' : null),
+        paidBy,
+      });
+      const savedPayment = await paymentRepo.save(payment);
+      await this.accountingService.createSalaryPaymentEntry(manager, {
+        sourceSalaryPaymentId: savedPayment.id,
+        entryDate: savedPayment.paidOn,
+        amountMinor: savedPayment.amountMinor,
+        paymentType: savedPayment.paymentType,
+        paymentMethod: savedPayment.paymentMethod,
+        employeeName: employee.fullName,
+        createdBy: paidBy,
+      });
+      return savedPayment;
     });
-    const saved = await this.dataSource.getRepository(SalaryPayment).save(payment);
     return this.toPaymentResponse(saved);
   }
 
@@ -294,17 +310,30 @@ export class PayPeriodsService {
       );
     }
 
-    const adjustment = this.dataSource.getRepository(SalaryPayment).create({
-      employeeId,
-      payPeriodId: periodId,
-      amountMinor: dto.amountMinor,
-      paymentType: SalaryPaymentType.ADVANCE_ADJUSTMENT,
-      paymentMethod: PaymentMethod.CASH,
-      paidOn: period.endDate,
-      note: 'Advance adjusted from salary.',
-      paidBy,
+    const saved = await this.dataSource.transaction(async (manager) => {
+      const paymentRepo = manager.getRepository(SalaryPayment);
+      const adjustment = paymentRepo.create({
+        employeeId,
+        payPeriodId: periodId,
+        amountMinor: dto.amountMinor,
+        paymentType: SalaryPaymentType.ADVANCE_ADJUSTMENT,
+        paymentMethod: PaymentMethod.CASH,
+        paidOn: period.endDate,
+        note: 'Advance adjusted from salary.',
+        paidBy,
+      });
+      const savedPayment = await paymentRepo.save(adjustment);
+      await this.accountingService.createSalaryPaymentEntry(manager, {
+        sourceSalaryPaymentId: savedPayment.id,
+        entryDate: savedPayment.paidOn,
+        amountMinor: savedPayment.amountMinor,
+        paymentType: savedPayment.paymentType,
+        paymentMethod: savedPayment.paymentMethod,
+        employeeName: employee.fullName,
+        createdBy: paidBy,
+      });
+      return savedPayment;
     });
-    const saved = await this.dataSource.getRepository(SalaryPayment).save(adjustment);
     return this.toPaymentResponse(saved);
   }
 
@@ -460,13 +489,22 @@ export class PayPeriodsService {
           paidBy: cashier,
         });
         const saved = await paymentRepo.save(payment);
+        await this.accountingService.createSalaryPaymentEntry(manager, {
+          sourceSalaryPaymentId: saved.id,
+          entryDate: saved.paidOn,
+          amountMinor: saved.amountMinor,
+          paymentType: saved.paymentType,
+          paymentMethod: saved.paymentMethod,
+          employeeName: e.fullName,
+          createdBy: cashier,
+        });
         const hasAdvanceAdjustmentThisPeriod = payments.some(
           (payment) =>
             payment.payPeriodId === periodId &&
             payment.paymentType === SalaryPaymentType.ADVANCE_ADJUSTMENT,
         );
         if (balances.advanceMinor > 0 && !hasAdvanceAdjustmentThisPeriod) {
-          await paymentRepo.save(
+          const adjustment = await paymentRepo.save(
             paymentRepo.create({
               employeeId: e.id,
               payPeriodId: periodId,
@@ -478,6 +516,15 @@ export class PayPeriodsService {
               paidBy: cashier,
             }),
           );
+          await this.accountingService.createSalaryPaymentEntry(manager, {
+            sourceSalaryPaymentId: adjustment.id,
+            entryDate: adjustment.paidOn,
+            amountMinor: adjustment.amountMinor,
+            paymentType: adjustment.paymentType,
+            paymentMethod: adjustment.paymentMethod,
+            employeeName: e.fullName,
+            createdBy: cashier,
+          });
         }
         created.push({
           id: saved.id,
@@ -694,6 +741,10 @@ export class PayPeriodsService {
         throw new BadRequestException(
           'Payroll salary payments and advance adjustments cannot be deleted.',
         );
+      }
+
+      for (const payment of payments) {
+        await this.accountingService.removeSalaryPaymentEntry(manager, payment.id);
       }
 
       const result = await repo.delete(ids);

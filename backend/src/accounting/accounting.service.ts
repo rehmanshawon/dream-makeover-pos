@@ -9,6 +9,8 @@ import { JournalEntryType } from './journal-entry-type.enum';
 import { JournalLine } from './journal-line.entity';
 import { AccountingJournalQueryDto } from './dto/accounting-journal-query.dto';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
+import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
+import { PaymentMethod } from '../salary-payments/payment-method.enum';
 
 interface AccountBalanceRow {
   accountId: string;
@@ -201,6 +203,77 @@ export class AccountingService {
 
     const lineRepo = manager.getRepository(JournalLine);
     await lineRepo.delete({ entryId: entry.id });
+    await entryRepo.remove(entry);
+  }
+
+  async createSalaryPaymentEntry(
+    manager: EntityManager,
+    payment: {
+      sourceSalaryPaymentId: string;
+      entryDate: string;
+      amountMinor: number;
+      paymentType: SalaryPaymentType;
+      paymentMethod: PaymentMethod;
+      employeeName: string;
+      createdBy: string;
+    },
+  ): Promise<void> {
+    const advance = payment.paymentType === SalaryPaymentType.ADVANCE;
+    const adjustment = payment.paymentType === SalaryPaymentType.ADVANCE_ADJUSTMENT;
+    const debitCode = advance ? 'EMPLOYEE_ADVANCES' : 'PAYROLL_EXPENSE';
+    const creditCode = adjustment
+      ? 'EMPLOYEE_ADVANCES'
+      : payment.paymentMethod === PaymentMethod.BANK
+        ? 'BANK'
+        : payment.paymentMethod === PaymentMethod.MOBILE
+          ? 'MOBILE_WALLET'
+          : 'CASH';
+    const accountRepo = manager.getRepository(Account);
+    const [debitAccount, creditAccount] = await Promise.all([
+      accountRepo.findOne({ where: { code: debitCode } }),
+      accountRepo.findOne({ where: { code: creditCode } }),
+    ]);
+    if (!debitAccount || !creditAccount) {
+      throw new Error('A required payroll accounting account is missing.');
+    }
+
+    const entryRepo = manager.getRepository(JournalEntry);
+    const lineRepo = manager.getRepository(JournalLine);
+    const entry = await entryRepo.save(
+      entryRepo.create({
+        entryType: JournalEntryType.SALARY_PAYMENT,
+        entryDate: payment.entryDate,
+        memo: `${payment.paymentType.replaceAll('_', ' ')} - ${payment.employeeName}`,
+        reference: payment.sourceSalaryPaymentId,
+        sourceSalaryPaymentId: payment.sourceSalaryPaymentId,
+        createdBy: payment.createdBy,
+      }),
+    );
+    await lineRepo.save([
+      lineRepo.create({
+        entryId: entry.id,
+        accountId: debitAccount.id,
+        debitMinor: payment.amountMinor,
+        creditMinor: 0,
+      }),
+      lineRepo.create({
+        entryId: entry.id,
+        accountId: creditAccount.id,
+        debitMinor: 0,
+        creditMinor: payment.amountMinor,
+      }),
+    ]);
+  }
+
+  async removeSalaryPaymentEntry(
+    manager: EntityManager,
+    sourceSalaryPaymentId: string,
+  ): Promise<void> {
+    const entryRepo = manager.getRepository(JournalEntry);
+    const entry = await entryRepo.findOne({ where: { sourceSalaryPaymentId } });
+    if (!entry) return;
+
+    await manager.getRepository(JournalLine).delete({ entryId: entry.id });
     await entryRepo.remove(entry);
   }
 

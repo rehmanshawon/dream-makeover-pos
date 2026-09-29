@@ -217,6 +217,20 @@ const TEST_ACCOUNTING_ACCOUNTS: Account[] = [
     type: AccountType.EQUITY,
     isSystem: true,
   },
+  {
+    id: '00000000-0000-4000-8000-000000000025',
+    code: 'PAYROLL_EXPENSE',
+    name: 'Payroll expense',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000026',
+    code: 'EMPLOYEE_ADVANCES',
+    name: 'Employee advances',
+    type: AccountType.ASSET,
+    isSystem: true,
+  },
 ];
 
 /**
@@ -332,6 +346,11 @@ export async function createTestDataSource(): Promise<DataSource> {
   ALTER TABLE accounting_journal_entries
     ADD CONSTRAINT fk_accounting_journal_entries_purchase
     FOREIGN KEY (source_purchase_id) REFERENCES purchases(id) ON DELETE RESTRICT
+`);
+  await dataSource.query(`
+  ALTER TABLE accounting_journal_entries
+    ADD CONSTRAINT fk_accounting_journal_entries_salary_payment
+    FOREIGN KEY (source_salary_payment_id) REFERENCES salary_payments(id) ON DELETE RESTRICT
 `);
   return dataSource;
 }

@@ -203,6 +203,17 @@ describe('Financial Summary (integration)', () => {
         paidBy: 'rep_admin',
       }),
     );
+    await salaryRepo.save(
+      salaryRepo.create({
+        employeeId: employee.id,
+        amountMinor: 500000,
+        paymentType: SalaryPaymentType.ADVANCE,
+        paymentMethod: SalaryPaymentMethod.CASH,
+        paidOn: today,
+        note: null,
+        paidBy: 'rep_admin',
+      }),
+    );
 
     // Record an expense
     await expenseRepo.save(

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Expense } from '../expenses/expense.entity';
 import { SalaryPayment } from '../salary-payments/salary-payment.entity';
+import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
 import { FinancialSummaryService } from './financial-summary.service';
 import { DateRangeQueryDto } from './dto/date-range-query.dto';
 import {
@@ -53,6 +54,7 @@ export class ExpenseBreakdownService {
         from: range.from,
         to: range.to,
       })
+      .andWhere('sp.payment_type != :advanceType', { advanceType: SalaryPaymentType.ADVANCE })
       .getRawOne();
 
     const salaryPaymentsMinor = salaryRow?.total ? Number(salaryRow.total) : 0;

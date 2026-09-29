@@ -7,11 +7,25 @@ import { AccountingService } from '../src/accounting/accounting.service';
 import { JournalEntry } from '../src/accounting/journal-entry.entity';
 import { JournalEntryType } from '../src/accounting/journal-entry-type.enum';
 import { JournalLine } from '../src/accounting/journal-line.entity';
+import { SalaryPaymentType } from '../src/salary-payments/salary-payment-type.enum';
+import { PaymentMethod } from '../src/salary-payments/payment-method.enum';
 
 function createService() {
   const accounts: Account[] = [
     { id: 'cash-id', code: 'CASH', name: 'Cash on hand', type: AccountType.ASSET } as Account,
     { id: 'bank-id', code: 'BANK', name: 'Business bank', type: AccountType.ASSET } as Account,
+    {
+      id: 'mobile-id',
+      code: 'MOBILE_WALLET',
+      name: 'Mobile wallet',
+      type: AccountType.ASSET,
+    } as Account,
+    {
+      id: 'advance-id',
+      code: 'EMPLOYEE_ADVANCES',
+      name: 'Employee advances',
+      type: AccountType.ASSET,
+    } as Account,
     {
       id: 'capital-id',
       code: 'OWNER_CAPITAL',
@@ -28,6 +42,12 @@ function createService() {
       id: 'electricity-id',
       code: 'EXPENSE_ELECTRICITY',
       name: 'Electricity expense',
+      type: AccountType.EXPENSE,
+    } as Account,
+    {
+      id: 'payroll-id',
+      code: 'PAYROLL_EXPENSE',
+      name: 'Payroll expense',
       type: AccountType.EXPENSE,
     } as Account,
     {
@@ -62,6 +82,7 @@ function createService() {
     create: jest.fn((value: Partial<JournalEntry>) => value as JournalEntry),
     save: jest.fn(async (value: JournalEntry) => ({ ...value, id: 'entry-1' }) as JournalEntry),
     findOne: jest.fn(async () => ({ ...createdEntry, lines: [] })),
+    remove: jest.fn(async (value: JournalEntry) => value),
   };
   const accountRepository = { find: jest.fn(async () => accounts) };
   const manager = {
@@ -172,6 +193,73 @@ describe('AccountingService', () => {
       expect.objectContaining({ accountId: 'electricity-id', debitMinor: 42000, creditMinor: 0 }),
       expect.objectContaining({ accountId: 'bank-id', debitMinor: 0, creditMinor: 42000 }),
     ]);
+  });
+
+  it('posts bonus and overtime to payroll expense and the selected disbursement account', async () => {
+    const { service, entryRepository, lineRepository, manager } = createService();
+
+    await service.createSalaryPaymentEntry(manager as EntityManager, {
+      sourceSalaryPaymentId: 'salary-payment-1',
+      entryDate: '2026-09-28',
+      amountMinor: 45000,
+      paymentType: SalaryPaymentType.BONUS,
+      paymentMethod: PaymentMethod.MOBILE,
+      employeeName: 'Asha Rahman',
+      createdBy: 'admin',
+    });
+
+    expect(entryRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entryType: JournalEntryType.SALARY_PAYMENT,
+        sourceSalaryPaymentId: 'salary-payment-1',
+        memo: 'BONUS - Asha Rahman',
+      }),
+    );
+    expect(lineRepository.save).toHaveBeenCalledWith([
+      expect.objectContaining({ accountId: 'payroll-id', debitMinor: 45000, creditMinor: 0 }),
+      expect.objectContaining({ accountId: 'mobile-id', debitMinor: 0, creditMinor: 45000 }),
+    ]);
+  });
+
+  it('posts advances to the asset account and adjustments back against that asset', async () => {
+    const advance = createService();
+    await advance.service.createSalaryPaymentEntry(advance.manager as EntityManager, {
+      sourceSalaryPaymentId: 'advance-1',
+      entryDate: '2026-09-28',
+      amountMinor: 100000,
+      paymentType: SalaryPaymentType.ADVANCE,
+      paymentMethod: PaymentMethod.BANK,
+      employeeName: 'Asha Rahman',
+      createdBy: 'admin',
+    });
+    expect(advance.lineRepository.save).toHaveBeenCalledWith([
+      expect.objectContaining({ accountId: 'advance-id', debitMinor: 100000, creditMinor: 0 }),
+      expect.objectContaining({ accountId: 'bank-id', debitMinor: 0, creditMinor: 100000 }),
+    ]);
+
+    const adjustment = createService();
+    await adjustment.service.createSalaryPaymentEntry(adjustment.manager as EntityManager, {
+      sourceSalaryPaymentId: 'adjustment-1',
+      entryDate: '2026-09-28',
+      amountMinor: 25000,
+      paymentType: SalaryPaymentType.ADVANCE_ADJUSTMENT,
+      paymentMethod: PaymentMethod.CASH,
+      employeeName: 'Asha Rahman',
+      createdBy: 'admin',
+    });
+    expect(adjustment.lineRepository.save).toHaveBeenCalledWith([
+      expect.objectContaining({ accountId: 'payroll-id', debitMinor: 25000, creditMinor: 0 }),
+      expect.objectContaining({ accountId: 'advance-id', debitMinor: 0, creditMinor: 25000 }),
+    ]);
+  });
+
+  it('removes a salary journal entry and its lines by source payment id', async () => {
+    const { service, entryRepository, lineRepository, manager } = createService();
+
+    await service.removeSalaryPaymentEntry(manager as EntityManager, 'salary-payment-1');
+
+    expect(lineRepository.delete).toHaveBeenCalledWith({ entryId: 'entry-1' });
+    expect(entryRepository.remove).toHaveBeenCalledWith(expect.objectContaining({ id: 'entry-1' }));
   });
 
   it('posts POS sale total to cash and separates revenue from VAT', async () => {

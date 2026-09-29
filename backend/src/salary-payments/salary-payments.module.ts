@@ -6,9 +6,14 @@ import { PayPeriod } from '../payroll/pay-period.entity';
 import { SalaryPaymentsService } from './salary-payments.service';
 import { SalaryPaymentsController } from './salary-payments.controller';
 import { AuthCommonModule } from '../auth/auth-common.module';
+import { AccountingModule } from '../accounting/accounting.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SalaryPayment, Employee, PayPeriod]), AuthCommonModule],
+  imports: [
+    TypeOrmModule.forFeature([SalaryPayment, Employee, PayPeriod]),
+    AuthCommonModule,
+    AccountingModule,
+  ],
   controllers: [SalaryPaymentsController],
   providers: [SalaryPaymentsService],
   exports: [SalaryPaymentsService],
