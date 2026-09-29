@@ -4,6 +4,9 @@ import { Product } from '../src/products/product.entity';
 import { StockMovement } from '../src/inventory/stock-movement.entity';
 import { StockMovementReason } from '../src/inventory/stock-movement-reason.enum';
 import { InventoryService } from '../src/inventory/inventory.service';
+import { AccountingService } from '../src/accounting/accounting.service';
+import { Account } from '../src/accounting/account.entity';
+import { JournalEntry } from '../src/accounting/journal-entry.entity';
 import {
   createTestDataSource,
   TEST_PRODUCT_CATEGORY_ID,
@@ -16,7 +19,14 @@ describe('Inventory (integration)', () => {
 
   beforeAll(async () => {
     dataSource = await createTestDataSource();
-    service = new InventoryService(dataSource);
+    service = new InventoryService(
+      dataSource,
+      new AccountingService(
+        dataSource,
+        dataSource.getRepository(Account),
+        dataSource.getRepository(JournalEntry),
+      ),
+    );
   });
 
   beforeEach(async () => {
@@ -76,6 +86,22 @@ describe('Inventory (integration)', () => {
     expect(movements).toHaveLength(1);
     expect(movements[0].delta).toBe(-3);
     expect(movements[0].note).toBe('damaged units');
+    const journalEntry = await dataSource.getRepository(JournalEntry).findOne({
+      where: { sourceStockMovementId: movements[0].id },
+      relations: { lines: { account: true } },
+    });
+    expect(journalEntry?.lines).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          debitMinor: 30000,
+          account: expect.objectContaining({ code: 'INVENTORY_SHRINKAGE' }),
+        }),
+        expect.objectContaining({
+          creditMinor: 30000,
+          account: expect.objectContaining({ code: 'INVENTORY' }),
+        }),
+      ]),
+    );
   });
 
   it('rolls back when adjustment would create negative stock', async () => {

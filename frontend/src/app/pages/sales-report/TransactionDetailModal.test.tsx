@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../../../test/render-with-providers';
 import { TransactionDetailModal } from './TransactionDetailModal';
 import type { AuthenticatedUser } from '../../../types/auth';
@@ -75,5 +76,59 @@ describe('TransactionDetailModal', () => {
   it('renders nothing when transactionId is null', () => {
     renderModal(null);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('allows an admin to submit a product return', async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        return new Response(JSON.stringify({ id: 'return-1', refundMinor: 5000 }), {
+          status: 201,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response(
+        JSON.stringify({
+          id: 'tx-1',
+          invoiceId: 'DM-20260916-0001',
+          createdAt: '2026-09-16T10:00:00.000Z',
+          cashier: 'admin',
+          customer: null,
+          subtotalMinor: 5000,
+          discountMinor: 0,
+          totalMinor: 5000,
+          cashReceivedMinor: 5000,
+          changeMinor: 0,
+          items: [
+            {
+              id: 'item-1',
+              itemType: 'PRODUCT',
+              itemName: 'Lipstick',
+              quantity: 1,
+              unitPriceMinor: 5000,
+              totalPriceMinor: 5000,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const user = userEvent.setup();
+    renderModal('tx-1');
+    await user.click(await screen.findByRole('button', { name: 'Return products' }));
+    await user.clear(screen.getByRole('spinbutton', { name: 'Quantity to return for Lipstick' }));
+    await user.type(
+      screen.getByRole('spinbutton', { name: 'Quantity to return for Lipstick' }),
+      '1',
+    );
+    await user.click(screen.getByRole('button', { name: 'Post return' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Return posted');
+    const post = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST');
+    expect(JSON.parse(String(post?.[1]?.body))).toMatchObject({
+      transactionId: 'tx-1',
+      lines: [{ transactionItemId: 'item-1', quantity: 1 }],
+    });
   });
 });

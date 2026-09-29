@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Transaction } from '../transactions/transaction.entity';
+import { SalesReturn } from '../returns/sales-return.entity';
 import { FinancialSummaryService } from './financial-summary.service';
 import { RevenueTrendQueryDto } from './dto/revenue-trend-query.dto';
 import { RevenueTrendResponseDto } from './dto/revenue-trend-response.dto';
@@ -9,6 +10,11 @@ interface RawRow {
   day: string;
   revenue: string | number | null;
   transactionCount: string | number;
+}
+
+interface RawReturnRow {
+  day: string;
+  refund: string | number | null;
 }
 
 @Injectable()
@@ -41,6 +47,14 @@ export class RevenueTrendService {
       .groupBy('DATE(tx.created_at)')
       .orderBy('DATE(tx.created_at)', 'ASC')
       .getRawMany();
+    const returnRows: RawReturnRow[] = await this.dataSource
+      .getRepository(SalesReturn)
+      .createQueryBuilder('salesReturn')
+      .select('DATE(salesReturn.return_date)', 'day')
+      .addSelect('SUM(salesReturn.refund_minor)', 'refund')
+      .where('salesReturn.return_date >= :from AND salesReturn.return_date <= :to', range)
+      .groupBy('DATE(salesReturn.return_date)')
+      .getRawMany();
 
     const map = new Map<string, { revenueMinor: number; transactionCount: number }>();
     for (const row of rows) {
@@ -49,6 +63,12 @@ export class RevenueTrendService {
         revenueMinor: row.revenue === null ? 0 : Number(row.revenue),
         transactionCount: Number(row.transactionCount),
       });
+    }
+    for (const row of returnRows) {
+      const day = this.normalizeDayKey(row.day);
+      const entry = map.get(day) ?? { revenueMinor: 0, transactionCount: 0 };
+      entry.revenueMinor -= Number(row.refund ?? 0);
+      map.set(day, entry);
     }
 
     const points: RevenueTrendResponseDto['points'] = [];

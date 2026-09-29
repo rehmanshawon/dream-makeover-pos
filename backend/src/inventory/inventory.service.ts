@@ -9,6 +9,7 @@ import { StockMovementResponseDto } from './dto/stock-movement-response.dto';
 import { LowStockProductDto } from './dto/low-stock-product.dto';
 import { InventoryStatsDto } from './dto/inventory-stats.dto';
 import { CategoriesService } from '../categories/categories.service';
+import { AccountingService } from '../accounting/accounting.service';
 
 /**
  * InventoryService — the single writer for product stock.
@@ -31,6 +32,7 @@ import { CategoriesService } from '../categories/categories.service';
 export class InventoryService {
   constructor(
     private readonly dataSource: DataSource,
+    private readonly accountingService: AccountingService,
     @Optional() private readonly categoriesService?: CategoriesService,
   ) {}
 
@@ -60,7 +62,17 @@ export class InventoryService {
     }
 
     return this.dataSource.transaction(async (manager) => {
-      return this.applyMovement(manager, {
+      const product = await manager.getRepository(Product).findOne({
+        where: { id: dto.productId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!product) throw new NotFoundException('Product not found');
+      const inventoryValueMinor = Math.abs(dto.delta) * product.purchaseCostMinor;
+      if (!Number.isSafeInteger(inventoryValueMinor)) {
+        throw new BadRequestException('Adjustment value exceeds supported accounting limits.');
+      }
+
+      const movement = await this.applyMovement(manager, {
         productId: dto.productId,
         delta: dto.delta,
         reason: StockMovementReason.ADJUSTMENT,
@@ -68,6 +80,15 @@ export class InventoryService {
         note: dto.note,
         createdBy,
       });
+      await this.accountingService.createInventoryAdjustmentEntry(manager, {
+        sourceStockMovementId: movement.id,
+        entryDate: new Date().toISOString().slice(0, 10),
+        delta: dto.delta,
+        inventoryValueMinor,
+        note: dto.note,
+        createdBy,
+      });
+      return movement;
     });
   }
 
@@ -303,6 +324,48 @@ export class InventoryService {
       createdBy: input.createdBy,
     });
     return this.toResponse(await movementRepo.save(movement));
+  }
+
+  async receiveCustomerReturn(
+    manager: EntityManager,
+    input: {
+      productId: string;
+      quantity: number;
+      returnedCostMinor: number;
+      referenceId: string;
+      createdBy: string;
+    },
+  ): Promise<StockMovementResponseDto> {
+    const productRepo = manager.getRepository(Product);
+    const product = await productRepo.findOne({
+      where: { id: input.productId },
+      lock: { mode: 'pessimistic_write' },
+    });
+    if (!product) throw new NotFoundException('Product not found');
+    const nextStock = product.stock + input.quantity;
+    const currentValue = product.stock * product.purchaseCostMinor;
+    if (!Number.isSafeInteger(nextStock) || nextStock > 2_147_483_647) {
+      throw new BadRequestException('Returned quantity exceeds supported stock limits.');
+    }
+    if (!Number.isSafeInteger(input.returnedCostMinor) || input.returnedCostMinor < 0) {
+      throw new BadRequestException('Returned cost exceeds supported accounting limits.');
+    }
+    const nextValue = currentValue + input.returnedCostMinor;
+    product.stock = nextStock;
+    if (nextStock > 0) product.purchaseCostMinor = Math.round(nextValue / nextStock);
+    await productRepo.save(product);
+
+    const movementRepo = manager.getRepository(StockMovement);
+    const movement = movementRepo.create({
+      productId: product.id,
+      delta: input.quantity,
+      reason: StockMovementReason.RETURN,
+      referenceId: input.referenceId,
+      note: 'Customer return',
+      createdBy: input.createdBy,
+    });
+    const saved = await movementRepo.save(movement);
+    return this.toResponse(saved);
   }
 
   private toResponse(movement: StockMovement): StockMovementResponseDto {

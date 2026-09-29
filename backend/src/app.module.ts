@@ -20,6 +20,7 @@ import { AttendanceModule } from './attendance/attendance.module';
 import { TimeTrustModule } from './time-trust/time-trust.module';
 import { AccountingModule } from './accounting/accounting.module';
 import { PurchasesModule } from './purchases/purchases.module';
+import { SalesReturnsModule } from './returns/sales-returns.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { PurchasesModule } from './purchases/purchases.module';
     TimeTrustModule,
     AccountingModule,
     PurchasesModule,
+    SalesReturnsModule,
   ],
 })
 export class AppModule {}

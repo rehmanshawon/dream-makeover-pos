@@ -19,7 +19,8 @@ import { PaymentMethod as SalaryPaymentMethod } from '../src/salary-payments/pay
 import { Expense } from '../src/expenses/expense.entity';
 import { ExpenseCategory } from '../src/expenses/expense-category.enum';
 import { Transaction } from '../src/transactions/transaction.entity';
-import { TransactionItemType } from '../src/transactions/transaction-item.entity';
+import { TransactionItem, TransactionItemType } from '../src/transactions/transaction-item.entity';
+import { SalesReturnsService } from '../src/returns/sales-returns.service';
 import {
   createTestDataSource,
   TEST_PRODUCT_CATEGORY_ID,
@@ -181,6 +182,21 @@ describe('Financial Summary (integration)', () => {
     // Subtotal = 2 * 100000 + 200000 = 400000. Discount 5000. Total 395000.
     await productRepo.update(product.id, { purchaseCostMinor: 90000 });
 
+    const sale = await dataSource.getRepository(Transaction).findOneOrFail({
+      where: { invoiceId: checkoutResponse.body.invoiceId },
+    });
+    const soldProduct = await dataSource.getRepository(TransactionItem).findOneOrFail({
+      where: { transactionId: sale.id, itemType: TransactionItemType.PRODUCT },
+    });
+    await app.get(SalesReturnsService).create(
+      {
+        transactionId: sale.id,
+        returnDate: today,
+        lines: [{ transactionItemId: soldProduct.id, quantity: 1 }],
+      },
+      'rep_admin',
+    );
+
     // Record a salary payment
     const employee = await employeeRepo.save(
       employeeRepo.create({
@@ -234,28 +250,28 @@ describe('Financial Summary (integration)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    // Revenue = 2*100000 + 200000 = 400000 (pre-discount per item breakdown)
-    expect(response.body.revenue.productSalesMinor).toBe(200000);
+    // The partial return reverses its allocated product revenue and refund.
+    expect(response.body.revenue.productSalesMinor).toBe(101250);
     expect(response.body.revenue.serviceSalesMinor).toBe(200000);
     expect(response.body.revenue.packageSalesMinor).toBe(0);
-    // Total revenue (post-discount) = 395000
-    expect(response.body.revenue.totalRevenueMinor).toBe(395000);
+    // Total revenue and COGS are net of the partial return recorded today.
+    expect(response.body.revenue.totalRevenueMinor).toBe(296250);
     // Discounts
     expect(response.body.discountsGivenMinor).toBe(5000);
 
-    // COGS = 2 * 50000 = 100000
-    expect(response.body.cogsMinor).toBe(100000);
+    // One returned product reverses half of its sale-time COGS.
+    expect(response.body.cogsMinor).toBe(50000);
 
-    // Gross profit = 395000 - 100000 = 295000
-    expect(response.body.grossProfitMinor).toBe(295000);
+    // Gross profit = 296250 - 50000 = 246250
+    expect(response.body.grossProfitMinor).toBe(246250);
 
     // Expenses
     expect(response.body.expenses.salaryPaymentsMinor).toBe(3000000);
     expect(response.body.expenses.shopExpensesMinor).toBe(250000);
     expect(response.body.expenses.totalOperatingExpensesMinor).toBe(3250000);
 
-    // Net operating result = 295000 - 3250000 = -2955000
-    expect(response.body.netOperatingResultMinor).toBe(-2955000);
+    // Net operating result = 246250 - 3250000 = -3003750
+    expect(response.body.netOperatingResultMinor).toBe(-3003750);
 
     // Metadata
     expect(response.body.metadata.cogsMethod).toBe(

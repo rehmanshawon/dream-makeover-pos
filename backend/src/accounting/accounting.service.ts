@@ -277,6 +277,173 @@ export class AccountingService {
     await entryRepo.remove(entry);
   }
 
+  async createInventoryAdjustmentEntry(
+    manager: EntityManager,
+    adjustment: {
+      sourceStockMovementId: string;
+      entryDate: string;
+      delta: number;
+      inventoryValueMinor: number;
+      note: string | null;
+      createdBy: string;
+    },
+  ): Promise<void> {
+    if (adjustment.inventoryValueMinor <= 0) return;
+
+    const shortage = adjustment.delta < 0;
+    const inventoryAccountCode = 'INVENTORY';
+    const varianceAccountCode = shortage ? 'INVENTORY_SHRINKAGE' : 'INVENTORY_ADJUSTMENT_GAIN';
+    const accountRepo = manager.getRepository(Account);
+    const [inventoryAccount, varianceAccount] = await Promise.all([
+      accountRepo.findOne({ where: { code: inventoryAccountCode } }),
+      accountRepo.findOne({ where: { code: varianceAccountCode } }),
+    ]);
+    if (!inventoryAccount || !varianceAccount) {
+      throw new Error('A required inventory adjustment accounting account is missing.');
+    }
+
+    const entryRepo = manager.getRepository(JournalEntry);
+    const lineRepo = manager.getRepository(JournalLine);
+    const entry = await entryRepo.save(
+      entryRepo.create({
+        entryType: JournalEntryType.INVENTORY_ADJUSTMENT,
+        entryDate: adjustment.entryDate,
+        memo:
+          adjustment.note?.trim() ||
+          (shortage ? 'Inventory count shortage' : 'Inventory count surplus'),
+        reference: adjustment.sourceStockMovementId,
+        sourceStockMovementId: adjustment.sourceStockMovementId,
+        createdBy: adjustment.createdBy,
+      }),
+    );
+    await lineRepo.save(
+      shortage
+        ? [
+            lineRepo.create({
+              entryId: entry.id,
+              accountId: varianceAccount.id,
+              debitMinor: adjustment.inventoryValueMinor,
+              creditMinor: 0,
+            }),
+            lineRepo.create({
+              entryId: entry.id,
+              accountId: inventoryAccount.id,
+              debitMinor: 0,
+              creditMinor: adjustment.inventoryValueMinor,
+            }),
+          ]
+        : [
+            lineRepo.create({
+              entryId: entry.id,
+              accountId: inventoryAccount.id,
+              debitMinor: adjustment.inventoryValueMinor,
+              creditMinor: 0,
+            }),
+            lineRepo.create({
+              entryId: entry.id,
+              accountId: varianceAccount.id,
+              debitMinor: 0,
+              creditMinor: adjustment.inventoryValueMinor,
+            }),
+          ],
+    );
+  }
+
+  async createSalesReturnEntry(
+    manager: EntityManager,
+    salesReturn: {
+      sourceSalesReturnId: string;
+      returnDate: string;
+      refundMethod: PaymentMethod;
+      refundMinor: number;
+      revenueReversalMinor: number;
+      vatReversalMinor: number;
+      cogsReversalMinor: number;
+      createdBy: string;
+    },
+  ): Promise<void> {
+    const refundAccountCode = {
+      [PaymentMethod.CASH]: 'CASH',
+      [PaymentMethod.BANK]: 'BANK',
+      [PaymentMethod.MOBILE]: 'MOBILE_WALLET',
+    }[salesReturn.refundMethod];
+    const accountRepo = manager.getRepository(Account);
+    const codes = [refundAccountCode];
+    if (salesReturn.revenueReversalMinor > 0) codes.push('SALES_REVENUE');
+    if (salesReturn.vatReversalMinor > 0) codes.push('VAT_PAYABLE');
+    if (salesReturn.cogsReversalMinor > 0) codes.push('COST_OF_GOODS_SOLD', 'INVENTORY');
+    const foundAccounts = await Promise.all(
+      [...new Set(codes)].map((code) => accountRepo.findOne({ where: { code } })),
+    );
+    const accounts = new Map(
+      foundAccounts
+        .filter((account): account is Account => account !== null)
+        .map((account) => [account.code, account]),
+    );
+    if (accounts.size !== new Set(codes).size) {
+      throw new Error('A required sales return accounting account is missing.');
+    }
+
+    const entryRepo = manager.getRepository(JournalEntry);
+    const lineRepo = manager.getRepository(JournalLine);
+    const entry = await entryRepo.save(
+      entryRepo.create({
+        entryType: JournalEntryType.SALES_RETURN,
+        entryDate: salesReturn.returnDate,
+        memo: 'Customer product return',
+        reference: salesReturn.sourceSalesReturnId,
+        sourceSalesReturnId: salesReturn.sourceSalesReturnId,
+        createdBy: salesReturn.createdBy,
+      }),
+    );
+    const lines = [];
+    if (salesReturn.revenueReversalMinor > 0) {
+      lines.push(
+        lineRepo.create({
+          entryId: entry.id,
+          accountId: accounts.get('SALES_REVENUE')!.id,
+          debitMinor: salesReturn.revenueReversalMinor,
+          creditMinor: 0,
+        }),
+      );
+    }
+    if (salesReturn.vatReversalMinor > 0) {
+      lines.push(
+        lineRepo.create({
+          entryId: entry.id,
+          accountId: accounts.get('VAT_PAYABLE')!.id,
+          debitMinor: salesReturn.vatReversalMinor,
+          creditMinor: 0,
+        }),
+      );
+    }
+    if (salesReturn.cogsReversalMinor > 0) {
+      lines.push(
+        lineRepo.create({
+          entryId: entry.id,
+          accountId: accounts.get('INVENTORY')!.id,
+          debitMinor: salesReturn.cogsReversalMinor,
+          creditMinor: 0,
+        }),
+        lineRepo.create({
+          entryId: entry.id,
+          accountId: accounts.get('COST_OF_GOODS_SOLD')!.id,
+          debitMinor: 0,
+          creditMinor: salesReturn.cogsReversalMinor,
+        }),
+      );
+    }
+    lines.push(
+      lineRepo.create({
+        entryId: entry.id,
+        accountId: accounts.get(refundAccountCode)!.id,
+        debitMinor: 0,
+        creditMinor: salesReturn.refundMinor,
+      }),
+    );
+    await lineRepo.save(lines);
+  }
+
   async createSaleEntry(
     manager: EntityManager,
     sale: {

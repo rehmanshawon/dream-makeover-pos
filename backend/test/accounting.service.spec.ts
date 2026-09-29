@@ -27,6 +27,24 @@ function createService() {
       type: AccountType.ASSET,
     } as Account,
     {
+      id: 'inventory-id',
+      code: 'INVENTORY',
+      name: 'Inventory',
+      type: AccountType.ASSET,
+    } as Account,
+    {
+      id: 'shrinkage-id',
+      code: 'INVENTORY_SHRINKAGE',
+      name: 'Inventory shrinkage',
+      type: AccountType.EXPENSE,
+    } as Account,
+    {
+      id: 'adjustment-gain-id',
+      code: 'INVENTORY_ADJUSTMENT_GAIN',
+      name: 'Inventory adjustment gain',
+      type: AccountType.REVENUE,
+    } as Account,
+    {
       id: 'capital-id',
       code: 'OWNER_CAPITAL',
       name: 'Owner capital',
@@ -260,6 +278,40 @@ describe('AccountingService', () => {
 
     expect(lineRepository.delete).toHaveBeenCalledWith({ entryId: 'entry-1' });
     expect(entryRepository.remove).toHaveBeenCalledWith(expect.objectContaining({ id: 'entry-1' }));
+  });
+
+  it('posts stock shortages to shrinkage expense and stock surpluses to adjustment gain', async () => {
+    const shortage = createService();
+    await shortage.service.createInventoryAdjustmentEntry(shortage.manager as EntityManager, {
+      sourceStockMovementId: 'movement-shortage',
+      entryDate: '2026-09-29',
+      delta: -3,
+      inventoryValueMinor: 30000,
+      note: 'Damaged units',
+      createdBy: 'admin',
+    });
+    expect(shortage.lineRepository.save).toHaveBeenCalledWith([
+      expect.objectContaining({ accountId: 'shrinkage-id', debitMinor: 30000, creditMinor: 0 }),
+      expect.objectContaining({ accountId: 'inventory-id', debitMinor: 0, creditMinor: 30000 }),
+    ]);
+
+    const surplus = createService();
+    await surplus.service.createInventoryAdjustmentEntry(surplus.manager as EntityManager, {
+      sourceStockMovementId: 'movement-surplus',
+      entryDate: '2026-09-29',
+      delta: 2,
+      inventoryValueMinor: 20000,
+      note: 'Count correction',
+      createdBy: 'admin',
+    });
+    expect(surplus.lineRepository.save).toHaveBeenCalledWith([
+      expect.objectContaining({ accountId: 'inventory-id', debitMinor: 20000, creditMinor: 0 }),
+      expect.objectContaining({
+        accountId: 'adjustment-gain-id',
+        debitMinor: 0,
+        creditMinor: 20000,
+      }),
+    ]);
   });
 
   it('posts POS sale total to cash and separates revenue from VAT', async () => {

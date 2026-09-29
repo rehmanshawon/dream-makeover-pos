@@ -6,6 +6,7 @@ import { InventoryService } from '../src/inventory/inventory.service';
 import { Product } from '../src/products/product.entity';
 import { StockMovement } from '../src/inventory/stock-movement.entity';
 import { StockMovementReason } from '../src/inventory/stock-movement-reason.enum';
+import { AccountingService } from '../src/accounting/accounting.service';
 
 describe('InventoryService', () => {
   let service: InventoryService;
@@ -37,7 +38,14 @@ describe('InventoryService', () => {
     } as unknown as DataSource;
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [InventoryService, { provide: DataSource, useValue: dataSource }],
+      providers: [
+        InventoryService,
+        { provide: DataSource, useValue: dataSource },
+        {
+          provide: AccountingService,
+          useValue: { createInventoryAdjustmentEntry: jest.fn() },
+        },
+      ],
     }).compile();
     service = module.get(InventoryService);
   });

@@ -13,6 +13,10 @@ import { SalaryFrequency } from '../src/employees/salary-frequency.enum';
 import { SalaryPayment } from '../src/salary-payments/salary-payment.entity';
 import { SalaryPaymentType } from '../src/salary-payments/salary-payment-type.enum';
 import { PaymentMethod } from '../src/salary-payments/payment-method.enum';
+import { BonusType } from '../src/salary-payments/bonus-type.enum';
+import { JournalEntry } from '../src/accounting/journal-entry.entity';
+import { JournalEntryType } from '../src/accounting/journal-entry-type.enum';
+import { TimeTrustService } from '../src/time-trust/time-trust.service';
 import { createTestDataSource, truncateAllTables } from './helpers/test-data-source';
 
 describe('Salary Payments (integration)', () => {
@@ -77,6 +81,11 @@ describe('Salary Payments (integration)', () => {
     })
       .overrideProvider(DataSource)
       .useValue(dataSource)
+      .overrideProvider(TimeTrustService)
+      .useValue({
+        getStatus: () => ({ payrollAllowed: true, message: null }),
+        getTrustedNow: () => new Date('2026-09-29T12:00:00.000Z'),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -119,8 +128,8 @@ describe('Salary Payments (integration)', () => {
     await request(app.getHttpServer()).get('/salary-payments').expect(401);
   });
 
-  it('records a REGULAR payment with defaults', async () => {
-    const response = await request(app.getHttpServer())
+  it('requires regular salary payments to be recorded from a pay period', async () => {
+    await request(app.getHttpServer())
       .post('/salary-payments')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
@@ -128,12 +137,7 @@ describe('Salary Payments (integration)', () => {
         amountMinor: 3500000,
         paidOn: '2026-01-31',
       })
-      .expect(201);
-
-    expect(response.body.paymentType).toBe(SalaryPaymentType.REGULAR);
-    expect(response.body.paymentMethod).toBe(PaymentMethod.CASH);
-    expect(response.body.amountMinor).toBe(3500000);
-    expect(response.body.paidBy).toBe('sp_admin');
+      .expect(400);
   });
 
   it('records a BONUS payment with a note', async () => {
@@ -144,15 +148,39 @@ describe('Salary Payments (integration)', () => {
         employeeId,
         amountMinor: 500000,
         paymentType: SalaryPaymentType.BONUS,
+        bonusType: BonusType.FESTIVAL,
         paymentMethod: PaymentMethod.MOBILE,
         paidOn: '2026-01-31',
         note: 'Eid bonus',
+        mobileWalletProvider: 'bKash',
+        mobileWalletNumber: '01712345678',
       })
       .expect(201);
 
     expect(response.body.paymentType).toBe(SalaryPaymentType.BONUS);
     expect(response.body.paymentMethod).toBe(PaymentMethod.MOBILE);
     expect(response.body.note).toBe('Eid bonus');
+
+    const entry = await dataSource.getRepository(JournalEntry).findOne({
+      where: { sourceSalaryPaymentId: response.body.id },
+      relations: { lines: { account: true } },
+    });
+    expect(entry).toMatchObject({
+      entryType: JournalEntryType.SALARY_PAYMENT,
+      sourceSalaryPaymentId: response.body.id,
+    });
+    expect(entry?.lines).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          debitMinor: 500000,
+          account: expect.objectContaining({ code: 'PAYROLL_EXPENSE' }),
+        }),
+        expect.objectContaining({
+          creditMinor: 500000,
+          account: expect.objectContaining({ code: 'MOBILE_WALLET' }),
+        }),
+      ]),
+    );
   });
 
   it('rejects a payment for an unknown employee', async () => {
@@ -171,13 +199,25 @@ describe('Salary Payments (integration)', () => {
     await request(app.getHttpServer())
       .post('/salary-payments')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ employeeId, amountMinor: 1000000, paidOn: '2026-01-01' })
+      .send({
+        employeeId,
+        amountMinor: 1000000,
+        paymentType: SalaryPaymentType.BONUS,
+        bonusType: BonusType.ANNUAL,
+        paidOn: '2026-01-01',
+      })
       .expect(201);
 
     await request(app.getHttpServer())
       .post('/salary-payments')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ employeeId, amountMinor: 2000000, paidOn: '2026-02-01' })
+      .send({
+        employeeId,
+        amountMinor: 2000000,
+        paymentType: SalaryPaymentType.BONUS,
+        bonusType: BonusType.ANNUAL,
+        paidOn: '2026-02-01',
+      })
       .expect(201);
 
     const list = await request(app.getHttpServer())
@@ -194,7 +234,13 @@ describe('Salary Payments (integration)', () => {
     const created = await request(app.getHttpServer())
       .post('/salary-payments')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ employeeId, amountMinor: 1000000, paidOn: '2026-01-01' })
+      .send({
+        employeeId,
+        amountMinor: 1000000,
+        paymentType: SalaryPaymentType.BONUS,
+        bonusType: BonusType.ANNUAL,
+        paidOn: '2026-01-01',
+      })
       .expect(201);
 
     await request(app.getHttpServer())
@@ -205,5 +251,9 @@ describe('Salary Payments (integration)', () => {
     const repo = dataSource.getRepository(SalaryPayment);
     const remaining = await repo.find({ where: { employeeId } });
     expect(remaining).toHaveLength(0);
+    const journalEntry = await dataSource.getRepository(JournalEntry).findOne({
+      where: { sourceSalaryPaymentId: created.body.id },
+    });
+    expect(journalEntry).toBeNull();
   });
 });

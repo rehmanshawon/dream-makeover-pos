@@ -3,6 +3,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/glo
 import { Product } from '../src/products/product.entity';
 import { StockMovement } from '../src/inventory/stock-movement.entity';
 import { InventoryService } from '../src/inventory/inventory.service';
+import { AccountingService } from '../src/accounting/accounting.service';
+import { Account } from '../src/accounting/account.entity';
+import { JournalEntry } from '../src/accounting/journal-entry.entity';
 import {
   createTestDataSource,
   TEST_PRODUCT_CATEGORY_ID,
@@ -15,7 +18,14 @@ describe('Inventory concurrency (integration)', () => {
 
   beforeAll(async () => {
     dataSource = await createTestDataSource();
-    service = new InventoryService(dataSource);
+    service = new InventoryService(
+      dataSource,
+      new AccountingService(
+        dataSource,
+        dataSource.getRepository(Account),
+        dataSource.getRepository(JournalEntry),
+      ),
+    );
   });
 
   beforeEach(async () => {

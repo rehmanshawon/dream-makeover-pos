@@ -25,10 +25,13 @@ describe('RevenueTrendService', () => {
   });
 
   it('includes zero-revenue days so charts have no gaps', async () => {
-    const getRawMany = jest.fn().mockResolvedValue([
-      { day: '2026-06-02', revenue: '100000', transactionCount: '3' },
-      { day: '2026-06-04', revenue: '50000', transactionCount: '1' },
-    ]);
+    const getRawMany = jest
+      .fn()
+      .mockResolvedValueOnce([
+        { day: '2026-06-02', revenue: '100000', transactionCount: '3' },
+        { day: '2026-06-04', revenue: '50000', transactionCount: '1' },
+      ])
+      .mockResolvedValueOnce([{ day: '2026-06-03', refund: '25000' }]);
 
     const createQueryBuilder = jest.fn().mockReturnValue({
       select: jest.fn().mockReturnThis(),
@@ -56,8 +59,9 @@ describe('RevenueTrendService', () => {
     ]);
     expect(result.points[0].revenueMinor).toBe(0);
     expect(result.points[1].revenueMinor).toBe(100000);
-    expect(result.points[2].revenueMinor).toBe(0);
+    expect(result.points[2].revenueMinor).toBe(-25000);
     expect(result.points[3].revenueMinor).toBe(50000);
+    expect(result.points[2].transactionCount).toBe(0);
   });
 
   it('handles empty results gracefully', async () => {
@@ -80,5 +84,29 @@ describe('RevenueTrendService', () => {
 
     expect(result.points).toHaveLength(3);
     expect(result.points.every((p) => p.revenueMinor === 0)).toBe(true);
+  });
+
+  it('subtracts a refund from the same day as the sale', async () => {
+    const getRawMany = jest
+      .fn()
+      .mockResolvedValueOnce([{ day: '2026-06-02', revenue: '100000', transactionCount: '1' }])
+      .mockResolvedValueOnce([{ day: '2026-06-02', refund: '25000' }]);
+    const createQueryBuilder = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getRawMany,
+    });
+    (dataSource.getRepository as jest.Mock).mockReturnValue({ createQueryBuilder });
+
+    const result = await service.daily({
+      range: 'custom' as any,
+      from: '2026-06-02',
+      to: '2026-06-02',
+    });
+
+    expect(result.points[0]).toMatchObject({ revenueMinor: 75000, transactionCount: 1 });
   });
 });

@@ -6,9 +6,15 @@ import { InventoryService } from './inventory.service';
 import { InventoryController } from './inventory.controller';
 import { AuthCommonModule } from '../auth/auth-common.module';
 import { CategoriesModule } from '../categories/categories.module';
+import { AccountingModule } from '../accounting/accounting.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, StockMovement]), AuthCommonModule, CategoriesModule],
+  imports: [
+    TypeOrmModule.forFeature([Product, StockMovement]),
+    AuthCommonModule,
+    CategoriesModule,
+    AccountingModule,
+  ],
   controllers: [InventoryController],
   providers: [InventoryService],
   exports: [InventoryService],

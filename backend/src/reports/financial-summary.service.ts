@@ -5,6 +5,8 @@ import { TransactionItem, TransactionItemType } from '../transactions/transactio
 import { Expense } from '../expenses/expense.entity';
 import { SalaryPayment } from '../salary-payments/salary-payment.entity';
 import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
+import { SalesReturn } from '../returns/sales-return.entity';
+import { SalesReturnLine } from '../returns/sales-return-line.entity';
 import { DateRangeQueryDto, DateRangePreset, DateRange } from './dto/date-range-query.dto';
 import {
   ExpenseBreakdownDto,
@@ -174,10 +176,25 @@ export class FinancialSummaryService {
       })
       .getRawOne();
 
-    const totalRevenueMinor = transactionTotals?.total ? Number(transactionTotals.total) : 0;
+    const returnedProductRevenue = await this.dataSource
+      .getRepository(SalesReturnLine)
+      .createQueryBuilder('line')
+      .innerJoin(SalesReturn, 'salesReturn', 'salesReturn.id = line.sales_return_id')
+      .select('COALESCE(SUM(line.revenue_reversal_minor), 0)', 'total')
+      .where('salesReturn.return_date >= :from AND salesReturn.return_date <= :to', range)
+      .getRawOne<{ total: string | number | null }>();
+    const returnedRefunds = await this.dataSource
+      .getRepository(SalesReturn)
+      .createQueryBuilder('salesReturn')
+      .select('COALESCE(SUM(salesReturn.refund_minor), 0)', 'total')
+      .where('salesReturn.return_date >= :from AND salesReturn.return_date <= :to', range)
+      .getRawOne<{ total: string | number | null }>();
+    const totalRevenueMinor =
+      (transactionTotals?.total ? Number(transactionTotals.total) : 0) -
+      Number(returnedRefunds?.total ?? 0);
 
     return {
-      productSalesMinor,
+      productSalesMinor: productSalesMinor - Number(returnedProductRevenue?.total ?? 0),
       serviceSalesMinor,
       packageSalesMinor,
       totalRevenueMinor,
@@ -210,7 +227,14 @@ export class FinancialSummaryService {
       })
       .getRawOne();
 
-    return cogsRow?.total ? Number(cogsRow.total) : 0;
+    const returnedCogs = await this.dataSource
+      .getRepository(SalesReturn)
+      .createQueryBuilder('salesReturn')
+      .select('COALESCE(SUM(salesReturn.cogs_reversal_minor), 0)', 'total')
+      .where('salesReturn.return_date >= :from AND salesReturn.return_date <= :to', range)
+      .getRawOne<{ total: string | number | null }>();
+
+    return (cogsRow?.total ? Number(cogsRow.total) : 0) - Number(returnedCogs?.total ?? 0);
   }
 
   private async computeExpenses(range: DateRange): Promise<ExpenseBreakdownDto> {

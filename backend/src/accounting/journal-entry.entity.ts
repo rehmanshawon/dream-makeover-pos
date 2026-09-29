@@ -18,6 +18,12 @@ import { JournalLine } from './journal-line.entity';
 @Index('uq_accounting_journal_entries_source_salary_payment', ['sourceSalaryPaymentId'], {
   unique: true,
 })
+@Index('uq_accounting_journal_entries_source_stock_movement', ['sourceStockMovementId'], {
+  unique: true,
+})
+@Index('uq_accounting_journal_entries_source_sales_return', ['sourceSalesReturnId'], {
+  unique: true,
+})
 export class JournalEntry {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -45,6 +51,12 @@ export class JournalEntry {
 
   @Column({ name: 'source_salary_payment_id', type: 'char', length: 36, nullable: true })
   sourceSalaryPaymentId: string | null;
+
+  @Column({ name: 'source_stock_movement_id', type: 'char', length: 36, nullable: true })
+  sourceStockMovementId: string | null;
+
+  @Column({ name: 'source_sales_return_id', type: 'char', length: 36, nullable: true })
+  sourceSalesReturnId: string | null;
 
   @Column({ name: 'created_by', type: 'varchar', length: 80 })
   createdBy: string;
