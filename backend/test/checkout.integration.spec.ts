@@ -183,11 +183,13 @@ describe('Checkout (integration)', () => {
     });
     expect(saleEntry?.entryType).toBe(JournalEntryType.SALE_RECEIPT);
     expect(saleEntry?.reference).toBe(response.body.invoiceId);
-    expect(saleEntry?.lines).toHaveLength(2);
+    expect(saleEntry?.lines).toHaveLength(4);
     expect(saleEntry?.lines).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ debitMinor: 570000, creditMinor: 0 }),
         expect.objectContaining({ debitMinor: 0, creditMinor: 570000 }),
+        expect.objectContaining({ debitMinor: 160000, creditMinor: 0 }),
+        expect.objectContaining({ debitMinor: 0, creditMinor: 160000 }),
       ]),
     );
   });

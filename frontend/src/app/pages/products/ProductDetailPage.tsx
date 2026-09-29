@@ -43,6 +43,7 @@ const REASON_LABEL: Record<StockMovement['reason'], string> = {
   STOCK_IN: 'Stock in',
   ADJUSTMENT: 'Adjustment',
   RETURN: 'Return',
+  PURCHASE: 'Purchase',
 };
 
 export function ProductDetailPage(): JSX.Element {

@@ -2,7 +2,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Transaction } from '../transactions/transaction.entity';
 import { TransactionItem, TransactionItemType } from '../transactions/transaction-item.entity';
-import { Product } from '../products/product.entity';
 import { Expense } from '../expenses/expense.entity';
 import { SalaryPayment } from '../salary-payments/salary-payment.entity';
 import { DateRangeQueryDto, DateRangePreset, DateRange } from './dto/date-range-query.dto';
@@ -13,7 +12,7 @@ import {
   RevenueByTypeDto,
 } from './dto/financial-summary-response.dto';
 
-const COGS_METHOD = 'current_purchase_cost';
+const COGS_METHOD = 'sale_time_moving_average_snapshot_with_legacy_estimates';
 
 @Injectable()
 export class FinancialSummaryService {
@@ -25,9 +24,9 @@ export class FinancialSummaryService {
    * The summary is a pragmatic P&L, not a complete accounting statement.
    * It does not account for taxes, depreciation, loans, or investments.
    *
-   * Cost of goods sold is computed using current purchase cost, not
-   * historical cost at sale time. A proper weighted-average or FIFO
-   * calculation requires a cost history table which is out of scope.
+   * Cost of goods sold uses the cost snapshot captured when each sale
+   * was recorded. Legacy sales are backfilled with a best-effort estimate
+   * from costs available when the snapshot migration ran.
    */
   async summarize(query: DateRangeQueryDto): Promise<FinancialSummaryResponseDto> {
     const range = this.resolveRange(query);
@@ -200,49 +199,17 @@ export class FinancialSummaryService {
 
   private async computeCogs(range: DateRange): Promise<number> {
     const itemRepo = this.dataSource.getRepository(TransactionItem);
-    //const productRepo = this.dataSource.getRepository(Product);
-
-    // Product COGS: sum(item.quantity × product.purchase_cost_minor)
-    const productCogsRow: { total: string | number | null } | undefined = await itemRepo
+    const cogsRow: { total: string | number | null } | undefined = await itemRepo
       .createQueryBuilder('item')
       .innerJoin(Transaction, 'tx', 'tx.id = item.transaction_id')
-      .innerJoin(Product, 'p', 'p.id = item.product_id')
-      .select('SUM(item.quantity * p.purchase_cost_minor)', 'total')
+      .select('SUM(item.cost_of_goods_sold_minor)', 'total')
       .where('tx.created_at >= :from AND tx.created_at < :toPlusOne', {
         from: `${range.from} 00:00:00`,
         toPlusOne: this.nextDay(range.to),
       })
-      .andWhere('item.item_type = :type', { type: TransactionItemType.PRODUCT })
       .getRawOne();
 
-    const productCogs = productCogsRow?.total ? Number(productCogsRow.total) : 0;
-
-    // Package COGS: for each package sold, sum the purchase cost of its
-    // contained products × package quantity.
-    // We use a raw query for clarity here because the composition is
-    // nested (packages -> package_items -> products).
-    const packageCogsRow: Array<{ total: string | number | null }> = await this.dataSource.query(
-      `
-      SELECT COALESCE(SUM(ti.quantity * pi_agg.cost_per_unit), 0) AS total
-      FROM transaction_items ti
-      INNER JOIN transactions t ON t.id = ti.transaction_id
-      INNER JOIN (
-        SELECT pkg_item.package_id,
-               COALESCE(SUM(prod.purchase_cost_minor), 0) AS cost_per_unit
-        FROM package_items pkg_item
-        INNER JOIN products prod ON prod.id = pkg_item.product_id
-        GROUP BY pkg_item.package_id
-      ) AS pi_agg ON pi_agg.package_id = ti.package_id
-      WHERE ti.item_type = 'PACKAGE'
-        AND t.created_at >= ?
-        AND t.created_at < ?
-      `,
-      [`${range.from} 00:00:00`, this.nextDay(range.to)],
-    );
-
-    const packageCogs = packageCogsRow[0]?.total ? Number(packageCogsRow[0].total) : 0;
-
-    return productCogs + packageCogs;
+    return cogsRow?.total ? Number(cogsRow.total) : 0;
   }
 
   private async computeExpenses(range: DateRange): Promise<ExpenseBreakdownDto> {

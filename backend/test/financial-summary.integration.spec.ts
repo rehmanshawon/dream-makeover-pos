@@ -179,6 +179,7 @@ describe('Financial Summary (integration)', () => {
 
     expect(checkoutResponse.body.totalMinor).toBe(395000);
     // Subtotal = 2 * 100000 + 200000 = 400000. Discount 5000. Total 395000.
+    await productRepo.update(product.id, { purchaseCostMinor: 90000 });
 
     // Record a salary payment
     const employee = await employeeRepo.save(
@@ -246,7 +247,9 @@ describe('Financial Summary (integration)', () => {
     expect(response.body.netOperatingResultMinor).toBe(-2955000);
 
     // Metadata
-    expect(response.body.metadata.cogsMethod).toBe('current_purchase_cost');
+    expect(response.body.metadata.cogsMethod).toBe(
+      'sale_time_moving_average_snapshot_with_legacy_estimates',
+    );
     expect(response.body.metadata.generatedAt).toBeDefined();
   });
 });

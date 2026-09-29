@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsString, Length, Min } from 'class-validator';
+import { Equals, IsInt, IsNotEmpty, IsString, Length, Min } from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
@@ -15,7 +15,9 @@ export class CreateProductDto {
   category: string;
 
   @IsInt()
-  @Min(0)
+  @Equals(0, {
+    message: 'New products must start with zero stock; record a purchase to receive stock.',
+  })
   stock: number;
 
   @IsInt()

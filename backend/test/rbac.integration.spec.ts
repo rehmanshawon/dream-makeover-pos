@@ -108,7 +108,7 @@ describe('RBAC (integration)', () => {
       .send({
         name: 'Admin Created Product',
         category: 'Cosmetics',
-        stock: 5,
+        stock: 0,
         purchaseCostMinor: 10000,
         sellingPriceMinor: 15000,
         minimumStockThreshold: 1,

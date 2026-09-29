@@ -24,6 +24,11 @@ export class ProductsService {
     dto: CreateProductDto,
     options: ProductResponseOptions,
   ): Promise<ProductResponseDto> {
+    if (dto.stock !== 0) {
+      throw new BadRequestException(
+        'New products must start with zero stock; record a purchase to receive stock.',
+      );
+    }
     const category = await this.resolveCategory(dto.category);
 
     const product = this.productRepository.create({
@@ -94,9 +99,6 @@ export class ProductsService {
     }
 
     if (dto.name !== undefined) product.name = dto.name;
-    if (dto.purchaseCostMinor !== undefined) {
-      product.purchaseCostMinor = dto.purchaseCostMinor;
-    }
     if (dto.sellingPriceMinor !== undefined) {
       product.sellingPriceMinor = dto.sellingPriceMinor;
     }

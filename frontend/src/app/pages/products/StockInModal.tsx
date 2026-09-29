@@ -1,10 +1,10 @@
 import { useEffect, useState, type FormEvent, type JSX } from 'react';
 import { Button } from '../../../ui/Button';
 import { Input } from '../../../ui/Input';
-import { Textarea } from '../../../ui/Textarea';
+import { Select } from '../../../ui/Select';
 import { Modal } from '../../../ui/Modal';
 import { ApiError } from '../../../api/api-error';
-import { useStockIn } from '../../../api/inventory-hooks';
+import { useCreatePurchase } from '../../../api/purchase-hooks';
 import './inventory-modal.css';
 
 interface StockInModalProps {
@@ -21,15 +21,23 @@ export function StockInModal({
   onClose,
 }: StockInModalProps): JSX.Element {
   const [quantity, setQuantity] = useState('1');
-  const [note, setNote] = useState('');
+  const [unitCost, setUnitCost] = useState('');
+  const [purchaseDate, setPurchaseDate] = useState('');
+  const [supplierName, setSupplierName] = useState('');
+  const [supplierReference, setSupplierReference] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [error, setError] = useState<string | null>(null);
 
-  const mutation = useStockIn();
+  const mutation = useCreatePurchase();
 
   useEffect(() => {
     if (open) {
       setQuantity('1');
-      setNote('');
+      setUnitCost('');
+      setPurchaseDate(new Date().toLocaleDateString('en-CA'));
+      setSupplierName('');
+      setSupplierReference('');
+      setPaymentMethod('CASH');
       setError(null);
     }
   }, [open]);
@@ -43,12 +51,24 @@ export function StockInModal({
       setError('Quantity must be a positive integer');
       return;
     }
+    const costMatch = /^(\d+)(?:\.(\d{1,2}))?$/.exec(unitCost.trim());
+    if (!costMatch) {
+      setError('Enter a unit cost with up to two decimal places');
+      return;
+    }
+    const unitCostMinor = Number(costMatch[1]) * 100 + Number((costMatch[2] ?? '').padEnd(2, '0'));
+    if (!Number.isSafeInteger(unitCostMinor) || unitCostMinor < 1) {
+      setError('Unit cost must be greater than zero and within supported limits');
+      return;
+    }
 
     try {
       await mutation.mutateAsync({
-        productId,
-        quantity: qty,
-        ...(note.trim() ? { note: note.trim() } : {}),
+        purchaseDate,
+        ...(supplierName.trim() ? { supplierName: supplierName.trim() } : {}),
+        ...(supplierReference.trim() ? { supplierReference: supplierReference.trim() } : {}),
+        paymentMethod: paymentMethod as 'CASH' | 'BANK' | 'MOBILE' | 'CREDIT',
+        lines: [{ productId, quantity: qty, unitCostMinor }],
       });
       onClose();
     } catch (err) {
@@ -59,7 +79,7 @@ export function StockInModal({
   return (
     <Modal
       open={open}
-      title={`Stock in — ${productName}`}
+      title={`Receive purchase — ${productName}`}
       onClose={onClose}
       size="sm"
       closeOnOverlayClick={!mutation.isPending}
@@ -74,10 +94,49 @@ export function StockInModal({
           disabled={mutation.isPending}
         />
 
-        <Textarea
-          label="Note (optional)"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
+        <Input
+          label="Unit cost (BDT)"
+          type="number"
+          min="0.01"
+          step="0.01"
+          inputMode="decimal"
+          value={unitCost}
+          onChange={(e) => setUnitCost(e.target.value)}
+          disabled={mutation.isPending}
+        />
+
+        <Input
+          label="Purchase date"
+          type="date"
+          value={purchaseDate}
+          onChange={(e) => setPurchaseDate(e.target.value)}
+          disabled={mutation.isPending}
+        />
+
+        <Input
+          label="Supplier (optional)"
+          value={supplierName}
+          onChange={(e) => setSupplierName(e.target.value)}
+          disabled={mutation.isPending}
+        />
+
+        <Input
+          label="Supplier reference (optional)"
+          value={supplierReference}
+          onChange={(e) => setSupplierReference(e.target.value)}
+          disabled={mutation.isPending}
+        />
+
+        <Select
+          label="Payment method"
+          value={paymentMethod}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+          options={[
+            { value: 'CASH', label: 'Cash' },
+            { value: 'BANK', label: 'Bank' },
+            { value: 'MOBILE', label: 'Mobile wallet' },
+            { value: 'CREDIT', label: 'On credit' },
+          ]}
           disabled={mutation.isPending}
         />
 
@@ -92,7 +151,7 @@ export function StockInModal({
             Cancel
           </Button>
           <Button type="submit" loading={mutation.isPending}>
-            Add stock
+            Record purchase
           </Button>
         </div>
       </form>

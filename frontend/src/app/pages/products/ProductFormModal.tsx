@@ -29,7 +29,6 @@ interface ProductFormModalProps {
 interface FormState {
   name: string;
   category: string;
-  stock: string;
   purchaseCostTaka: string;
   sellingPriceTaka: string;
   minimumStockThreshold: string;
@@ -39,7 +38,6 @@ function emptyForm(category: string): FormState {
   return {
     name: '',
     category,
-    stock: '0',
     purchaseCostTaka: '0.00',
     sellingPriceTaka: '',
     minimumStockThreshold: '0',
@@ -48,7 +46,6 @@ function emptyForm(category: string): FormState {
 
 interface FormErrors {
   name?: string;
-  stock?: string;
   purchaseCostTaka?: string;
   sellingPriceTaka?: string;
   minimumStockThreshold?: string;
@@ -78,7 +75,6 @@ export function ProductFormModal({
       setForm({
         name: product.name,
         category: product.category,
-        stock: String(product.stock),
         purchaseCostTaka: minorToTakaInput(product.purchaseCostMinor ?? 0),
         sellingPriceTaka: minorToTakaInput(product.sellingPriceMinor),
         minimumStockThreshold: String(product.minimumStockThreshold),
@@ -102,15 +98,8 @@ export function ProductFormModal({
       nextErrors.name = 'Name must be at least 2 characters';
     }
 
-    const stock = Number(form.stock);
-    if (!isEdit) {
-      if (!Number.isInteger(stock) || stock < 0) {
-        nextErrors.stock = 'Stock must be a non-negative integer';
-      }
-    }
-
     const purchaseCostMinor = parseTakaToMinor(form.purchaseCostTaka);
-    if (purchaseCostMinor === null) {
+    if (!isEdit && purchaseCostMinor === null) {
       nextErrors.purchaseCostTaka = 'Enter a valid amount';
     }
 
@@ -136,7 +125,6 @@ export function ProductFormModal({
           payload: {
             name: trimmedName,
             category: form.category,
-            purchaseCostMinor: purchaseCostMinor as number,
             sellingPriceMinor: sellingPriceMinor as number,
             minimumStockThreshold: minimumStockThreshold as number,
           },
@@ -146,7 +134,7 @@ export function ProductFormModal({
         const created = await createMutation.mutateAsync({
           name: trimmedName,
           category: form.category,
-          stock: stock as number,
+          stock: 0,
           purchaseCostMinor: purchaseCostMinor as number,
           sellingPriceMinor: sellingPriceMinor as number,
           minimumStockThreshold: minimumStockThreshold as number,
@@ -189,16 +177,6 @@ export function ProductFormModal({
             onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))}
             disabled={submitting}
           />
-          {!isEdit && (
-            <Input
-              label="Stock"
-              inputMode="numeric"
-              value={form.stock}
-              onChange={(e) => setForm((s) => ({ ...s, stock: e.target.value }))}
-              {...(errors.stock ? { error: errors.stock } : {})}
-              disabled={submitting}
-            />
-          )}
           <Input
             label="Minimum stock threshold"
             inputMode="numeric"
@@ -208,15 +186,17 @@ export function ProductFormModal({
             disabled={submitting}
           />
 
-          <Input
-            label="Purchase cost (৳)"
-            inputMode="decimal"
-            value={form.purchaseCostTaka}
-            onChange={(e) => setForm((s) => ({ ...s, purchaseCostTaka: e.target.value }))}
-            {...(errors.purchaseCostTaka ? { error: errors.purchaseCostTaka } : {})}
-            hint="What the shop pays per unit"
-            disabled={submitting}
-          />
+          {!isEdit && (
+            <Input
+              label="Initial unit cost (৳)"
+              inputMode="decimal"
+              value={form.purchaseCostTaka}
+              onChange={(e) => setForm((s) => ({ ...s, purchaseCostTaka: e.target.value }))}
+              {...(errors.purchaseCostTaka ? { error: errors.purchaseCostTaka } : {})}
+              hint="Updated to the weighted average when you record a purchase"
+              disabled={submitting}
+            />
+          )}
 
           <Input
             label="Selling price (৳)"

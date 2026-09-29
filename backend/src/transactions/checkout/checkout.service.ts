@@ -16,7 +16,6 @@ import { InvoiceNumberService } from '../invoice-number.service';
 import { Package } from '../../packages/package.entity';
 import { PackageItem } from '../../packages/package-item.entity';
 import { InventoryService } from '../../inventory/inventory.service';
-import { StockMovementReason } from '../../inventory/stock-movement-reason.enum';
 import { AccountingService } from '../../accounting/accounting.service';
 
 @Injectable()
@@ -46,7 +45,11 @@ export class CheckoutService {
       let subtotalMinor = 0;
       const itemResponses: CheckoutItemResponseDto[] = [];
       const itemsToSave: TransactionItem[] = [];
-      const pendingStockDeltas: Array<{ productId: string; delta: number }> = [];
+      const pendingStockDeltas: Array<{
+        productId: string;
+        quantity: number;
+        costItem: TransactionItem;
+      }> = [];
 
       for (const itemDto of dto.items) {
         if (itemDto.itemType === TransactionItemType.PRODUCT) {
@@ -62,11 +65,6 @@ export class CheckoutService {
 
           const lineTotal = product.sellingPriceMinor * itemDto.quantity;
           subtotalMinor += lineTotal;
-          pendingStockDeltas.push({
-            productId: product.id,
-            delta: -itemDto.quantity,
-          });
-
           const item = itemRepo.create({
             productId: product.id,
             serviceId: null,
@@ -76,8 +74,14 @@ export class CheckoutService {
             quantity: itemDto.quantity,
             unitPriceMinor: product.sellingPriceMinor,
             totalPriceMinor: lineTotal,
+            costOfGoodsSoldMinor: 0,
           });
           itemsToSave.push(item);
+          pendingStockDeltas.push({
+            productId: product.id,
+            quantity: itemDto.quantity,
+            costItem: item,
+          });
 
           itemResponses.push({
             itemType: TransactionItemType.PRODUCT,
@@ -96,6 +100,19 @@ export class CheckoutService {
 
           const lineTotal = pkg.packagePriceMinor * itemDto.quantity;
           subtotalMinor += lineTotal;
+
+          const item = itemRepo.create({
+            productId: null,
+            serviceId: null,
+            packageId: pkg.id,
+            itemType: TransactionItemType.PACKAGE,
+            itemName: pkg.name,
+            quantity: itemDto.quantity,
+            unitPriceMinor: pkg.packagePriceMinor,
+            totalPriceMinor: lineTotal,
+            costOfGoodsSoldMinor: 0,
+          });
+          itemsToSave.push(item);
 
           const components = await packageItemRepo.find({
             where: { packageId: pkg.id },
@@ -118,22 +135,11 @@ export class CheckoutService {
               }
               pendingStockDeltas.push({
                 productId: product.id,
-                delta: -itemDto.quantity,
+                quantity: itemDto.quantity,
+                costItem: item,
               });
             }
           }
-
-          const item = itemRepo.create({
-            productId: null,
-            serviceId: null,
-            packageId: pkg.id,
-            itemType: TransactionItemType.PACKAGE,
-            itemName: pkg.name,
-            quantity: itemDto.quantity,
-            unitPriceMinor: pkg.packagePriceMinor,
-            totalPriceMinor: lineTotal,
-          });
-          itemsToSave.push(item);
 
           itemResponses.push({
             itemType: TransactionItemType.PACKAGE,
@@ -203,6 +209,27 @@ export class CheckoutService {
       });
       const savedTransaction = await transactionRepo.save(transaction);
 
+      for (const item of itemsToSave) {
+        item.transactionId = savedTransaction.id;
+        await itemRepo.save(item);
+      }
+
+      let costOfGoodsSoldMinor = 0;
+      for (const sale of pendingStockDeltas) {
+        const result = await this.inventoryService.applySaleMovement(manager, {
+          productId: sale.productId,
+          quantity: sale.quantity,
+          referenceId: savedTransaction.id,
+          createdBy: cashierName,
+        });
+        sale.costItem.costOfGoodsSoldMinor =
+          (sale.costItem.costOfGoodsSoldMinor ?? 0) + result.costMinor;
+        costOfGoodsSoldMinor += result.costMinor;
+      }
+      savedTransaction.costOfGoodsSoldMinor = costOfGoodsSoldMinor;
+      await transactionRepo.save(savedTransaction);
+      for (const item of itemsToSave) await itemRepo.save(item);
+
       await this.accountingService.createSaleEntry(manager, {
         sourceTransactionId: savedTransaction.id,
         entryDate: (savedTransaction.createdAt ?? new Date()).toISOString().slice(0, 10),
@@ -210,24 +237,9 @@ export class CheckoutService {
         totalMinor,
         revenueMinor: subtotalMinor - dto.discountMinor,
         vatMinor,
+        cogsMinor: costOfGoodsSoldMinor,
         createdBy: cashierName,
       });
-
-      for (const item of itemsToSave) {
-        item.transactionId = savedTransaction.id;
-        await itemRepo.save(item);
-      }
-
-      for (const delta of pendingStockDeltas) {
-        await this.inventoryService.applyMovement(manager, {
-          productId: delta.productId,
-          delta: delta.delta,
-          reason: StockMovementReason.SALE,
-          referenceId: savedTransaction.id,
-          note: null,
-          createdBy: cashierName,
-        });
-      }
 
       let loyaltyPointsEarned = 0;
       let customerResponse: CheckoutCustomerResponseDto | null = null;

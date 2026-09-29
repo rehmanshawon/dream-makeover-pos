@@ -91,7 +91,7 @@ describe('Products (integration)', () => {
       productRepo.create({
         name: 'Integration Lipstick',
         categoryId: TEST_PRODUCT_CATEGORY_ID,
-        stock: 10,
+        stock: 0,
         purchaseCostMinor: 50000,
         sellingPriceMinor: 100000,
         minimumStockThreshold: 2,
@@ -147,6 +147,7 @@ describe('Products (integration)', () => {
 
   it('updates product name for ADMIN without changing stock', async () => {
     const productId = await createProduct();
+    await dataSource.getRepository(Product).update(productId, { stock: 10 });
 
     const response = await request(app.getHttpServer())
       .patch(`/products/${productId}`)

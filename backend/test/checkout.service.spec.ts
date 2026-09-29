@@ -85,15 +85,18 @@ describe('CheckoutService', () => {
     } as unknown as InvoiceNumberService;
 
     inventoryService = {
-      applyMovement: jest.fn().mockImplementation(async (_manager: any, input: any) => ({
-        id: 'movement-1',
-        productId: input.productId,
-        delta: input.delta,
-        reason: input.reason,
-        referenceId: input.referenceId,
-        note: input.note,
-        createdBy: input.createdBy,
-        createdAt: new Date(),
+      applySaleMovement: jest.fn().mockImplementation(async (_manager: any, input: any) => ({
+        movement: {
+          id: 'movement-1',
+          productId: input.productId,
+          delta: -input.quantity,
+          reason: StockMovementReason.SALE,
+          referenceId: input.referenceId,
+          note: null,
+          createdBy: input.createdBy,
+          createdAt: new Date(),
+        },
+        costMinor: input.quantity * 25000,
       })),
     } as unknown as InventoryService;
 
@@ -169,9 +172,9 @@ describe('CheckoutService', () => {
     expect(result.totalMinor).toBe(69000);
     expect(result.cashReceivedMinor).toBe(70000);
     expect(result.changeMinor).toBe(1000);
-    expect(inventoryService.applyMovement).toHaveBeenCalledWith(
+    expect(inventoryService.applySaleMovement).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ productId: 'p1', delta: -2 }),
+      expect.objectContaining({ productId: 'p1', quantity: 2 }),
     );
     expect(customerRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({ lifetimeSpendMinor: 69000, rewardPoints: 6 }),
@@ -186,6 +189,7 @@ describe('CheckoutService', () => {
         totalMinor: 69000,
         revenueMinor: 69000,
         vatMinor: 0,
+        cogsMinor: 50000,
         createdBy: 'admin',
       }),
     );
@@ -284,12 +288,11 @@ describe('CheckoutService', () => {
     expect(result.subtotalMinor).toBe(999800);
     expect(result.totalMinor).toBe(999800);
     // Inventory service should be called to reduce stock of contained products
-    expect(inventoryService.applyMovement).toHaveBeenCalledWith(
+    expect(inventoryService.applySaleMovement).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
         productId: 'p-in-pkg',
-        delta: -2,
-        reason: StockMovementReason.SALE,
+        quantity: 2,
       }),
     );
     // Item has packageId set

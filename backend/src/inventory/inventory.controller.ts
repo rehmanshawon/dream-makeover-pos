@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, GoneException, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { StockInDto } from './dto/stock-in.dto';
 import { AdjustmentDto } from './dto/adjustment.dto';
@@ -22,7 +22,9 @@ export class InventoryController {
     @Body() dto: StockInDto,
     @Req() req: { user: JwtPayload },
   ): Promise<StockMovementResponseDto> {
-    return this.inventoryService.stockIn(dto, req.user.username);
+    void dto;
+    void req;
+    throw new GoneException('Use POST /purchases to receive stock with cost and accounting.');
   }
 
   @Post('adjust')

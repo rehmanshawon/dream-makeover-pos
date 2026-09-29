@@ -73,6 +73,15 @@ export class TransactionItem {
   })
   totalPriceMinor: number;
 
+  @Column({
+    name: 'cost_of_goods_sold_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
+  costOfGoodsSoldMinor: number = 0;
+
   @Column({ name: 'package_id', type: 'char', length: 36, nullable: true })
   packageId: string | null;
 

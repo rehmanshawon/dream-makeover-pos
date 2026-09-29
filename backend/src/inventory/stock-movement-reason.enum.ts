@@ -3,4 +3,5 @@ export enum StockMovementReason {
   STOCK_IN = 'STOCK_IN',
   ADJUSTMENT = 'ADJUSTMENT',
   RETURN = 'RETURN',
+  PURCHASE = 'PURCHASE',
 }

@@ -74,6 +74,15 @@ export class Transaction {
   totalMinor: number;
 
   @Column({
+    name: 'cost_of_goods_sold_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
+  costOfGoodsSoldMinor: number = 0;
+
+  @Column({
     name: 'cash_received_minor',
     type: 'bigint',
     unsigned: true,

@@ -20,12 +20,16 @@ import { Account } from '../../src/accounting/account.entity';
 import { AccountType } from '../../src/accounting/account-type.enum';
 import { JournalEntry } from '../../src/accounting/journal-entry.entity';
 import { JournalLine } from '../../src/accounting/journal-line.entity';
+import { Purchase } from '../../src/purchases/purchase.entity';
+import { PurchaseLine } from '../../src/purchases/purchase-line.entity';
 
 export const TEST_PRODUCT_CATEGORY_ID = '11111111-1111-4111-8111-111111111111';
 export const TEST_SERVICE_CATEGORY_ID = '22222222-2222-4222-8222-222222222222';
 const TEST_TABLES = [
   'accounting_journal_lines',
   'accounting_journal_entries',
+  'purchase_lines',
+  'purchases',
   'transaction_items',
   'transactions',
   'stock_movements',
@@ -185,6 +189,34 @@ const TEST_ACCOUNTING_ACCOUNTS: Account[] = [
     type: AccountType.LIABILITY,
     isSystem: true,
   },
+  {
+    id: '00000000-0000-4000-8000-000000000021',
+    code: 'INVENTORY',
+    name: 'Inventory asset',
+    type: AccountType.ASSET,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000022',
+    code: 'COST_OF_GOODS_SOLD',
+    name: 'Cost of goods sold',
+    type: AccountType.EXPENSE,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000023',
+    code: 'ACCOUNTS_PAYABLE',
+    name: 'Supplier payables',
+    type: AccountType.LIABILITY,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000024',
+    code: 'OPENING_BALANCE_EQUITY',
+    name: 'Opening balance equity',
+    type: AccountType.EQUITY,
+    isSystem: true,
+  },
 ];
 
 /**
@@ -236,6 +268,8 @@ export async function createTestDataSource(): Promise<DataSource> {
       Account,
       JournalEntry,
       JournalLine,
+      Purchase,
+      PurchaseLine,
     ],
     synchronize: false,
     dropSchema: false,
@@ -293,6 +327,11 @@ export async function createTestDataSource(): Promise<DataSource> {
   ALTER TABLE accounting_journal_entries
     ADD CONSTRAINT fk_accounting_journal_entries_transaction
     FOREIGN KEY (source_transaction_id) REFERENCES transactions(id) ON DELETE RESTRICT
+`);
+  await dataSource.query(`
+  ALTER TABLE accounting_journal_entries
+    ADD CONSTRAINT fk_accounting_journal_entries_purchase
+    FOREIGN KEY (source_purchase_id) REFERENCES purchases(id) ON DELETE RESTRICT
 `);
   return dataSource;
 }

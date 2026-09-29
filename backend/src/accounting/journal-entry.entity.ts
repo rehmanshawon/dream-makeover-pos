@@ -37,6 +37,9 @@ export class JournalEntry {
   @Column({ name: 'source_transaction_id', type: 'char', length: 36, nullable: true })
   sourceTransactionId: string | null;
 
+  @Column({ name: 'source_purchase_id', type: 'char', length: 36, nullable: true })
+  sourcePurchaseId: string | null;
+
   @Column({ name: 'created_by', type: 'varchar', length: 80 })
   createdBy: string;
 

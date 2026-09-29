@@ -213,25 +213,36 @@ export class AccountingService {
       totalMinor: number;
       revenueMinor: number;
       vatMinor: number;
+      cogsMinor: number;
       createdBy: string;
     },
   ): Promise<void> {
-    if (sale.totalMinor === 0) return;
+    if (sale.totalMinor === 0 && sale.cogsMinor === 0) return;
 
     const accountRepo = manager.getRepository(Account);
-    const [cashAccount, revenueAccount, vatAccount] = await Promise.all([
-      accountRepo.findOne({ where: { code: 'CASH' } }),
-      sale.revenueMinor > 0
-        ? accountRepo.findOne({ where: { code: 'SALES_REVENUE' } })
-        : Promise.resolve(null),
-      sale.vatMinor > 0
-        ? accountRepo.findOne({ where: { code: 'VAT_PAYABLE' } })
-        : Promise.resolve(null),
-    ]);
+    const [cashAccount, revenueAccount, vatAccount, cogsAccount, inventoryAccount] =
+      await Promise.all([
+        sale.totalMinor > 0
+          ? accountRepo.findOne({ where: { code: 'CASH' } })
+          : Promise.resolve(null),
+        sale.revenueMinor > 0
+          ? accountRepo.findOne({ where: { code: 'SALES_REVENUE' } })
+          : Promise.resolve(null),
+        sale.vatMinor > 0
+          ? accountRepo.findOne({ where: { code: 'VAT_PAYABLE' } })
+          : Promise.resolve(null),
+        sale.cogsMinor > 0
+          ? accountRepo.findOne({ where: { code: 'COST_OF_GOODS_SOLD' } })
+          : Promise.resolve(null),
+        sale.cogsMinor > 0
+          ? accountRepo.findOne({ where: { code: 'INVENTORY' } })
+          : Promise.resolve(null),
+      ]);
     if (
-      !cashAccount ||
+      (sale.totalMinor > 0 && !cashAccount) ||
       (sale.revenueMinor > 0 && !revenueAccount) ||
-      (sale.vatMinor > 0 && !vatAccount)
+      (sale.vatMinor > 0 && !vatAccount) ||
+      (sale.cogsMinor > 0 && (!cogsAccount || !inventoryAccount))
     ) {
       throw new Error('A required sales accounting account is missing.');
     }
@@ -249,14 +260,17 @@ export class AccountingService {
       }),
     );
 
-    const lines = [
-      lineRepo.create({
-        entryId: entry.id,
-        accountId: cashAccount.id,
-        debitMinor: sale.totalMinor,
-        creditMinor: 0,
-      }),
-    ];
+    const lines = [];
+    if (cashAccount && sale.totalMinor > 0) {
+      lines.push(
+        lineRepo.create({
+          entryId: entry.id,
+          accountId: cashAccount.id,
+          debitMinor: sale.totalMinor,
+          creditMinor: 0,
+        }),
+      );
+    }
     if (revenueAccount && sale.revenueMinor > 0) {
       lines.push(
         lineRepo.create({
@@ -277,7 +291,125 @@ export class AccountingService {
         }),
       );
     }
+    if (cogsAccount && inventoryAccount && sale.cogsMinor > 0) {
+      lines.push(
+        lineRepo.create({
+          entryId: entry.id,
+          accountId: cogsAccount.id,
+          debitMinor: sale.cogsMinor,
+          creditMinor: 0,
+        }),
+        lineRepo.create({
+          entryId: entry.id,
+          accountId: inventoryAccount.id,
+          debitMinor: 0,
+          creditMinor: sale.cogsMinor,
+        }),
+      );
+    }
     await lineRepo.save(lines);
+  }
+
+  async createPurchaseEntry(
+    manager: EntityManager,
+    purchase: {
+      sourcePurchaseId: string;
+      purchaseDate: string;
+      supplierName: string | null;
+      supplierReference: string | null;
+      paymentMethod: 'CASH' | 'BANK' | 'MOBILE' | 'CREDIT';
+      totalMinor: number;
+      createdBy: string;
+    },
+  ): Promise<void> {
+    const accountRepo = manager.getRepository(Account);
+    const paymentCode = {
+      CASH: 'CASH',
+      BANK: 'BANK',
+      MOBILE: 'MOBILE_WALLET',
+      CREDIT: 'ACCOUNTS_PAYABLE',
+    }[purchase.paymentMethod];
+    const [inventoryAccount, paymentAccount] = await Promise.all([
+      accountRepo.findOne({ where: { code: 'INVENTORY' } }),
+      accountRepo.findOne({ where: { code: paymentCode } }),
+    ]);
+    if (!inventoryAccount || !paymentAccount) {
+      throw new Error('A required purchase accounting account is missing.');
+    }
+
+    const entryRepo = manager.getRepository(JournalEntry);
+    const lineRepo = manager.getRepository(JournalLine);
+    const memo = `Inventory purchase${purchase.supplierName ? ` from ${purchase.supplierName}` : ''}`;
+    const entry = await entryRepo.save(
+      entryRepo.create({
+        entryType: JournalEntryType.PURCHASE,
+        entryDate: purchase.purchaseDate,
+        memo,
+        reference: purchase.supplierReference,
+        sourcePurchaseId: purchase.sourcePurchaseId,
+        createdBy: purchase.createdBy,
+      }),
+    );
+    await lineRepo.save([
+      lineRepo.create({
+        entryId: entry.id,
+        accountId: inventoryAccount.id,
+        debitMinor: purchase.totalMinor,
+        creditMinor: 0,
+      }),
+      lineRepo.create({
+        entryId: entry.id,
+        accountId: paymentAccount.id,
+        debitMinor: 0,
+        creditMinor: purchase.totalMinor,
+      }),
+    ]);
+  }
+
+  async createSupplierPaymentEntry(
+    manager: EntityManager,
+    payment: {
+      paymentDate: string;
+      amountMinor: number;
+      supplierName: string;
+      paymentAccountCode: string;
+      reference: string | null;
+      createdBy: string;
+    },
+  ): Promise<void> {
+    const accountRepo = manager.getRepository(Account);
+    const [payableAccount, paymentAccount] = await Promise.all([
+      accountRepo.findOne({ where: { code: 'ACCOUNTS_PAYABLE' } }),
+      accountRepo.findOne({ where: { code: payment.paymentAccountCode } }),
+    ]);
+    if (!payableAccount || !paymentAccount) {
+      throw new Error('A required supplier-payment accounting account is missing.');
+    }
+    const entryRepo = manager.getRepository(JournalEntry);
+    const lineRepo = manager.getRepository(JournalLine);
+    const entry = await entryRepo.save(
+      entryRepo.create({
+        entryType: JournalEntryType.SUPPLIER_PAYMENT,
+        entryDate: payment.paymentDate,
+        memo: `Payment to ${payment.supplierName}`,
+        reference: payment.reference,
+        createdBy: payment.createdBy,
+      }),
+    );
+    await lineRepo.save([
+      lineRepo.create({
+        entryId: entry.id,
+        accountId: payableAccount.id,
+        debitMinor: payment.amountMinor,
+        creditMinor: 0,
+      }),
+      lineRepo.create({
+        entryId: entry.id,
+        accountId: paymentAccount.id,
+        debitMinor: 0,
+        creditMinor: payment.amountMinor,
+      }),
+    ]);
   }
 
   private resolvePostings(dto: CreateVoucherDto): {

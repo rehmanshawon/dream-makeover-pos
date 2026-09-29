@@ -232,6 +232,79 @@ export class InventoryService {
     return this.toResponse(saved);
   }
 
+  async applySaleMovement(
+    manager: EntityManager,
+    input: { productId: string; quantity: number; referenceId: string; createdBy: string },
+  ): Promise<{ movement: StockMovementResponseDto; costMinor: number }> {
+    const productRepo = manager.getRepository(Product);
+    const product = await productRepo.findOne({
+      where: { id: input.productId },
+      lock: { mode: 'pessimistic_write' },
+    });
+    if (!product) throw new NotFoundException('Product not found');
+    if (product.stock < input.quantity) {
+      throw new BadRequestException(`Insufficient stock for product: ${product.name}`);
+    }
+    const costMinor = product.purchaseCostMinor * input.quantity;
+    if (!Number.isSafeInteger(costMinor)) {
+      throw new BadRequestException('Sale cost exceeds supported accounting limits.');
+    }
+    product.stock -= input.quantity;
+    await productRepo.save(product);
+    const movementRepo = manager.getRepository(StockMovement);
+    const movement = movementRepo.create({
+      productId: product.id,
+      delta: -input.quantity,
+      reason: StockMovementReason.SALE,
+      referenceId: input.referenceId,
+      note: null,
+      createdBy: input.createdBy,
+    });
+    await movementRepo.save(movement);
+    return { movement: this.toResponse(movement), costMinor };
+  }
+
+  async receivePurchaseLine(
+    manager: EntityManager,
+    input: {
+      productId: string;
+      quantity: number;
+      unitCostMinor: number;
+      referenceId: string;
+      createdBy: string;
+    },
+  ): Promise<StockMovementResponseDto> {
+    const productRepo = manager.getRepository(Product);
+    const product = await productRepo.findOne({
+      where: { id: input.productId },
+      lock: { mode: 'pessimistic_write' },
+    });
+    if (!product) throw new NotFoundException('Product not found');
+    const nextStock = product.stock + input.quantity;
+    if (!Number.isSafeInteger(nextStock) || nextStock > 2_147_483_647) {
+      throw new BadRequestException('Received quantity exceeds supported stock limits.');
+    }
+    const oldValue = product.stock * product.purchaseCostMinor;
+    const receivedValue = input.quantity * input.unitCostMinor;
+    const newAverageCost = Math.round((oldValue + receivedValue) / nextStock);
+    if (!Number.isSafeInteger(newAverageCost)) {
+      throw new BadRequestException('Purchase value exceeds supported accounting limits.');
+    }
+    product.stock = nextStock;
+    product.purchaseCostMinor = newAverageCost;
+    await productRepo.save(product);
+    const movementRepo = manager.getRepository(StockMovement);
+    const movement = movementRepo.create({
+      productId: product.id,
+      delta: input.quantity,
+      reason: StockMovementReason.PURCHASE,
+      referenceId: input.referenceId,
+      note: `Purchase unit cost ${input.unitCostMinor}`,
+      createdBy: input.createdBy,
+    });
+    return this.toResponse(await movementRepo.save(movement));
+  }
+
   private toResponse(movement: StockMovement): StockMovementResponseDto {
     return {
       id: movement.id,

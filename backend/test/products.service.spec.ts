@@ -122,7 +122,7 @@ describe('ProductsService', () => {
     const dto: CreateProductDto = {
       name: 'Lipstick',
       category: 'Cosmetics',
-      stock: 10,
+      stock: 0,
       purchaseCostMinor: 50000,
       sellingPriceMinor: 100000,
       minimumStockThreshold: 2,
