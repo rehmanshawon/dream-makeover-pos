@@ -23,6 +23,11 @@ import { BankReconciliation } from '../accounting/bank-reconciliation.entity';
 import { BankReconciliationLine } from '../accounting/bank-reconciliation-line.entity';
 import { Purchase } from '../purchases/purchase.entity';
 import { PurchaseLine } from '../purchases/purchase-line.entity';
+import { SalesReturn } from '../returns/sales-return.entity';
+import { SalesReturnLine } from '../returns/sales-return-line.entity';
+import { SupplierReturn } from '../purchases/supplier-return.entity';
+import { SupplierReturnLine } from '../purchases/supplier-return-line.entity';
+import { CostRevaluation } from '../inventory/cost-revaluation.entity';
 const env = process.env;
 
 export const databaseConfig: TypeOrmModuleOptions = {
@@ -55,6 +60,11 @@ export const databaseConfig: TypeOrmModuleOptions = {
     BankReconciliationLine,
     Purchase,
     PurchaseLine,
+    SalesReturn,
+    SalesReturnLine,
+    SupplierReturn,
+    SupplierReturnLine,
+    CostRevaluation,
   ],
   migrations,
   migrationsRun: true,
