@@ -24,6 +24,7 @@ import { AttendanceEditor } from './AttendanceEditor';
 import { PayrollSalaryPaymentModal } from './PayrollSalaryPaymentModal';
 import { AdvanceAdjustmentModal } from './AdvanceAdjustmentModal';
 import { Icon } from '../../components/Icon';
+import { PrintReportAction } from '../../components/PrintReportAction';
 
 export function PayPeriodDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -284,7 +285,11 @@ export function PayPeriodDetailPage(): JSX.Element {
   const pendingCount = batchEligibleEmployees.length;
 
   return (
-    <div className="pay-period-detail">
+    <div className="pay-period-detail" data-printable-report>
+      <PrintReportAction
+        title={`Payroll · ${p.name}`}
+        subtitle={`${formatDate(p.startDate)} to ${formatDate(p.endDate)} · ${p.status}`}
+      />
       <div className="pay-period-detail__breadcrumb">
         <Link to="/payroll">Payroll</Link>
         <span aria-hidden="true"> / </span>

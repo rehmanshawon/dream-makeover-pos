@@ -12,6 +12,7 @@ import { Table, type TableColumn } from '../../../ui/Table';
 import { formatBdt } from '../../../utils/format';
 import type { Product, ProductCategory } from '../../../types/products';
 import { StockStatsCards } from './StockStatsCards';
+import { PrintReportAction } from '../../components/PrintReportAction';
 import './StockPage.css';
 
 type StatusFilter = 'all' | 'low' | 'out';
@@ -124,7 +125,11 @@ export function StockPage(): JSX.Element {
   const empty = !products.isLoading && !productsError && filtered.length === 0;
 
   return (
-    <div className="stock-page">
+    <div className="stock-page" data-printable-report>
+      <PrintReportAction
+        title="Inventory on hand"
+        subtitle={`${filtered.length} products · Current stock snapshot`}
+      />
       <StockStatsCards stats={stats.data} loading={stats.isLoading} />
 
       <Card title="Inventory" subtitle="Cross-category stock overview">

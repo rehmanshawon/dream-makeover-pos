@@ -18,6 +18,8 @@ import './AccountsPage.css';
 import { CashBankBook } from './CashBankBook';
 import { BankReconciliation } from './BankReconciliation';
 import { AccountingStatements } from './AccountingStatements';
+import { AccountingPeriodControls } from './AccountingPeriodControls';
+import { PrintReportAction } from '../../components/PrintReportAction';
 
 function initialRange(): DateRangeValue {
   return {
@@ -54,77 +56,84 @@ export function AccountsPage(): JSX.Element {
       <CashBankBook />
       <BankReconciliation />
       <AccountingStatements asOf={range.range.to} />
+      <AccountingPeriodControls />
 
-      <section className="accounts-page__summary" aria-label="Headline metrics">
-        <KpiCard
-          label="Net Revenue"
-          value={formatBdt(
-            (data?.revenue.totalRevenueMinor ?? 0) - (data?.discountsGivenMinor ?? 0),
-          )}
-          loading={isLoading}
+      <div data-printable-report>
+        <PrintReportAction
+          title="Profit and loss report"
+          subtitle={`${range.range.from} to ${range.range.to}`}
         />
-        <KpiCard
-          label="Gross Profit"
-          value={formatBdt(data?.grossProfitMinor ?? 0)}
-          loading={isLoading}
-        />
-        <KpiCard
-          label="Operating Expenses"
-          value={formatBdt(data?.expenses.totalOperatingExpensesMinor ?? 0)}
-          tone="warning"
-          loading={isLoading}
-        />
-        <KpiCard
-          label="Net Operating Result"
-          value={formatBdt(net)}
-          tone={netTone}
-          {...(data
-            ? {
-                hint:
-                  net >= 0 ? 'Operating profit for the period' : 'Operating loss for the period',
-              }
-            : {})}
-          loading={isLoading}
-        />
-      </section>
+        <section className="accounts-page__summary" aria-label="Headline metrics">
+          <KpiCard
+            label="Net Revenue"
+            value={formatBdt(
+              (data?.revenue.totalRevenueMinor ?? 0) - (data?.discountsGivenMinor ?? 0),
+            )}
+            loading={isLoading}
+          />
+          <KpiCard
+            label="Gross Profit"
+            value={formatBdt(data?.grossProfitMinor ?? 0)}
+            loading={isLoading}
+          />
+          <KpiCard
+            label="Operating Expenses"
+            value={formatBdt(data?.expenses.totalOperatingExpensesMinor ?? 0)}
+            tone="warning"
+            loading={isLoading}
+          />
+          <KpiCard
+            label="Net Operating Result"
+            value={formatBdt(net)}
+            tone={netTone}
+            {...(data
+              ? {
+                  hint:
+                    net >= 0 ? 'Operating profit for the period' : 'Operating loss for the period',
+                }
+              : {})}
+            loading={isLoading}
+          />
+        </section>
 
-      <Card title="Profit & loss statement" subtitle={`${range.range.from} → ${range.range.to}`}>
-        {isLoading && (
-          <div className="accounts-page__center">
-            <Spinner label="Loading financial summary" />
-          </div>
-        )}
-
-        {error && (
-          <div className="accounts-page__error" role="alert">
-            {error instanceof ApiError ? error.message : 'Unable to load financial summary.'}
-          </div>
-        )}
-
-        {!isLoading && !error && !data && (
-          <EmptyState title="No data for this period" description="Try a different date range." />
-        )}
-
-        {!isLoading && !error && data && (
-          <>
-            <ProfitAndLossTable summary={data} />
-
-            <div className="accounts-page__footer">
-              <p className="accounts-page__methodology">
-                <strong>Cost of goods sold methodology:</strong>{' '}
-                {data.metadata.cogsMethod === 'current_purchase_cost'
-                  ? 'calculated using the current purchase cost of each product, not the historical cost at the time of sale.'
-                  : data.metadata.cogsMethod}
-              </p>
-              <p className="accounts-page__disclaimer">
-                This is a pragmatic operating profit-and-loss view. It does not include taxes,
-                depreciation, loans, investments, or other balance-sheet items. It is not a complete
-                accounting statement.
-              </p>
+        <Card title="Profit & loss statement" subtitle={`${range.range.from} → ${range.range.to}`}>
+          {isLoading && (
+            <div className="accounts-page__center">
+              <Spinner label="Loading financial summary" />
             </div>
-          </>
-        )}
-      </Card>
+          )}
+
+          {error && (
+            <div className="accounts-page__error" role="alert">
+              {error instanceof ApiError ? error.message : 'Unable to load financial summary.'}
+            </div>
+          )}
+
+          {!isLoading && !error && !data && (
+            <EmptyState title="No data for this period" description="Try a different date range." />
+          )}
+
+          {!isLoading && !error && data && (
+            <>
+              <ProfitAndLossTable summary={data} />
+
+              <div className="accounts-page__footer">
+                <p className="accounts-page__methodology">
+                  <strong>Cost of goods sold methodology:</strong>{' '}
+                  {data.metadata.cogsMethod === 'current_purchase_cost'
+                    ? 'calculated using the current purchase cost of each product, not the historical cost at the time of sale.'
+                    : data.metadata.cogsMethod}
+                </p>
+                <p className="accounts-page__disclaimer">
+                  This is a pragmatic operating profit-and-loss view. It does not include taxes,
+                  depreciation, loans, investments, or other balance-sheet items. It is not a
+                  complete accounting statement.
+                </p>
+              </div>
+            </>
+          )}
+        </Card>
+      </div>
 
       <section className="accounts-page__charts" aria-label="Charts">
         <RevenueTrendChart from={range.range.from} to={range.range.to} title="Revenue trend" />

@@ -6,6 +6,7 @@ import { JournalEntry } from './journal-entry.entity';
 import { JournalLine } from './journal-line.entity';
 import { BankReconciliation } from './bank-reconciliation.entity';
 import { BankReconciliationLine } from './bank-reconciliation-line.entity';
+import { AccountingPeriod } from './accounting-period.entity';
 import { AccountingController } from './accounting.controller';
 import { AccountingService } from './accounting.service';
 
@@ -17,6 +18,7 @@ import { AccountingService } from './accounting.service';
       JournalLine,
       BankReconciliation,
       BankReconciliationLine,
+      AccountingPeriod,
     ]),
     AuthCommonModule,
   ],

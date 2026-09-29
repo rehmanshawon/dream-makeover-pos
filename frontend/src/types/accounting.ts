@@ -6,12 +6,19 @@ export type AccountingVoucherType =
   | 'OWNER_WITHDRAWAL'
   | 'CASH_BANK_TRANSFER'
   | 'EXPENSE_PAYMENT'
-  | 'SALE_RECEIPT';
+  | 'SALE_RECEIPT'
+  | 'PURCHASE'
+  | 'SUPPLIER_PAYMENT'
+  | 'OPENING_BALANCE'
+  | 'SALARY_PAYMENT'
+  | 'INVENTORY_ADJUSTMENT'
+  | 'SALES_RETURN'
+  | 'SUPPLIER_RETURN'
+  | 'INVENTORY_REVALUATION'
+  | 'JOURNAL_REVERSAL';
 
-export type ManualAccountingVoucherType = Exclude<
-  AccountingVoucherType,
-  'EXPENSE_PAYMENT' | 'SALE_RECEIPT'
->;
+export type ManualAccountingVoucherType =
+  'OWNER_CONTRIBUTION' | 'OWNER_WITHDRAWAL' | 'CASH_BANK_TRANSFER';
 
 export interface AccountingAccount {
   id: string;
@@ -34,6 +41,7 @@ export interface AccountingJournalEntry {
   entryDate: string;
   memo: string;
   reference: string | null;
+  sourceReversalEntryId?: string | null;
   createdBy: string;
   createdAt: string;
   lines: AccountingJournalLine[];
@@ -115,4 +123,15 @@ export interface BalanceSheetReport {
   totalLiabilitiesMinor: number;
   totalEquityMinor: number;
   totalLiabilitiesAndEquityMinor: number;
+}
+
+export interface AccountingPeriodRecord {
+  periodKey: string;
+  closedAt: string | null;
+  closedBy: string | null;
+}
+
+export interface ReverseJournalEntryRequest {
+  reversalDate: string;
+  reason: string;
 }

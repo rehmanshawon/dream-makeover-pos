@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -11,6 +11,8 @@ import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { CreateBankReconciliationDto } from './dto/create-bank-reconciliation.dto';
 import { BankReconciliationQueryDto } from './dto/bank-reconciliation-query.dto';
 import { AccountingAsOfQueryDto } from './dto/accounting-as-of-query.dto';
+import { CloseAccountingPeriodDto } from './dto/close-accounting-period.dto';
+import { ReverseJournalEntryDto } from './dto/reverse-journal-entry.dto';
 
 @Controller('accounting')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -36,6 +38,26 @@ export class AccountingController {
   @Get('journal')
   getJournal(@Query() query: AccountingJournalQueryDto) {
     return this.accountingService.getJournal(query);
+  }
+
+  @Get('periods')
+  getAccountingPeriods() {
+    return this.accountingService.getAccountingPeriods();
+  }
+
+  @Post('periods/close')
+  closeAccountingPeriod(@Body() dto: CloseAccountingPeriodDto, @Req() req: { user: JwtPayload }) {
+    return this.accountingService.closeAccountingPeriod(dto.period, req.user.username);
+  }
+
+  @Post('journal/:id/reverse')
+  @UseGuards(TimeTrustGuard)
+  reverseJournalEntry(
+    @Param('id') id: string,
+    @Body() dto: ReverseJournalEntryDto,
+    @Req() req: { user: JwtPayload },
+  ) {
+    return this.accountingService.reverseJournalEntry(id, dto, req.user.username);
   }
 
   @Get('reconciliation')

@@ -27,6 +27,8 @@ import { SalesReturnLine } from '../../src/returns/sales-return-line.entity';
 import { SupplierReturn } from '../../src/purchases/supplier-return.entity';
 import { SupplierReturnLine } from '../../src/purchases/supplier-return-line.entity';
 import { CostRevaluation } from '../../src/inventory/cost-revaluation.entity';
+import { AccountingPeriod } from '../../src/accounting/accounting-period.entity';
+import { JournalEntryPeriodSubscriber } from '../../src/accounting/journal-entry-period.subscriber';
 import { BankReconciliation } from '../../src/accounting/bank-reconciliation.entity';
 import { BankReconciliationLine } from '../../src/accounting/bank-reconciliation-line.entity';
 
@@ -35,6 +37,7 @@ export const TEST_SERVICE_CATEGORY_ID = '22222222-2222-4222-8222-222222222222';
 const TEST_TABLES = [
   'accounting_journal_lines',
   'accounting_journal_entries',
+  'accounting_periods',
   'accounting_bank_reconciliation_lines',
   'accounting_bank_reconciliations',
   'supplier_return_lines',
@@ -347,7 +350,9 @@ export async function createTestDataSource(): Promise<DataSource> {
       SalesReturn,
       SalesReturnLine,
       CostRevaluation,
+      AccountingPeriod,
     ],
+    subscribers: [JournalEntryPeriodSubscriber],
     synchronize: false,
     dropSchema: false,
     logging: false,

@@ -3,6 +3,7 @@ import {
   useAccountingAccounts,
   useAccountingJournal,
   useCreateAccountingVoucher,
+  useReverseJournalEntry,
 } from '../../../api/accounting-hooks';
 import { usePayrollTimeTrust } from '../../../api/time-trust-hooks';
 import { ApiError } from '../../../api/api-error';
@@ -18,6 +19,7 @@ import { Input } from '../../../ui/Input';
 import { Select } from '../../../ui/Select';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
+import { Modal } from '../../../ui/Modal';
 import { formatBdt, formatDate, formatDateTime } from '../../../utils/format';
 import './CashBankBook.css';
 
@@ -39,6 +41,15 @@ const typeLabels: Record<AccountingVoucherType, string> = {
   CASH_BANK_TRANSFER: 'Cash / bank transfer',
   EXPENSE_PAYMENT: 'Expense payment',
   SALE_RECEIPT: 'POS sale',
+  PURCHASE: 'Purchase',
+  SUPPLIER_PAYMENT: 'Supplier payment',
+  OPENING_BALANCE: 'Opening balance',
+  SALARY_PAYMENT: 'Payroll payment',
+  INVENTORY_ADJUSTMENT: 'Inventory adjustment',
+  SALES_RETURN: 'Sales return',
+  SUPPLIER_RETURN: 'Supplier return',
+  INVENTORY_REVALUATION: 'Inventory revaluation',
+  JOURNAL_REVERSAL: 'Journal reversal',
 };
 
 const manualTypeLabels: Record<ManualAccountingVoucherType, string> = {
@@ -60,10 +71,15 @@ export function CashBankBook(): JSX.Element {
   const [from, setFrom] = useState(today.slice(0, 8) + '01');
   const [to, setTo] = useState(today);
   const [formError, setFormError] = useState<string | null>(null);
+  const [entryToReverse, setEntryToReverse] = useState<AccountingJournalEntry | null>(null);
+  const [reversalDate, setReversalDate] = useState(today);
+  const [reversalReason, setReversalReason] = useState('');
+  const [reversalError, setReversalError] = useState<string | null>(null);
 
   const accounts = useAccountingAccounts();
   const journal = useAccountingJournal(from, to);
   const createVoucher = useCreateAccountingVoucher();
+  const reverseEntry = useReverseJournalEntry();
   const timeTrust = usePayrollTimeTrust();
 
   const columns: TableColumn<AccountingJournalEntry>[] = [
@@ -90,6 +106,35 @@ export function CashBankBook(): JSX.Element {
       key: 'recorded',
       header: 'Recorded',
       render: (entry) => `${entry.createdBy} · ${formatDateTime(entry.createdAt)}`,
+    },
+    {
+      key: 'correction',
+      header: '',
+      align: 'right',
+      render: (entry) => {
+        const alreadyReversed = (journal.data ?? []).some(
+          (candidate) => candidate.sourceReversalEntryId === entry.id,
+        );
+        if (entry.entryType === 'JOURNAL_REVERSAL' || alreadyReversed) return '—';
+        return (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="button--icon"
+            aria-label={`Reverse journal entry dated ${formatDate(entry.entryDate)}`}
+            title="Create a reversing entry"
+            onClick={() => {
+              setEntryToReverse(entry);
+              setReversalDate(today);
+              setReversalReason('');
+              setReversalError(null);
+            }}
+          >
+            <span aria-hidden="true">↶</span>
+            Reverse
+          </Button>
+        );
+      },
     },
   ];
 
@@ -155,7 +200,6 @@ export function CashBankBook(): JSX.Element {
           ))}
         </div>
       )}
-
       <form className="cash-bank-book__form" onSubmit={(event) => void handleSubmit(event)}>
         <Select
           label="Voucher type"
@@ -274,6 +318,62 @@ export function CashBankBook(): JSX.Element {
           emptyMessage="No vouchers recorded for this date range."
         />
       )}
+      <Modal
+        open={entryToReverse !== null}
+        title="Reverse journal entry"
+        onClose={() => setEntryToReverse(null)}
+        size="sm"
+      >
+        <div className="cash-bank-book__reverse-form">
+          <p>
+            {entryToReverse
+              ? `Create an opposite accounting entry for ${formatDate(entryToReverse.entryDate)}. This does not cancel the linked sale, purchase, expense, or stock movement.`
+              : ''}
+          </p>
+          <Input
+            label="Reversal date"
+            type="date"
+            value={reversalDate}
+            onChange={(event) => setReversalDate(event.target.value)}
+            required
+          />
+          <Input
+            label="Reason"
+            value={reversalReason}
+            onChange={(event) => setReversalReason(event.target.value)}
+            maxLength={255}
+            required
+          />
+          {reversalError && (
+            <p className="cash-bank-book__error" role="alert">
+              {reversalError}
+            </p>
+          )}
+          <Button
+            variant="danger"
+            loading={reverseEntry.isPending}
+            onClick={() => {
+              if (!entryToReverse || reversalReason.trim().length < 3) {
+                setReversalError('Enter a reason of at least 3 characters.');
+                return;
+              }
+              void reverseEntry
+                .mutateAsync({
+                  id: entryToReverse.id,
+                  payload: { reversalDate, reason: reversalReason.trim() },
+                })
+                .then(() => setEntryToReverse(null))
+                .catch((error: unknown) => {
+                  setReversalError(
+                    error instanceof ApiError ? error.message : 'Unable to reverse entry.',
+                  );
+                });
+            }}
+          >
+            Create reversal
+          </Button>
+        </div>
+      </Modal>
     </Card>
   );
 }

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, In, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import { Between, In, IsNull, LessThanOrEqual, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import { DataSource, EntityManager } from 'typeorm';
 import { Account } from './account.entity';
 import { AccountType } from './account-type.enum';
@@ -15,6 +15,8 @@ import { PurchasePaymentMethod } from '../purchases/purchase-payment-method.enum
 import { BankReconciliation } from './bank-reconciliation.entity';
 import { BankReconciliationLine } from './bank-reconciliation-line.entity';
 import { CreateBankReconciliationDto } from './dto/create-bank-reconciliation.dto';
+import { AccountingPeriod } from './accounting-period.entity';
+import { ReverseJournalEntryDto } from './dto/reverse-journal-entry.dto';
 
 interface AccountBalanceRow {
   accountId: string;
@@ -207,6 +209,109 @@ export class AccountingService {
       relations: { lines: { account: true } },
       order: { entryDate: 'DESC', createdAt: 'DESC' },
       take: 500,
+    });
+  }
+
+  async getAccountingPeriods(): Promise<AccountingPeriod[]> {
+    return this.dataSource.getRepository(AccountingPeriod).find({
+      where: { closedAt: Not(IsNull()) },
+      order: { periodKey: 'DESC' },
+    });
+  }
+
+  async closeAccountingPeriod(period: string, closedBy: string): Promise<AccountingPeriod> {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) {
+      throw new BadRequestException('period must be a valid YYYY-MM month.');
+    }
+    const today = new Date();
+    const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    if (period >= currentMonth)
+      throw new BadRequestException('Only a completed accounting month can be closed.');
+
+    return this.dataSource.transaction(async (manager) => {
+      const periodRepo = manager.getRepository(AccountingPeriod);
+      try {
+        await periodRepo.insert({ periodKey: period, closedAt: null, closedBy: null });
+      } catch (error) {
+        const databaseError = error as { code?: string; driverError?: { code?: string } };
+        if (
+          databaseError.code !== 'ER_DUP_ENTRY' &&
+          databaseError.driverError?.code !== 'ER_DUP_ENTRY'
+        ) {
+          throw error;
+        }
+      }
+      const rows: AccountingPeriod[] = await manager.query(
+        'SELECT period_key AS periodKey, closed_at AS closedAt, closed_by AS closedBy FROM accounting_periods WHERE period_key = ? FOR UPDATE',
+        [period],
+      );
+      if (rows[0]?.closedAt)
+        throw new BadRequestException(`Accounting period ${period} is already closed.`);
+
+      const closed = await periodRepo.save({
+        periodKey: period,
+        closedAt: new Date(),
+        closedBy,
+      });
+      return closed;
+    });
+  }
+
+  async reverseJournalEntry(
+    entryId: string,
+    dto: ReverseJournalEntryDto,
+    createdBy: string,
+  ): Promise<JournalEntry> {
+    if (!this.isRealDate(dto.reversalDate)) {
+      throw new BadRequestException('reversalDate must be a valid calendar date.');
+    }
+    return this.dataSource.transaction(async (manager) => {
+      const entryRepo = manager.getRepository(JournalEntry);
+      const original = await entryRepo.findOne({
+        where: { id: entryId },
+        relations: { lines: true },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!original) throw new BadRequestException('Journal entry was not found.');
+      if (
+        original.entryType === JournalEntryType.JOURNAL_REVERSAL ||
+        original.sourceReversalEntryId
+      ) {
+        throw new BadRequestException('A reversal entry cannot itself be reversed.');
+      }
+      if (await entryRepo.exist({ where: { sourceReversalEntryId: original.id } })) {
+        throw new BadRequestException('This journal entry has already been reversed.');
+      }
+      if (!original.lines.length)
+        throw new BadRequestException('Journal entry has no lines to reverse.');
+
+      const reversal = await entryRepo.save(
+        entryRepo.create({
+          entryType: JournalEntryType.JOURNAL_REVERSAL,
+          entryDate: dto.reversalDate,
+          memo: `Reversal: ${dto.reason.trim()}`,
+          reference: original.reference ?? original.id,
+          sourceReversalEntryId: original.id,
+          createdBy,
+        }),
+      );
+      const lineRepo = manager.getRepository(JournalLine);
+      await lineRepo.save(
+        original.lines.map((line) =>
+          lineRepo.create({
+            entryId: reversal.id,
+            accountId: line.accountId,
+            debitMinor: line.creditMinor,
+            creditMinor: line.debitMinor,
+          }),
+        ),
+      );
+      const saved = await entryRepo.findOne({
+        where: { id: reversal.id },
+        relations: { lines: { account: true } },
+      });
+      if (!saved) throw new Error('Reversal entry could not be reloaded.');
+      return saved;
     });
   }
 

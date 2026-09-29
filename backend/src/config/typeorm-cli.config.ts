@@ -27,6 +27,8 @@ import { SalesReturnLine } from '../returns/sales-return-line.entity';
 import { SupplierReturn } from '../purchases/supplier-return.entity';
 import { SupplierReturnLine } from '../purchases/supplier-return-line.entity';
 import { CostRevaluation } from '../inventory/cost-revaluation.entity';
+import { AccountingPeriod } from '../accounting/accounting-period.entity';
+import { JournalEntryPeriodSubscriber } from '../accounting/journal-entry-period.subscriber';
 
 export default new DataSource({
   type: 'mysql',
@@ -62,7 +64,9 @@ export default new DataSource({
     SupplierReturn,
     SupplierReturnLine,
     CostRevaluation,
+    AccountingPeriod,
   ],
+  subscribers: [JournalEntryPeriodSubscriber],
   migrations,
   synchronize: false,
   logging: true,

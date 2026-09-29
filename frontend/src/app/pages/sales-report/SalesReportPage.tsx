@@ -11,6 +11,7 @@ import { formatBdt, formatDateTime } from '../../../utils/format';
 import type { TransactionListItem } from '../../../types/transactions';
 import { DateRangeFilter, resolvePreset, type RangePreset } from '../../components/DateRangeFilter';
 import { TransactionDetailModal } from './TransactionDetailModal';
+import { PrintReportAction } from '../../components/PrintReportAction';
 import './SalesReportPage.css';
 
 const PAGE_SIZE = 50;
@@ -104,7 +105,11 @@ export function SalesReportPage(): JSX.Element {
     pagination !== undefined && filter.offset + (pagination.limit ?? PAGE_SIZE) < pagination.total;
 
   return (
-    <div className="sales-report">
+    <div className="sales-report" data-printable-report>
+      <PrintReportAction
+        title="Sales report"
+        subtitle={`${filter.range.from} to ${filter.range.to} · Page ${currentPage} of ${totalPages} · ${pagination?.total ?? 0} total transactions; this printout contains the current page.`}
+      />
       <Card title="Sales report" subtitle="Transaction history and summary">
         <div className="sales-report__filters">
           <DateRangeFilter

@@ -1,0 +1,113 @@
+.print-report-action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.print-report-header {
+  display: none;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+
+@media print {
+  body[data-print-mode='true'] * {
+    visibility: hidden !important;
+  }
+
+  body[data-print-mode='true'] [data-printing='true'],
+  body[data-print-mode='true'] [data-printing='true'] * {
+    visibility: visible !important;
+  }
+
+  body[data-print-mode='true'] [data-printing='true'] {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #17211c !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  body[data-print-mode='true'] .print-report-action,
+  body[data-print-mode='true'] button,
+  body[data-print-mode='true'] input,
+  body[data-print-mode='true'] select,
+  body[data-print-mode='true'] textarea,
+  body[data-print-mode='true'] [role='dialog'],
+  body[data-print-mode='true'] .sales-report__pagination,
+  body[data-print-mode='true'] .expenditure__filters,
+  body[data-print-mode='true'] .stock-page__filters,
+  body[data-print-mode='true'] .accounts-page__filter,
+  body[data-print-mode='true'] .accounting-statements__tabs,
+  body[data-print-mode='true'] .expenditure__row-actions,
+  body[data-print-mode='true'] .payroll__actions,
+  body[data-print-mode='true'] .table__row-actions {
+    display: none !important;
+  }
+
+  body[data-print-mode='true'] .print-report-header {
+    display: block !important;
+    margin: 0 0 7mm !important;
+    padding: 0 0 4mm !important;
+    border-bottom: 1px solid #8a958f !important;
+  }
+
+  body[data-print-mode='true'] .print-report-header h1 {
+    margin: 0 0 2mm !important;
+    color: #17211c !important;
+    font-size: 19pt !important;
+  }
+
+  body[data-print-mode='true'] .print-report-header p,
+  body[data-print-mode='true'] .print-report-header small {
+    display: block;
+    margin: 1mm 0 0 !important;
+    color: #46534c !important;
+    font-size: 9pt !important;
+  }
+
+  body[data-print-mode='true'] table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    break-inside: auto;
+  }
+
+  body[data-print-mode='true'] th,
+  body[data-print-mode='true'] td {
+    padding: 2mm 1.5mm !important;
+    color: #17211c !important;
+    border-bottom: 0.25mm solid #d6ddd8 !important;
+    font-size: 8.5pt !important;
+  }
+
+  body[data-print-mode='true'] tr,
+  body[data-print-mode='true'] .kpi-card,
+  body[data-print-mode='true'] .accounting-statements__section {
+    break-inside: avoid;
+  }
+
+  body[data-print-mode='true'] .table,
+  body[data-print-mode='true'] .payment-history .table {
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  body[data-print-mode='true'] .table-wrapper,
+  body[data-print-mode='true'] .accounting-statements__table-wrap {
+    overflow: visible !important;
+    border: 0 !important;
+  }
+
+  body[data-print-mode='true'] .print-report-header > strong {
+    display: block;
+    margin-bottom: 2mm;
+    color: #24533f !important;
+    font-size: 10pt !important;
+  }
+}

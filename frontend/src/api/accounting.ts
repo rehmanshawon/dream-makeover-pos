@@ -8,6 +8,8 @@ import type {
   CreateBankReconciliationRequest,
   CreateAccountingVoucherRequest,
   TrialBalanceReport,
+  AccountingPeriodRecord,
+  ReverseJournalEntryRequest,
 } from '../types/accounting';
 
 export const accountingApi = {
@@ -45,5 +47,20 @@ export const accountingApi = {
   getBalanceSheet(asOf: string): Promise<BalanceSheetReport> {
     const params = new URLSearchParams({ asOf });
     return api.get<BalanceSheetReport>(`/accounting/balance-sheet?${params.toString()}`);
+  },
+
+  getPeriods(): Promise<AccountingPeriodRecord[]> {
+    return api.get<AccountingPeriodRecord[]>('/accounting/periods');
+  },
+
+  closePeriod(period: string): Promise<AccountingPeriodRecord> {
+    return api.post<AccountingPeriodRecord>('/accounting/periods/close', { period });
+  },
+
+  reverseJournalEntry(
+    id: string,
+    payload: ReverseJournalEntryRequest,
+  ): Promise<AccountingJournalEntry> {
+    return api.post<AccountingJournalEntry>(`/accounting/journal/${id}/reverse`, payload);
   },
 };

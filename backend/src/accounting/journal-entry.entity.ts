@@ -66,6 +66,10 @@ export class JournalEntry {
   @Column({ name: 'source_cost_revaluation_id', type: 'char', length: 36, nullable: true })
   sourceCostRevaluationId: string | null;
 
+  @Index('uq_accounting_journal_entries_source_reversal', { unique: true })
+  @Column({ name: 'source_reversal_entry_id', type: 'char', length: 36, nullable: true })
+  sourceReversalEntryId: string | null;
+
   @Column({ name: 'created_by', type: 'varchar', length: 80 })
   createdBy: string;
 

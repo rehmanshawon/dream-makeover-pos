@@ -5,6 +5,7 @@ import type {
   CreateBankReconciliationRequest,
   BalanceSheetReport,
   TrialBalanceReport,
+  ReverseJournalEntryRequest,
 } from '../types/accounting';
 
 export const accountingKeys = {
@@ -15,7 +16,36 @@ export const accountingKeys = {
     [...accountingKeys.all, 'reconciliation', statementDate] as const,
   trialBalance: (asOf: string) => [...accountingKeys.all, 'trial-balance', asOf] as const,
   balanceSheet: (asOf: string) => [...accountingKeys.all, 'balance-sheet', asOf] as const,
+  periods: () => [...accountingKeys.all, 'periods'] as const,
 };
+
+export function useAccountingPeriods() {
+  return useQuery({
+    queryKey: accountingKeys.periods(),
+    queryFn: () => accountingApi.getPeriods(),
+  });
+}
+
+export function useCloseAccountingPeriod() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (period: string) => accountingApi.closePeriod(period),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: accountingKeys.all });
+    },
+  });
+}
+
+export function useReverseJournalEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: ReverseJournalEntryRequest }) =>
+      accountingApi.reverseJournalEntry(id, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: accountingKeys.all });
+    },
+  });
+}
 
 export function useAccountingAccounts() {
   return useQuery({

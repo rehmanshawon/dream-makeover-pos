@@ -26,6 +26,7 @@ import {
   type ExpenseCategory,
 } from '../../../types/expenses';
 import { ExpenseFormModal } from './ExpenseFormModal';
+import { PrintReportAction } from '../../components/PrintReportAction';
 import './ExpenditurePage.css';
 
 type CategoryFilter = 'all' | ExpenseCategory;
@@ -187,7 +188,11 @@ export function ExpenditurePage(): JSX.Element {
   ];
 
   return (
-    <div className="expenditure">
+    <div className="expenditure" data-printable-report>
+      <PrintReportAction
+        title="Operating expenses"
+        subtitle={`${range.range.from} to ${range.range.to} · ${summary.count} items · ${formatBdt(summary.totalMinor)}`}
+      />
       <Card
         title="Office / Shop Expenditure"
         subtitle="Non-salary operating expenses"
