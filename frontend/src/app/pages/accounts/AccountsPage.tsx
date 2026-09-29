@@ -16,6 +16,8 @@ import { formatBdt } from '../../../utils/format';
 import { ProfitAndLossTable } from './ProfitAndLossTable';
 import './AccountsPage.css';
 import { CashBankBook } from './CashBankBook';
+import { BankReconciliation } from './BankReconciliation';
+import { AccountingStatements } from './AccountingStatements';
 
 function initialRange(): DateRangeValue {
   return {
@@ -50,6 +52,8 @@ export function AccountsPage(): JSX.Element {
       </Card>
 
       <CashBankBook />
+      <BankReconciliation />
+      <AccountingStatements asOf={range.range.to} />
 
       <section className="accounts-page__summary" aria-label="Headline metrics">
         <KpiCard

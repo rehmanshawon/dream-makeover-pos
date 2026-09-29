@@ -1,0 +1,125 @@
+.bank-reconciliation {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.bank-reconciliation__balances {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.bank-reconciliation__previous,
+.bank-reconciliation__empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.bank-reconciliation__summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2) var(--space-4);
+  padding-block: var(--space-3);
+  border-block: 1px solid var(--color-border);
+}
+
+.bank-reconciliation__summary span {
+  color: var(--color-text-muted);
+}
+
+.bank-reconciliation__summary strong,
+.bank-reconciliation__row > strong {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.bank-reconciliation__list {
+  display: grid;
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.bank-reconciliation__row {
+  display: grid;
+  grid-template-columns: 24px minmax(92px, auto) minmax(0, 1fr) minmax(100px, auto);
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 54px;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+.bank-reconciliation__row:last-child {
+  border-bottom: 0;
+}
+
+.bank-reconciliation__row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+
+.bank-reconciliation__date {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.bank-reconciliation__memo {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.bank-reconciliation__memo strong,
+.bank-reconciliation__memo small {
+  overflow-wrap: anywhere;
+}
+
+.bank-reconciliation__memo small {
+  color: var(--color-text-muted);
+}
+
+.bank-reconciliation__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bank-reconciliation__error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+}
+
+.bank-reconciliation__success,
+.bank-reconciliation .is-balanced {
+  color: var(--color-success);
+}
+
+.bank-reconciliation .is-unbalanced {
+  color: var(--color-danger);
+}
+
+@media (max-width: 640px) {
+  .bank-reconciliation__row {
+    grid-template-columns: 24px minmax(0, 1fr) minmax(86px, auto);
+    gap: var(--space-2);
+  }
+
+  .bank-reconciliation__date {
+    grid-column: 2;
+  }
+
+  .bank-reconciliation__memo {
+    grid-column: 2;
+  }
+
+  .bank-reconciliation__row > strong {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+}

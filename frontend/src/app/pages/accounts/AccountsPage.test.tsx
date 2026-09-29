@@ -51,8 +51,100 @@ describe('AccountsPage', () => {
   });
 
   function mockEndpoints(): void {
+    let bankReconciled = false;
     globalThis.fetch = vi.fn(async (input, init) => {
       const url = typeof input === 'string' ? input : (input as Request).url;
+
+      if (url.includes('/accounting/reconciliation')) {
+        const statementDate = new URL(url).searchParams.get('statementDate') ?? '2026-09-30';
+        if (init?.method === 'POST') {
+          bankReconciled = true;
+          return new Response(
+            JSON.stringify({
+              id: 'reconciliation-1',
+              statementDate,
+              openingBalanceMinor: 0,
+              closingBalanceMinor: 10000,
+              clearedMovementMinor: 10000,
+              createdBy: 'admin',
+            }),
+            { status: 201, headers: { 'content-type': 'application/json' } },
+          );
+        }
+        return new Response(
+          JSON.stringify(
+            bankReconciled
+              ? {
+                  openingBalanceMinor: 0,
+                  previousStatementDate: null,
+                  completedReconciliation: {
+                    id: 'reconciliation-1',
+                    statementDate,
+                    openingBalanceMinor: 0,
+                    closingBalanceMinor: 10000,
+                    clearedMovementMinor: 10000,
+                    createdBy: 'admin',
+                  },
+                  candidates: [],
+                }
+              : {
+                  openingBalanceMinor: 0,
+                  previousStatementDate: null,
+                  completedReconciliation: null,
+                  candidates: [
+                    {
+                      journalLineId: '00000000-0000-4000-8000-000000000111',
+                      entryDate: '2026-09-02',
+                      memo: 'Owner deposit',
+                      reference: null,
+                      debitMinor: 10000,
+                      creditMinor: 0,
+                      movementMinor: 10000,
+                    },
+                  ],
+                },
+          ),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
+
+      if (url.includes('/accounting/trial-balance')) {
+        return new Response(
+          JSON.stringify({
+            asOf: '2026-09-30',
+            lines: [
+              {
+                accountId: 'bank',
+                code: 'BANK',
+                name: 'Business bank',
+                type: 'ASSET',
+                debitBalanceMinor: 10000,
+                creditBalanceMinor: 0,
+              },
+            ],
+            totalDebitsMinor: 10000,
+            totalCreditsMinor: 10000,
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
+
+      if (url.includes('/accounting/balance-sheet')) {
+        return new Response(
+          JSON.stringify({
+            asOf: '2026-09-30',
+            assets: [{ code: 'BANK', name: 'Business bank', balanceMinor: 10000 }],
+            liabilities: [],
+            equity: [{ code: 'OWNER_CAPITAL', name: 'Owner capital', balanceMinor: 10000 }],
+            currentEarningsMinor: 0,
+            totalAssetsMinor: 10000,
+            totalLiabilitiesMinor: 0,
+            totalEquityMinor: 10000,
+            totalLiabilitiesAndEquityMinor: 10000,
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
 
       if (url.endsWith('/accounting/accounts')) {
         return new Response(
@@ -191,6 +283,43 @@ describe('AccountsPage', () => {
         cashBankAccountCode: 'BANK',
       });
     });
+  });
+
+  it('finalizes a statement after selected bank activity matches the closing balance', async () => {
+    mockEndpoints();
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('checkbox', { name: /owner deposit/i }));
+    fireEvent.change(screen.getByLabelText(/statement closing balance/i), {
+      target: { value: '100.00' },
+    });
+    const finalize = screen.getByRole('button', { name: /finalize reconciliation/i });
+    expect(finalize).toBeEnabled();
+    fireEvent.click(finalize);
+
+    expect(await screen.findByText(/this statement was reconciled by admin/i)).toBeInTheDocument();
+    expect(finalize).toBeDisabled();
+    expect(screen.getByText('Difference').nextElementSibling).toHaveClass('is-balanced');
+    const request = vi.mocked(globalThis.fetch).mock.calls.find(([input, init]) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      return url.includes('/accounting/reconciliation') && init?.method === 'POST';
+    });
+    expect(JSON.parse(String(request?.[1]?.body))).toMatchObject({
+      openingBalanceMinor: 0,
+      closingBalanceMinor: 10000,
+      clearedJournalLineIds: ['00000000-0000-4000-8000-000000000111'],
+    });
+  });
+
+  it('shows the balance sheet with a balanced assets and liabilities/equity total', async () => {
+    mockEndpoints();
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('tab', { name: /balance sheet/i }));
+    const panel = await screen.findByRole('tabpanel', { name: /balance sheet/i });
+    expect(within(panel).getByText('Business bank')).toBeInTheDocument();
+    expect(within(panel).getByText('Owner capital')).toBeInTheDocument();
+    expect(within(panel).getByRole('status').textContent).toContain('Liabilities + equity');
   });
 
   it('renders the profit and loss statement sections', async () => {

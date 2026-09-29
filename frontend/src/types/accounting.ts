@@ -49,3 +49,70 @@ export interface CreateAccountingVoucherRequest {
   fromAccountCode?: 'CASH' | 'BANK';
   toAccountCode?: 'CASH' | 'BANK';
 }
+
+export interface BankReconciliationCandidate {
+  journalLineId: string;
+  entryDate: string;
+  memo: string;
+  reference: string | null;
+  debitMinor: number;
+  creditMinor: number;
+  movementMinor: number;
+}
+
+export interface BankReconciliationDraft {
+  openingBalanceMinor: number;
+  previousStatementDate: string | null;
+  completedReconciliation: BankReconciliationRecord | null;
+  candidates: BankReconciliationCandidate[];
+}
+
+export interface CreateBankReconciliationRequest {
+  statementDate: string;
+  openingBalanceMinor: number;
+  closingBalanceMinor: number;
+  clearedJournalLineIds: string[];
+}
+
+export interface BankReconciliationRecord {
+  id: string;
+  statementDate: string;
+  openingBalanceMinor: number;
+  closingBalanceMinor: number;
+  clearedMovementMinor: number;
+  createdBy: string;
+}
+
+export interface TrialBalanceLine {
+  accountId: string;
+  code: string;
+  name: string;
+  type: AccountingAccountType;
+  debitBalanceMinor: number;
+  creditBalanceMinor: number;
+}
+
+export interface TrialBalanceReport {
+  asOf: string;
+  lines: TrialBalanceLine[];
+  totalDebitsMinor: number;
+  totalCreditsMinor: number;
+}
+
+export interface BalanceSheetLine {
+  code: string;
+  name: string;
+  balanceMinor: number;
+}
+
+export interface BalanceSheetReport {
+  asOf: string;
+  assets: BalanceSheetLine[];
+  liabilities: BalanceSheetLine[];
+  equity: BalanceSheetLine[];
+  currentEarningsMinor: number;
+  totalAssetsMinor: number;
+  totalLiabilitiesMinor: number;
+  totalEquityMinor: number;
+  totalLiabilitiesAndEquityMinor: number;
+}

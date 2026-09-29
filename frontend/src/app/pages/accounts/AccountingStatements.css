@@ -1,0 +1,133 @@
+.accounting-statements__tabs {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.accounting-statements__tabs button {
+  min-height: 42px;
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font: inherit;
+}
+
+.accounting-statements__tabs button[aria-selected='true'] {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.accounting-statements__table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.accounting-statements__table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.accounting-statements__table th,
+.accounting-statements__table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.accounting-statements__table th {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.accounting-statements__code {
+  display: inline-block;
+  min-width: 150px;
+  margin-right: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.accounting-statements__amount {
+  min-width: 130px;
+  text-align: right !important;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.accounting-statements__totals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3) var(--space-5);
+  padding-top: var(--space-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.accounting-statements__totals span {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.accounting-statements__totals.is-balanced {
+  color: var(--color-success);
+}
+
+.accounting-statements__totals.is-unbalanced,
+.accounting-statements__error {
+  color: var(--color-danger);
+}
+
+.accounting-statements__sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+  gap: var(--space-4);
+}
+
+.accounting-statements__section h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-md);
+}
+
+.accounting-statements__section td:first-child {
+  min-width: 240px;
+}
+
+.accounting-statements__empty,
+.accounting-statements__error,
+.accounting-statements__note {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.accounting-statements__empty,
+.accounting-statements__note {
+  color: var(--color-text-muted);
+}
+
+.accounting-statements__note {
+  margin-top: var(--space-3);
+}
+
+@media (max-width: 640px) {
+  .accounting-statements__tabs {
+    width: 100%;
+  }
+
+  .accounting-statements__tabs button {
+    flex: 1;
+    padding-inline: var(--space-2);
+  }
+
+  .accounting-statements__code {
+    display: block;
+    min-width: 0;
+    margin: 0;
+  }
+}

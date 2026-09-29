@@ -132,8 +132,9 @@ export function CashBankBook(): JSX.Element {
       subtitle="Record owner funds and transfers between business cash and bank."
     >
       <p className="cash-bank-book__scope" role="note">
-        POS sales and expenses are posted automatically. Payroll and inventory costs are not posted
-        to this ledger yet.
+        Sales, purchase, expense, payroll, and supplier-return activity posts here when paid through
+        the bank. Stock adjustments and cost revaluations affect inventory accounts, not the bank
+        balance.
       </p>
 
       {accounts.isLoading ? (

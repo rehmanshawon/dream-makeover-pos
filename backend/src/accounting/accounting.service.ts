@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import { Between, In, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { DataSource, EntityManager } from 'typeorm';
 import { Account } from './account.entity';
 import { AccountType } from './account-type.enum';
@@ -12,11 +12,20 @@ import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
 import { PaymentMethod } from '../salary-payments/payment-method.enum';
 import { PurchasePaymentMethod } from '../purchases/purchase-payment-method.enum';
+import { BankReconciliation } from './bank-reconciliation.entity';
+import { BankReconciliationLine } from './bank-reconciliation-line.entity';
+import { CreateBankReconciliationDto } from './dto/create-bank-reconciliation.dto';
 
 interface AccountBalanceRow {
   accountId: string;
   debitMinor: string | number | null;
   creditMinor: string | number | null;
+}
+
+interface TrialBalanceRawRow extends AccountBalanceRow {
+  code: string;
+  name: string;
+  type: AccountType;
 }
 
 @Injectable()
@@ -61,6 +70,124 @@ export class AccountingService {
     });
   }
 
+  async getTrialBalance(asOf: string): Promise<{
+    asOf: string;
+    lines: Array<{
+      accountId: string;
+      code: string;
+      name: string;
+      type: AccountType;
+      debitBalanceMinor: number;
+      creditBalanceMinor: number;
+    }>;
+    totalDebitsMinor: number;
+    totalCreditsMinor: number;
+  }> {
+    if (!this.isRealDate(asOf))
+      throw new BadRequestException('asOf must be a valid calendar date.');
+    const accounts = await this.accountRepository.find({ order: { code: 'ASC' } });
+    const rawRows = (await this.dataSource
+      .getRepository(JournalLine)
+      .createQueryBuilder('line')
+      .innerJoin('line.entry', 'entry')
+      .innerJoin('line.account', 'account')
+      .select('account.id', 'accountId')
+      .addSelect('account.code', 'code')
+      .addSelect('account.name', 'name')
+      .addSelect('account.type', 'type')
+      .addSelect('SUM(line.debitMinor)', 'debitMinor')
+      .addSelect('SUM(line.creditMinor)', 'creditMinor')
+      .where('entry.entryDate <= :asOf', { asOf })
+      .groupBy('account.id')
+      .addGroupBy('account.code')
+      .addGroupBy('account.name')
+      .addGroupBy('account.type')
+      .getRawMany()) as TrialBalanceRawRow[];
+    const balances = new Map(rawRows.map((row) => [row.accountId, row]));
+    const lines = accounts.map((account) => {
+      const totals = balances.get(account.id);
+      const netDebitMinor = Number(totals?.debitMinor ?? 0) - Number(totals?.creditMinor ?? 0);
+      return {
+        accountId: account.id,
+        code: account.code,
+        name: account.name,
+        type: account.type,
+        debitBalanceMinor: Math.max(netDebitMinor, 0),
+        creditBalanceMinor: Math.max(-netDebitMinor, 0),
+      };
+    });
+    return {
+      asOf,
+      lines,
+      totalDebitsMinor: lines.reduce((sum, line) => sum + line.debitBalanceMinor, 0),
+      totalCreditsMinor: lines.reduce((sum, line) => sum + line.creditBalanceMinor, 0),
+    };
+  }
+
+  async getBalanceSheet(asOf: string): Promise<{
+    asOf: string;
+    assets: Array<{ code: string; name: string; balanceMinor: number }>;
+    liabilities: Array<{ code: string; name: string; balanceMinor: number }>;
+    equity: Array<{ code: string; name: string; balanceMinor: number }>;
+    currentEarningsMinor: number;
+    totalAssetsMinor: number;
+    totalLiabilitiesMinor: number;
+    totalEquityMinor: number;
+    totalLiabilitiesAndEquityMinor: number;
+  }> {
+    const trialBalance = await this.getTrialBalance(asOf);
+    const balanceFor = (line: (typeof trialBalance.lines)[number]): number => {
+      if (
+        line.type === AccountType.ASSET ||
+        line.type === AccountType.CONTRA_EQUITY ||
+        line.type === AccountType.EXPENSE
+      ) {
+        return line.debitBalanceMinor - line.creditBalanceMinor;
+      }
+      return line.creditBalanceMinor - line.debitBalanceMinor;
+    };
+    const assets = trialBalance.lines
+      .filter((line) => line.type === AccountType.ASSET)
+      .map((line) => ({ code: line.code, name: line.name, balanceMinor: balanceFor(line) }));
+    const liabilities = trialBalance.lines
+      .filter((line) => line.type === AccountType.LIABILITY)
+      .map((line) => ({ code: line.code, name: line.name, balanceMinor: balanceFor(line) }));
+    const equity = trialBalance.lines
+      .filter((line) => line.type === AccountType.EQUITY || line.type === AccountType.CONTRA_EQUITY)
+      .map((line) => ({ code: line.code, name: line.name, balanceMinor: balanceFor(line) }));
+    const currentEarningsMinor = trialBalance.lines.reduce((total, line) => {
+      if (line.type === AccountType.REVENUE) {
+        return total + line.creditBalanceMinor - line.debitBalanceMinor;
+      }
+      if (line.type === AccountType.EXPENSE) {
+        return total - line.debitBalanceMinor + line.creditBalanceMinor;
+      }
+      return total;
+    }, 0);
+    const totalAssetsMinor = assets.reduce((sum, line) => sum + line.balanceMinor, 0);
+    const totalLiabilitiesMinor = liabilities.reduce((sum, line) => sum + line.balanceMinor, 0);
+    const totalEquityMinor =
+      equity.reduce((sum, line) => sum + line.balanceMinor, 0) + currentEarningsMinor;
+    return {
+      asOf,
+      assets,
+      liabilities,
+      equity: [
+        ...equity,
+        {
+          code: 'CURRENT_EARNINGS',
+          name: 'Current and retained earnings',
+          balanceMinor: currentEarningsMinor,
+        },
+      ],
+      currentEarningsMinor,
+      totalAssetsMinor,
+      totalLiabilitiesMinor,
+      totalEquityMinor,
+      totalLiabilitiesAndEquityMinor: totalLiabilitiesMinor + totalEquityMinor,
+    };
+  }
+
   /** Returns posted vouchers with their account lines, newest first. */
   async getJournal(query: AccountingJournalQueryDto): Promise<JournalEntry[]> {
     if ((query.from && !this.isRealDate(query.from)) || (query.to && !this.isRealDate(query.to))) {
@@ -80,6 +207,185 @@ export class AccountingService {
       relations: { lines: { account: true } },
       order: { entryDate: 'DESC', createdAt: 'DESC' },
       take: 500,
+    });
+  }
+
+  async getBankReconciliation(statementDate: string): Promise<{
+    openingBalanceMinor: number;
+    previousStatementDate: string | null;
+    completedReconciliation: BankReconciliation | null;
+    candidates: Array<{
+      journalLineId: string;
+      entryDate: string;
+      memo: string;
+      reference: string | null;
+      debitMinor: number;
+      creditMinor: number;
+      movementMinor: number;
+    }>;
+  }> {
+    if (!this.isRealDate(statementDate)) {
+      throw new BadRequestException('statementDate must be a valid calendar date.');
+    }
+    const bankAccount = await this.accountRepository.findOne({ where: { code: 'BANK' } });
+    if (!bankAccount) throw new BadRequestException('Business bank account is missing.');
+    const reconciliationRepo = this.dataSource.getRepository(BankReconciliation);
+    const previous = await reconciliationRepo.findOne({
+      where: { accountId: bankAccount.id },
+      order: { statementDate: 'DESC' },
+    });
+    const completed = await reconciliationRepo.findOne({
+      where: { accountId: bankAccount.id, statementDate },
+    });
+    if (completed) {
+      return {
+        openingBalanceMinor: completed.openingBalanceMinor,
+        previousStatementDate: null,
+        completedReconciliation: completed,
+        candidates: [],
+      };
+    }
+    if (previous && statementDate <= previous.statementDate) {
+      throw new BadRequestException('statementDate must be after the latest reconciliation.');
+    }
+
+    const reconciled = await this.dataSource
+      .getRepository(BankReconciliationLine)
+      .find({ select: { journalLineId: true } });
+    const reconciledIds = reconciled.map((line) => line.journalLineId);
+    const lineRepo = this.dataSource.getRepository(JournalLine);
+    const query = lineRepo
+      .createQueryBuilder('line')
+      .innerJoinAndSelect('line.entry', 'entry')
+      .innerJoinAndSelect('line.account', 'account')
+      .where('account.code = :accountCode', { accountCode: 'BANK' })
+      .andWhere('entry.entryDate <= :statementDate', { statementDate })
+      .orderBy('entry.entryDate', 'ASC')
+      .addOrderBy('entry.createdAt', 'ASC');
+    if (reconciledIds.length > 0)
+      query.andWhere('line.id NOT IN (:...reconciledIds)', { reconciledIds });
+    const lines = await query.getMany();
+
+    return {
+      openingBalanceMinor: previous?.closingBalanceMinor ?? 0,
+      previousStatementDate: previous?.statementDate ?? null,
+      completedReconciliation: null,
+      candidates: lines.map((line) => ({
+        journalLineId: line.id,
+        entryDate: line.entry.entryDate,
+        memo: line.entry.memo,
+        reference: line.entry.reference,
+        debitMinor: line.debitMinor,
+        creditMinor: line.creditMinor,
+        movementMinor: line.debitMinor - line.creditMinor,
+      })),
+    };
+  }
+
+  async createBankReconciliation(
+    dto: CreateBankReconciliationDto,
+    createdBy: string,
+  ): Promise<BankReconciliation> {
+    if (!this.isRealDate(dto.statementDate)) {
+      throw new BadRequestException('statementDate must be a valid calendar date.');
+    }
+    if (
+      !Number.isSafeInteger(dto.openingBalanceMinor) ||
+      !Number.isSafeInteger(dto.closingBalanceMinor)
+    ) {
+      throw new BadRequestException('Statement balances exceed supported accounting limits.');
+    }
+    if (new Set(dto.clearedJournalLineIds).size !== dto.clearedJournalLineIds.length) {
+      throw new BadRequestException('A bank journal line may only be selected once.');
+    }
+
+    return this.dataSource.transaction(async (manager) => {
+      const accountRepo = manager.getRepository(Account);
+      const bankAccount = await accountRepo.findOne({
+        where: { code: 'BANK' },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!bankAccount) throw new BadRequestException('Business bank account is missing.');
+
+      const reconciliationRepo = manager.getRepository(BankReconciliation);
+      const previous = await reconciliationRepo.findOne({
+        where: { accountId: bankAccount.id },
+        order: { statementDate: 'DESC' },
+      });
+      if (previous && dto.statementDate <= previous.statementDate) {
+        throw new BadRequestException('statementDate must be after the latest reconciliation.');
+      }
+      if (previous && dto.openingBalanceMinor !== previous.closingBalanceMinor) {
+        throw new BadRequestException(
+          'Opening balance must equal the prior statement closing balance.',
+        );
+      }
+
+      const ids = dto.clearedJournalLineIds;
+      const selectedLines = ids.length
+        ? await manager.getRepository(JournalLine).find({
+            where: { id: In(ids) },
+            relations: { entry: true, account: true },
+          })
+        : [];
+      if (selectedLines.length !== ids.length) {
+        throw new BadRequestException('One or more selected bank transactions were not found.');
+      }
+      if (
+        selectedLines.some(
+          (line) => line.account.code !== 'BANK' || line.entry.entryDate > dto.statementDate,
+        )
+      ) {
+        throw new BadRequestException(
+          'Only bank transactions dated on or before the statement can be cleared.',
+        );
+      }
+      const alreadyReconciled = ids.length
+        ? await manager.getRepository(BankReconciliationLine).find({
+            where: { journalLineId: In(ids) },
+          })
+        : [];
+      if (alreadyReconciled.length > 0) {
+        throw new BadRequestException(
+          'One or more selected bank transactions were already reconciled.',
+        );
+      }
+
+      const clearedMovementMinor = selectedLines.reduce(
+        (sum, line) => sum + line.debitMinor - line.creditMinor,
+        0,
+      );
+      if (
+        !Number.isSafeInteger(clearedMovementMinor) ||
+        dto.openingBalanceMinor + clearedMovementMinor !== dto.closingBalanceMinor
+      ) {
+        throw new BadRequestException(
+          'Selected transactions do not reconcile to the statement closing balance.',
+        );
+      }
+
+      const reconciliation = await reconciliationRepo.save(
+        reconciliationRepo.create({
+          accountId: bankAccount.id,
+          statementDate: dto.statementDate,
+          openingBalanceMinor: dto.openingBalanceMinor,
+          closingBalanceMinor: dto.closingBalanceMinor,
+          clearedMovementMinor,
+          createdBy,
+        }),
+      );
+      if (selectedLines.length > 0) {
+        await manager.getRepository(BankReconciliationLine).save(
+          selectedLines.map((line) =>
+            manager.getRepository(BankReconciliationLine).create({
+              reconciliationId: reconciliation.id,
+              journalLineId: line.id,
+            }),
+          ),
+        );
+      }
+      reconciliation.lines = [];
+      return reconciliation;
     });
   }
 

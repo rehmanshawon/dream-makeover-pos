@@ -19,6 +19,8 @@ import { Attendance } from '../attendance/attendance.entity';
 import { Account } from '../accounting/account.entity';
 import { JournalEntry } from '../accounting/journal-entry.entity';
 import { JournalLine } from '../accounting/journal-line.entity';
+import { BankReconciliation } from '../accounting/bank-reconciliation.entity';
+import { BankReconciliationLine } from '../accounting/bank-reconciliation-line.entity';
 import { Purchase } from '../purchases/purchase.entity';
 import { PurchaseLine } from '../purchases/purchase-line.entity';
 const env = process.env;
@@ -49,6 +51,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     Account,
     JournalEntry,
     JournalLine,
+    BankReconciliation,
+    BankReconciliationLine,
     Purchase,
     PurchaseLine,
   ],
