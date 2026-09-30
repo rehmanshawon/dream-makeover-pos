@@ -65,6 +65,21 @@ describe('BrowserReceiptPrinter', () => {
     expect(html).toContain('line--center');
   });
 
+  it('renders medium emphasized lines with the fixed-width style', async () => {
+    const popup = mockPopup();
+    window.open = vi.fn(() => popup) as unknown as typeof window.open;
+
+    const printer = new BrowserReceiptPrinter();
+    const promise = printer.print([{ type: 'text', text: 'TOTAL', bold: true, medium: true }]);
+    await vi.advanceTimersByTimeAsync(200);
+    await promise;
+
+    const html = popup.document.write.mock.calls[0]?.[0] as string;
+    expect(html).toContain('line--medium');
+    expect(html).toContain('width: 115.8%');
+    expect(html).toContain('transform: scaleX(0.864)');
+  });
+
   it('renders inverse as a class', async () => {
     const popup = mockPopup();
     window.open = vi.fn(() => popup) as unknown as typeof window.open;

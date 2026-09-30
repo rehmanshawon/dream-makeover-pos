@@ -88,6 +88,14 @@ export class BrowserReceiptPrinter implements ReceiptPrinter {
   }
   .line--bold   { font-weight: bold; }
   .line--large  { font-size: 16px; font-weight: bold; line-height: 1.35; }
+  .line--medium {
+    width: 115.8%;
+    font-size: 11px;
+    font-weight: bold;
+    line-height: 1.35;
+    transform: scaleX(0.864);
+    transform-origin: left center;
+  }
   .line--center { text-align: center; }
   .line--right  { text-align: right; }
   .line--inverse {
@@ -111,6 +119,7 @@ export class BrowserReceiptPrinter implements ReceiptPrinter {
     const classes = ['line'];
     if (line.bold) classes.push('line--bold');
     if (line.large) classes.push('line--large');
+    if (line.medium) classes.push('line--medium');
     if (line.inverse) classes.push('line--inverse');
     if (line.align === 'center') classes.push('line--center');
     else if (line.align === 'right') classes.push('line--right');

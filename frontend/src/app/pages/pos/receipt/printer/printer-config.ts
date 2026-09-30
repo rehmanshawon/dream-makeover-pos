@@ -22,8 +22,8 @@ export const PRINTER_SERVICE_UUIDS: string[] = [
  */
 export const PRINTER_PAPER_WIDTH = 48;
 
-/** Extra paper feed after the receipt so the printer's top margin is balanced. */
-export const PRINTER_FEED_BEFORE_CUT = 0;
+/** Feed extra lines before cutting so the final printed row clears the cutter. */
+export const PRINTER_FEED_BEFORE_CUT = 4;
 
 /**
  * Storage key for the previously paired device ID, used to display the

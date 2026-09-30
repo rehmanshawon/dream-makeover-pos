@@ -13,6 +13,11 @@ type BluetoothPrinter = {
 };
 
 const DEFAULT_IMAGE_WIDTH_DOTS = 256;
+const PRINTER_CHARACTER_WIDTH_DOTS = 12;
+const PRINTER_STANDARD_LINE_HEIGHT_DOTS = 24;
+const MEDIUM_LINE_HEIGHT_SCALE = 1.5;
+const BLUETOOTH_CHUNK_SIZE = 100;
+const BLUETOOTH_CHUNK_DELAY_MS = 30;
 
 /**
  * Prints receipts over Bluetooth Low Energy using the Web Bluetooth API.
@@ -58,17 +63,26 @@ export class WebBluetoothReceiptPrinter implements ReceiptPrinter {
     const encoder = new ReceiptPrinterEncoder({
       language: 'esc-pos',
       width: PRINTER_PAPER_WIDTH,
+      imageMode: 'raster',
+      feedBeforeCut: PRINTER_FEED_BEFORE_CUT,
     })
       .initialize()
-      .codepage('auto');
+      .codepage('auto')
+      .font('B');
 
     for (const line of lines) {
       await this.appendLine(encoder, line);
     }
 
-    encoder.newline().newline().cut();
+    encoder.cut();
 
-    await this.printer!.print(encoder.encode());
+    const data = encoder.encode();
+    for (let offset = 0; offset < data.length; offset += BLUETOOTH_CHUNK_SIZE) {
+      await this.printer!.print(data.slice(offset, offset + BLUETOOTH_CHUNK_SIZE));
+      if (offset + BLUETOOTH_CHUNK_SIZE < data.length) {
+        await new Promise((resolve) => setTimeout(resolve, BLUETOOTH_CHUNK_DELAY_MS));
+      }
+    }
   }
 
   /**
@@ -91,18 +105,72 @@ export class WebBluetoothReceiptPrinter implements ReceiptPrinter {
     if (line.align === 'center') encoder.align('center');
     else if (line.align === 'right') encoder.align('right');
 
+    if (line.medium) {
+      this.appendMediumText(encoder, line);
+      return;
+    }
+
     if (line.bold) encoder.bold(true);
-    if (line.large) encoder.size(2, 2);
-    if (line.medium) encoder.size(1.25, 1.25);
+    if (line.large) {
+      encoder.size(2, 2);
+    }
     if (line.inverse) encoder.invert(true);
 
     encoder.text(line.text);
 
     if (line.inverse) encoder.invert(false);
-    if (line.medium) encoder.size(1.25, 1.25);
     if (line.bold) encoder.bold(false);
 
     encoder.newline();
+  }
+
+  private appendMediumText(
+    encoder: ReceiptPrinterEncoder,
+    line: Extract<ReceiptLine, { type: 'text' }>,
+  ): void {
+    const canvas = document.createElement('canvas');
+    canvas.width = PRINTER_PAPER_WIDTH * PRINTER_CHARACTER_WIDTH_DOTS;
+    canvas.height = Math.round(PRINTER_STANDARD_LINE_HEIGHT_DOTS * MEDIUM_LINE_HEIGHT_SCALE);
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+      if (line.bold) encoder.bold(true);
+      encoder.text(line.text).newline();
+      if (line.bold) encoder.bold(false);
+      return;
+    }
+
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = '#000000';
+    context.font = `${line.bold ? 'bold ' : ''}${PRINTER_STANDARD_LINE_HEIGHT_DOTS}px "Courier New", Courier, monospace`;
+    context.textBaseline = 'middle';
+
+    const characterWidth = context.measureText('M').width;
+    const targetCharacterWidth =
+      (PRINTER_PAPER_WIDTH * PRINTER_CHARACTER_WIDTH_DOTS) / line.text.length;
+    const horizontalScale = characterWidth > 0 ? targetCharacterWidth / characterWidth : 1;
+    const textWidth = context.measureText(line.text).width * horizontalScale;
+    const left =
+      line.align === 'right'
+        ? canvas.width - textWidth
+        : line.align === 'center'
+          ? (canvas.width - textWidth) / 2
+          : 0;
+
+    context.save();
+    context.translate(left, 0);
+    context.scale(horizontalScale, MEDIUM_LINE_HEIGHT_SCALE);
+    context.fillText(line.text, 0, PRINTER_STANDARD_LINE_HEIGHT_DOTS / 2);
+    context.restore();
+
+    encoder.align('left').image(canvas, {
+      width: canvas.width,
+      height: canvas.height,
+      algorithm: 'threshold',
+      threshold: 160,
+    });
+    encoder.align('left');
   }
 
   /**
@@ -152,11 +220,6 @@ export class WebBluetoothReceiptPrinter implements ReceiptPrinter {
       threshold: 160,
     });
     encoder.align('left').newline();
-
-    if (PRINTER_FEED_BEFORE_CUT > 0) {
-      // Feed one blank line after the logo for spacing.
-      encoder.newline();
-    }
   }
 
   hasStoredDevice(): boolean {

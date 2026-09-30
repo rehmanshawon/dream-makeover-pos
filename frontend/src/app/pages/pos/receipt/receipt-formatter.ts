@@ -2,10 +2,10 @@ import type { ReceiptData } from './receipt-types';
 import type { ReceiptLine } from './printer/receipt-printer';
 
 /**
- * Physical line width for 80mm thermal printers at the standard font.
+ * Font B character width for 80mm thermal printers.
  * Every character-aligned row in this file is padded to this width.
  */
-export const RECEIPT_WIDTH = 48;
+export const RECEIPT_WIDTH = 64;
 
 // -----------------------------------------------------------------------------
 // Primitive helpers
@@ -56,7 +56,7 @@ function labelValue(label: string, value: string): string {
   const padded = truncate(label, labelWidth).padEnd(labelWidth);
   const prefix = `${padded} :`;
   const remaining = RECEIPT_WIDTH - prefix.length;
-  return prefix + truncate(value, remaining);
+  return prefix + rightAlign(value, remaining);
 }
 
 function itemRow(
@@ -67,10 +67,10 @@ function itemRow(
   amount: string,
 ): string {
   const sl = leftAlign(serial, 3);
-  const name = leftAlign(item, 19);
-  const qty = rightAlign(quantity, 4);
-  const r = rightAlign(rate, 9);
-  const a = rightAlign(amount, 9);
+  const name = leftAlign(item, 29);
+  const qty = rightAlign(quantity, 5);
+  const r = rightAlign(rate, 12);
+  const a = rightAlign(amount, 11);
   const full = `${sl} ${name} ${qty} ${r} ${a}`;
   return full.slice(0, RECEIPT_WIDTH).padEnd(RECEIPT_WIDTH);
 }
@@ -125,7 +125,6 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   // 1. Header
   // ---------------------------------------------------------------------------
   lines.push(text('CASH RECEIPT', { align: 'center', bold: true, large: true }));
-  lines.push(text(''));
   lines.push(
     text(data.business.name.toUpperCase(), {
       align: 'center',
@@ -135,7 +134,6 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   if (data.business.tagline) {
     lines.push(text(`\u2014 ${data.business.tagline} \u2014`, { align: 'center' }));
   }
-  lines.push(text(''));
   for (const addressLine of data.business.addressLines) {
     lines.push(text(addressLine, { align: 'center' }));
   }
@@ -208,7 +206,6 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
     text(totalRow('Total Amount', formatMoney(data.totalMinor)), {
       bold: true,
       medium: true,
-      inverse: false,
     }),
   );
   lines.push(text(totalRow('Paid Amount', formatMoney(data.cashReceivedMinor))));
@@ -245,7 +242,10 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   // 7. Footer greeting
   // ---------------------------------------------------------------------------
   //lines.push(text('Thank You', { align: 'center', bold: true, large: false }));
-  lines.push(text('Thank you for choosing Dream Makeover!', { align: 'center' }));
+  lines.push(text('Thank you for choosing Dream Makeover.', { align: 'center' }));
+  lines.push(text(divider()));
+  //lines.push(text(''));
+  //lines.push(text(''));
 
   return lines;
 }

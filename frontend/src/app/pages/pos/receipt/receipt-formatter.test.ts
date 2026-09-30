@@ -54,7 +54,18 @@ describe('formatReceipt', () => {
     expect(lines[0]).toMatchObject({ type: 'text', text: 'CASH RECEIPT' });
   });
 
-  it('produces text lines that fit the 48-column printer', () => {
+  it('keeps the header compact to save two lines of paper', () => {
+    const lines = formatReceipt(baseReceipt());
+    const firstDividerIndex = lines.findIndex(
+      (line) => line.type === 'text' && line.text.includes('---'),
+    );
+
+    expect(
+      lines.slice(0, firstDividerIndex).every((line) => line.type !== 'text' || line.text !== ''),
+    ).toBe(true);
+  });
+
+  it('produces text lines that fit the 64-column Font B layout', () => {
     for (const line of textLines(baseReceipt())) {
       expect(line.length).toBeLessThanOrEqual(RECEIPT_WIDTH);
     }
@@ -66,7 +77,7 @@ describe('formatReceipt', () => {
     expect(heading).toBeDefined();
     if (heading && heading.type === 'text') {
       expect(heading.bold).toBe(true);
-      expect(heading.large).not.toBe(true);
+      expect(heading.large).toBe(true);
       expect(heading.align).toBe('center');
     }
   });
@@ -163,14 +174,26 @@ describe('formatReceipt', () => {
     const formattedTotal = formatReceipt(baseReceipt()).find(
       (line) => line.type === 'text' && line.text.startsWith('Total Amount'),
     );
-    expect(formattedTotal).toMatchObject({ bold: true, large: false });
+    expect(formattedTotal).toMatchObject({ bold: true, medium: true });
+    expect(
+      formatReceipt(baseReceipt()).find(
+        (line) => line.type === 'text' && line.text.startsWith('Subtotal'),
+      ),
+    ).toMatchObject({ bold: true, medium: true });
   });
 
   it('separates receipt labels from values with colons', () => {
     const lines = textLines(baseReceipt());
     expect(lines.some((l) => /Invoice No\s+:/.test(l))).toBe(true);
-    expect(lines.some((l) => /Customer Name\s+:Guest/.test(l))).toBe(true);
+    expect(lines.some((l) => /Customer Name\s+:\s+Guest$/.test(l))).toBe(true);
     expect(lines.some((l) => /Subtotal\s+:/.test(l))).toBe(true);
+    expect(
+      lines
+        .filter((line) =>
+          /^(Invoice No|Date|Time|Customer Name|Payment Method|Staff Name)/.test(line),
+        )
+        .every((line) => line.length === RECEIPT_WIDTH),
+    ).toBe(true);
   });
 
   it('keeps all label colons in one vertical column', () => {
