@@ -22,6 +22,7 @@ import { AccountingModule } from './accounting/accounting.module';
 import { PurchasesModule } from './purchases/purchases.module';
 import { SalesReturnsModule } from './returns/sales-returns.module';
 import { LoyaltyModule } from './loyalty/loyalty.module';
+import { DatabaseBackupsModule } from './database-backups/database-backups.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { LoyaltyModule } from './loyalty/loyalty.module';
     PurchasesModule,
     SalesReturnsModule,
     LoyaltyModule,
+    DatabaseBackupsModule,
   ],
 })
 export class AppModule {}

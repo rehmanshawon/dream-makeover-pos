@@ -4,9 +4,10 @@ import { CategoriesSection } from './CategoriesSection';
 import { SecuritySection } from './SecuritySection';
 import { BusinessInfoSection } from './BusinessInfoSection';
 import { LoyaltySection } from './LoyaltySection';
+import { DatabaseBackupsSection } from './DatabaseBackupsSection';
 import './SettingsPage.css';
 
-type SettingsTab = 'users' | 'categories' | 'security' | 'business' | 'loyalty';
+type SettingsTab = 'users' | 'categories' | 'security' | 'business' | 'loyalty' | 'backup';
 
 const TABS: { key: SettingsTab; label: string }[] = [
   { key: 'users', label: 'Users' },
@@ -14,6 +15,7 @@ const TABS: { key: SettingsTab; label: string }[] = [
   { key: 'security', label: 'Security' },
   { key: 'business', label: 'Business info' },
   { key: 'loyalty', label: 'Loyalty' },
+  { key: 'backup', label: 'Backup & restore' },
 ];
 
 export function SettingsPage(): JSX.Element {
@@ -42,6 +44,7 @@ export function SettingsPage(): JSX.Element {
         {tab === 'security' && <SecuritySection />}
         {tab === 'business' && <BusinessInfoSection />}
         {tab === 'loyalty' && <LoyaltySection />}
+        {tab === 'backup' && <DatabaseBackupsSection />}
       </div>
     </div>
   );

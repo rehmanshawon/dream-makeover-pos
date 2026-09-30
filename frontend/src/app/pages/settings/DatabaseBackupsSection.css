@@ -1,0 +1,45 @@
+.database-backups-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.database-backups-section__note,
+.database-backups-section__file,
+.database-backups-section__error,
+.database-backups-section__success {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.database-backups-section__note,
+.database-backups-section__file {
+  color: var(--color-text-muted);
+}
+
+.database-backups-section__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.database-backups-section__file-input {
+  display: none;
+}
+
+.database-backups-section__error {
+  color: var(--color-danger);
+}
+
+.database-backups-section__success {
+  color: var(--color-success);
+}
+
+@media (max-width: 600px) {
+  .database-backups-section__actions {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+  }
+}

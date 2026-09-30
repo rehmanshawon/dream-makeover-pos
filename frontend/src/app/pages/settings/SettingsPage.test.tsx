@@ -76,6 +76,7 @@ describe('SettingsPage', () => {
     expect(screen.getByRole('tab', { name: /security/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /business info/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /loyalty/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /backup & restore/i })).toBeInTheDocument();
   });
 
   it('shows the Users tab by default', async () => {
@@ -102,6 +103,48 @@ describe('SettingsPage', () => {
     await userEvent.click(screen.getByRole('tab', { name: /business info/i }));
 
     expect(screen.getByText('DREAM MAKEOVER')).toBeInTheDocument();
+  });
+
+  it('shows backup and restore actions', async () => {
+    mockEndpoints();
+    renderPage();
+
+    await userEvent.click(screen.getByRole('tab', { name: /backup & restore/i }));
+
+    expect(screen.getByRole('button', { name: /download full backup/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /choose backup file/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /restore and replace data/i })).toBeDisabled();
+  });
+
+  it('uploads the selected backup only after explicit confirmation', async () => {
+    mockEndpoints();
+    const fallbackFetch = globalThis.fetch;
+    const restoreRequest = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        new Response(JSON.stringify({ message: 'Backup restored successfully.' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+    );
+    globalThis.fetch = vi.fn(async (input, init) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      if (url.endsWith('/database-backups/restore')) return restoreRequest(input, init);
+      return fallbackFetch(input, init);
+    }) as unknown as typeof fetch;
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    renderPage();
+    await userEvent.click(screen.getByRole('tab', { name: /backup & restore/i }));
+
+    const file = new File(['backup'], 'salon-backup.zip', { type: 'application/zip' });
+    await userEvent.upload(screen.getByLabelText('Select backup file'), file);
+    await userEvent.click(screen.getByRole('button', { name: /restore and replace data/i }));
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(restoreRequest).toHaveBeenCalledOnce();
+    const formData = restoreRequest.mock.calls[0]?.[1]?.body as FormData;
+    expect(formData.get('confirmReplace')).toBe('true');
+    expect(formData.get('backup')).toBeInstanceOf(File);
+    expect(await screen.findByText(/backup restored/i)).toBeInTheDocument();
   });
 
   it('allows admins to save earning and tier redemption rules', async () => {
