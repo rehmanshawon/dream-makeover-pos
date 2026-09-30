@@ -61,7 +61,7 @@ export class BrowserReceiptPrinter implements ReceiptPrinter {
 <meta charset="utf-8" />
 <title>Receipt</title>
 <style>
-  @page { size: 80mm auto; margin: 2mm; }
+  @page { size: 80mm auto; margin: 0; }
   html, body {
     margin: 0;
     padding: 0;
@@ -70,7 +70,8 @@ export class BrowserReceiptPrinter implements ReceiptPrinter {
     box-sizing: border-box;
   }
   body {
-    width: 76mm;
+    width: 80mm;
+    padding: 1mm 2mm 0;
     font-family: 'Courier New', Courier, monospace;
     font-size: 9.5px;
     line-height: 1.25;
@@ -78,6 +79,7 @@ export class BrowserReceiptPrinter implements ReceiptPrinter {
   .line {
     display: block;
     width: 100%;
+    box-sizing: border-box;
     overflow: hidden;
     white-space: pre;
     font-family: inherit;

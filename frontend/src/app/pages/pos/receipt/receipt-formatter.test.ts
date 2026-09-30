@@ -49,9 +49,9 @@ function textLines(data: ReceiptData): string[] {
 }
 
 describe('formatReceipt', () => {
-  it('starts with a logo image line', () => {
+  it('starts with the receipt title when the optional logo is omitted', () => {
     const lines = formatReceipt(baseReceipt());
-    expect(lines[0]?.type).toBe('image');
+    expect(lines[0]).toMatchObject({ type: 'text', text: 'CASH RECEIPT' });
   });
 
   it('produces text lines that fit the 48-column printer', () => {
@@ -66,7 +66,7 @@ describe('formatReceipt', () => {
     expect(heading).toBeDefined();
     if (heading && heading.type === 'text') {
       expect(heading.bold).toBe(true);
-      expect(heading.large).toBe(true);
+      expect(heading.large).not.toBe(true);
       expect(heading.align).toBe('center');
     }
   });
@@ -137,6 +137,31 @@ describe('formatReceipt', () => {
     expect(lines.some((l) => l.includes('SL') && l.includes('Service/Product'))).toBe(true);
   });
 
+  it('aligns item amounts and every total value to the far-right receipt column', () => {
+    const lines = textLines(
+      baseReceipt({
+        items: [{ name: 'Facial', quantity: 1, unitPriceMinor: 350000, totalPriceMinor: 350000 }],
+        subtotalMinor: 350000,
+        totalMinor: 350000,
+      }),
+    );
+    const item = lines.find((line) => line.includes('Facial'));
+    const subtotal = lines.find((line) => line.startsWith('Subtotal'));
+    const total = lines.find((line) => line.startsWith('Total Amount'));
+
+    expect(item).toHaveLength(RECEIPT_WIDTH);
+    expect(item?.endsWith('3500.00')).toBe(true);
+    expect(subtotal).toHaveLength(RECEIPT_WIDTH);
+    expect(subtotal?.endsWith('3500.00')).toBe(true);
+    expect(total).toHaveLength(RECEIPT_WIDTH);
+    expect(total?.endsWith('3500.00')).toBe(true);
+
+    const formattedTotal = formatReceipt(baseReceipt()).find(
+      (line) => line.type === 'text' && line.text.startsWith('Total Amount'),
+    );
+    expect(formattedTotal).toMatchObject({ bold: true, large: false });
+  });
+
   it('separates receipt labels from values with colons', () => {
     const lines = textLines(baseReceipt());
     expect(lines.some((l) => /Invoice No\s+:/.test(l))).toBe(true);
@@ -205,11 +230,10 @@ describe('formatReceipt', () => {
 });
 
 describe('formatReceiptText', () => {
-  it('joins text lines with newlines and marks images', () => {
+  it('joins the formatted receipt lines with newlines', () => {
     const text = formatReceiptText(baseReceipt());
     const lines = text.split('\n');
     expect(lines.length).toBeGreaterThan(10);
-    // First line is the logo image marker
-    expect(lines[0]).toBe('[image: /logo.png]');
+    expect(lines[0]).toBe('CASH RECEIPT');
   });
 });

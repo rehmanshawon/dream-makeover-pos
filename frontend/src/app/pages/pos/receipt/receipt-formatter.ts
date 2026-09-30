@@ -67,7 +67,7 @@ function itemRow(
   amount: string,
 ): string {
   const sl = leftAlign(serial, 3);
-  const name = leftAlign(item, 20);
+  const name = leftAlign(item, 19);
   const qty = rightAlign(quantity, 4);
   const r = rightAlign(rate, 9);
   const a = rightAlign(amount, 9);
@@ -82,7 +82,9 @@ function itemHeaderRow(): string {
 function totalRow(label: string, value: string): string {
   const labelWidth = 16;
   const valueWidth = 12;
-  return `${truncate(label, labelWidth).padEnd(labelWidth)} : ${rightAlign(value, valueWidth)}`;
+  const prefix = `${truncate(label, labelWidth).padEnd(labelWidth)} : `;
+  const gapWidth = RECEIPT_WIDTH - prefix.length - valueWidth;
+  return `${prefix}${' '.repeat(gapWidth)}${rightAlign(value, valueWidth)}`;
 }
 
 // -----------------------------------------------------------------------------
@@ -122,13 +124,7 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   // ---------------------------------------------------------------------------
   // 1. Header
   // ---------------------------------------------------------------------------
-  // lines.push({
-  //   type: 'image',
-  //   src: '/logo.png',
-  //   maxWidthDots: 192,
-  // });
-
-  lines.push(text('CASH RECEIPT', { align: 'center', bold: true, large: true }));
+  lines.push(text('CASH RECEIPT', { align: 'center', bold: true }));
   lines.push(text(''));
   lines.push(
     text(data.business.name.toUpperCase(), {

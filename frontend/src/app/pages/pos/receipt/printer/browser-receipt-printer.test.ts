@@ -92,7 +92,7 @@ describe('BrowserReceiptPrinter', () => {
     expect(html).toContain('/logo.png');
   });
 
-  it('uses the 80mm receipt page width and waits for the print dialog to finish before closing', async () => {
+  it('uses an inset 80mm receipt page and waits for the print dialog to finish before closing', async () => {
     const popup = mockPopup();
     const addEventListener = popup.addEventListener;
     window.open = vi.fn(() => popup) as unknown as typeof window.open;
@@ -103,8 +103,9 @@ describe('BrowserReceiptPrinter', () => {
     await promise;
 
     const html = popup.document.write.mock.calls[0]?.[0] as string;
-    expect(html).toContain('@page { size: 80mm auto; margin: 2mm; }');
-    expect(html).toContain('width: 76mm');
+    expect(html).toContain('@page { size: 80mm auto; margin: 0; }');
+    expect(html).toContain('width: 80mm');
+    expect(html).toContain('padding: 1mm 2mm 0');
     expect(html).toContain('font-size: 9.5px');
     expect(addEventListener).toHaveBeenCalledWith('afterprint', expect.any(Function), {
       once: true,
