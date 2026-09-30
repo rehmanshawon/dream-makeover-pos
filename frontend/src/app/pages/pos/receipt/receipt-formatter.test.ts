@@ -182,6 +182,15 @@ describe('formatReceipt', () => {
     ).toMatchObject({ bold: true, medium: true });
   });
 
+  it('moves the quantity column three spaces toward the service column', () => {
+    const header = textLines(baseReceipt()).find((line) => line.includes('Service/Product'));
+
+    expect(header?.indexOf('Qty')).toBe(33);
+    expect(header?.indexOf('Rate')).toBe(48);
+    expect(header?.indexOf('Amount')).toBe(58);
+    expect(header).toHaveLength(RECEIPT_WIDTH);
+  });
+
   it('separates receipt labels from values with colons', () => {
     const lines = textLines(baseReceipt());
     expect(lines.some((l) => /Invoice No\s+:/.test(l))).toBe(true);

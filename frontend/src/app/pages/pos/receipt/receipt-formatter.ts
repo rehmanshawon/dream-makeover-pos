@@ -67,11 +67,11 @@ function itemRow(
   amount: string,
 ): string {
   const sl = leftAlign(serial, 3);
-  const name = leftAlign(item, 29);
+  const name = leftAlign(item, 26);
   const qty = rightAlign(quantity, 5);
   const r = rightAlign(rate, 12);
   const a = rightAlign(amount, 11);
-  const full = `${sl} ${name} ${qty} ${r} ${a}`;
+  const full = `${sl} ${name} ${qty}    ${r} ${a}`;
   return full.slice(0, RECEIPT_WIDTH).padEnd(RECEIPT_WIDTH);
 }
 
