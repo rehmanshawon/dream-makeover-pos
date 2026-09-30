@@ -13,6 +13,7 @@ import { InventoryModule } from '../../inventory/inventory.module';
 import { AccountingModule } from '../../accounting/accounting.module';
 import { Package } from '../../packages/package.entity';
 import { PackageItem } from '../../packages/package-item.entity';
+import { LoyaltyModule } from '../../loyalty/loyalty.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PackageItem } from '../../packages/package-item.entity';
     AuthCommonModule,
     InventoryModule,
     AccountingModule,
+    LoyaltyModule,
   ],
   controllers: [CheckoutController],
   providers: [CheckoutService, InvoiceNumberService],

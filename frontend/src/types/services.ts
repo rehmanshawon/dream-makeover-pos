@@ -16,7 +16,7 @@ export interface CreateServiceRequest {
   categoryId?: string;
   priceMinor: number;
   durationMinutes: number;
-  rewardPointWeight: number;
+  rewardPointWeight?: number;
   active?: boolean;
 }
 

@@ -30,14 +30,17 @@ export function buildReceiptData(response: CheckoutResponse, business: BusinessI
       totalPriceMinor: item.totalPriceMinor,
     })),
     subtotalMinor: response.subtotalMinor,
+    manualDiscountMinor: response.manualDiscountMinor,
+    rewardDiscountMinor: response.rewardDiscountMinor,
     discountMinor: response.discountMinor,
     totalMinor: response.totalMinor,
     cashReceivedMinor: response.cashReceivedMinor,
     changeMinor: response.changeMinor,
     loyalty:
-      response.customer && response.loyaltyPointsEarned > 0
+      response.customer && (response.loyaltyPointsEarned > 0 || response.rewardPointsRedeemed > 0)
         ? {
             pointsEarned: response.loyaltyPointsEarned,
+            pointsRedeemed: response.rewardPointsRedeemed,
             totalPoints: response.customer.totalPointsAfterSale,
             tier: response.customer.tier,
           }

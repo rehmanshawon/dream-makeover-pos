@@ -20,21 +20,18 @@ interface FormState {
   name: string;
   priceTaka: string;
   durationMinutes: string;
-  rewardPointWeight: string;
 }
 
 interface FormErrors {
   name?: string;
   priceTaka?: string;
   durationMinutes?: string;
-  rewardPointWeight?: string;
 }
 
 const EMPTY_FORM: FormState = {
   name: '',
   priceTaka: '',
   durationMinutes: '60',
-  rewardPointWeight: '1',
 };
 
 function formFromService(service: SalonService): FormState {
@@ -42,7 +39,6 @@ function formFromService(service: SalonService): FormState {
     name: service.name,
     priceTaka: minorToTakaInput(service.priceMinor),
     durationMinutes: String(service.durationMinutes),
-    rewardPointWeight: String(service.rewardPointWeight),
   };
 }
 
@@ -90,11 +86,6 @@ export function ServiceFormModal({
       nextErrors.durationMinutes = 'Duration must be a positive integer';
     }
 
-    const rewardWeight = Number(form.rewardPointWeight);
-    if (!Number.isInteger(rewardWeight) || rewardWeight < 0) {
-      nextErrors.rewardPointWeight = 'Reward weight must be a non-negative integer';
-    }
-
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       return;
@@ -104,7 +95,6 @@ export function ServiceFormModal({
       name: trimmedName,
       priceMinor: priceMinor as number,
       durationMinutes: duration as number,
-      rewardPointWeight: rewardWeight as number,
     };
 
     try {
@@ -172,16 +162,6 @@ export function ServiceFormModal({
             disabled={submitting}
           />
         </div>
-
-        <Input
-          label="Reward point weight"
-          inputMode="numeric"
-          value={form.rewardPointWeight}
-          onChange={(e) => setForm((s) => ({ ...s, rewardPointWeight: e.target.value }))}
-          {...(errors.rewardPointWeight ? { error: errors.rewardPointWeight } : {})}
-          hint="Points earned per ৳100 spent. Use 1 for standard, 2 for premium."
-          disabled={submitting}
-        />
 
         {formError && (
           <div className="service-form__error" role="alert">

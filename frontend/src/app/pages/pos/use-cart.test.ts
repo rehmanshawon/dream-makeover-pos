@@ -183,7 +183,7 @@ describe('useCart', () => {
         unitPriceMinor: 120000,
       });
       result.current.setDiscount(5000);
-      result.current.setCustomer('c1', 'Alice', 'Gold');
+      result.current.setCustomer('c1', 'Alice', 'Gold', 250);
       result.current.clear();
     });
 

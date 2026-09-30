@@ -9,6 +9,7 @@ export interface CheckoutRequestItem {
 export interface CheckoutRequest {
   items: CheckoutRequestItem[];
   customerId?: string;
+  redeemRewardPoints?: boolean;
   discountMinor: number;
   cashReceivedMinor: number;
 }
@@ -34,6 +35,8 @@ export interface CheckoutResponse {
   transactionId: string;
   invoiceId: string;
   subtotalMinor: number;
+  manualDiscountMinor: number;
+  rewardDiscountMinor: number;
   discountMinor: number;
   totalMinor: number;
   cashReceivedMinor: number;
@@ -41,5 +44,6 @@ export interface CheckoutResponse {
   cashier: string;
   items: CheckoutResponseItem[];
   loyaltyPointsEarned: number;
+  rewardPointsRedeemed: number;
   customer: CheckoutCustomer | null;
 }

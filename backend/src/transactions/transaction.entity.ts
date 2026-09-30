@@ -47,6 +47,21 @@ export class Transaction {
   discountMinor: number = 0;
 
   @Column({
+    name: 'reward_discount_minor',
+    type: 'bigint',
+    unsigned: true,
+    default: 0,
+    transformer: bigintTransformer,
+  })
+  rewardDiscountMinor: number = 0;
+
+  @Column({ name: 'reward_points_redeemed', type: 'int', unsigned: true, default: 0 })
+  rewardPointsRedeemed: number = 0;
+
+  @Column({ name: 'loyalty_points_earned', type: 'int', unsigned: true, default: 0 })
+  loyaltyPointsEarned: number = 0;
+
+  @Column({
     name: 'vat_rate_percent',
     type: 'decimal',
     precision: 5,

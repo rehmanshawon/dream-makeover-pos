@@ -197,8 +197,11 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
     }),
   );
 
-  if (data.discountMinor > 0) {
-    lines.push(text(totalRow('Discount', formatMoney(data.discountMinor))));
+  if (data.manualDiscountMinor > 0) {
+    lines.push(text(totalRow('Discount', formatMoney(data.manualDiscountMinor))));
+  }
+  if (data.rewardDiscountMinor > 0) {
+    lines.push(text(totalRow('Reward discount', formatMoney(data.rewardDiscountMinor))));
   }
 
   lines.push(
@@ -226,8 +229,13 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   // ---------------------------------------------------------------------------
   // 6. Loyalty
   // ---------------------------------------------------------------------------
-  if (data.loyalty && data.loyalty.pointsEarned > 0) {
-    lines.push(text(labelValue('Points earned', String(data.loyalty.pointsEarned))));
+  if (data.loyalty && (data.loyalty.pointsEarned > 0 || data.loyalty.pointsRedeemed > 0)) {
+    if (data.loyalty.pointsEarned > 0) {
+      lines.push(text(labelValue('Points earned', String(data.loyalty.pointsEarned))));
+    }
+    if (data.loyalty.pointsRedeemed > 0) {
+      lines.push(text(labelValue('Points redeemed', String(data.loyalty.pointsRedeemed))));
+    }
     lines.push(text(labelValue('Total points', String(data.loyalty.totalPoints))));
     lines.push(text(labelValue('Tier', data.loyalty.tier)));
     lines.push(text(divider()));

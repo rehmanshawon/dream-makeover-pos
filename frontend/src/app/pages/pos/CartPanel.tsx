@@ -13,11 +13,15 @@ interface CartPanelProps {
   customerId: string | null;
   customerName: string | null;
   customerTier: string | null;
+  customerRewardPoints: number;
+  rewardOffer: { tier: string; redeemPoints: number; discountMinor: number } | null;
+  redeemRewardPoints: boolean;
   onRemoveItem: (kind: CartItem['kind'], id: string) => void;
   onSetQuantity: (kind: CartItem['kind'], id: string, quantity: number) => void;
-  onSelectCustomer: (id: string, name: string, tier: string) => void;
+  onSelectCustomer: (id: string, name: string, tier: string, points: number) => void;
   onClearCustomer: () => void;
   onSetDiscount: (minorUnits: number) => void;
+  onSetRewardRedemption: (enabled: boolean, discountMinor: number) => void;
   onSetCashReceived: (minorUnits: number) => void;
   onClearCart: () => void;
   submissionError: string | null;
@@ -31,11 +35,15 @@ export function CartPanel({
   customerId,
   customerName,
   customerTier,
+  customerRewardPoints,
+  rewardOffer,
+  redeemRewardPoints,
   onRemoveItem,
   onSetQuantity,
   onSelectCustomer,
   onClearCustomer,
   onSetDiscount,
+  onSetRewardRedemption,
   onSetCashReceived,
   onClearCart,
   submissionError,
@@ -46,7 +54,10 @@ export function CartPanel({
   const [discountInput, setDiscountInput] = useState('');
   const [cashInput, setCashInput] = useState('');
 
-  const canSubmit = items.length > 0 && totals.cashReceivedMinor >= totals.totalMinor;
+  const canSubmit =
+    items.length > 0 &&
+    totals.cashReceivedMinor >= totals.totalMinor &&
+    totals.redemptionAffordable;
 
   return (
     <aside className="cart-panel" aria-label="Cart">
@@ -65,6 +76,9 @@ export function CartPanel({
             <div>
               <div className="cart-panel__customer-name">{customerName}</div>
               {customerTier && <Badge variant="accent">{customerTier}</Badge>}
+              <div className="cart-panel__points">
+                {customerRewardPoints.toLocaleString()} points
+              </div>
             </div>
             <div className="cart-panel__customer-actions">
               <Button size="sm" variant="ghost" onClick={() => setCustomerPickerOpen(true)}>
@@ -79,6 +93,34 @@ export function CartPanel({
           <Button variant="secondary" size="sm" onClick={() => setCustomerPickerOpen(true)}>
             Add customer
           </Button>
+        )}
+
+        {rewardOffer && (
+          <section className="cart-panel__reward" aria-label="Reward redemption">
+            <div>
+              <strong>{rewardOffer.tier} reward available</strong>
+              <p>
+                Redeem {rewardOffer.redeemPoints.toLocaleString()} points for{' '}
+                {formatBdt(rewardOffer.discountMinor)} off.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant={redeemRewardPoints ? 'secondary' : 'primary'}
+              disabled={
+                !redeemRewardPoints &&
+                totals.subtotalMinor - totals.discountMinor < rewardOffer.discountMinor
+              }
+              onClick={() => onSetRewardRedemption(!redeemRewardPoints, rewardOffer.discountMinor)}
+            >
+              {redeemRewardPoints ? 'Remove reward' : 'Apply reward'}
+            </Button>
+            {redeemRewardPoints && !totals.redemptionAffordable && (
+              <p className="cart-panel__reward-error">
+                Add items to cover the reward discount or remove the reward.
+              </p>
+            )}
+          </section>
         )}
       </section>
 
@@ -123,6 +165,13 @@ export function CartPanel({
             }}
           />
         </div>
+
+        {totals.rewardDiscountMinor > 0 && (
+          <div className="cart-panel__row cart-panel__row--reward">
+            <span>Reward discount</span>
+            <span>−{formatBdt(totals.rewardDiscountMinor)}</span>
+          </div>
+        )}
 
         <div className="cart-panel__row cart-panel__row--total">
           <span>Total</span>

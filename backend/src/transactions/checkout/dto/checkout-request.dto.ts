@@ -1,5 +1,13 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsInt, IsOptional, IsUUID, Min, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsUUID,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { CheckoutItemDto } from './checkout-item.dto';
 
 export class CheckoutRequestDto {
@@ -11,6 +19,10 @@ export class CheckoutRequestDto {
   @IsOptional()
   @IsUUID()
   customerId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  redeemRewardPoints?: boolean;
 
   @IsInt()
   @Min(0)

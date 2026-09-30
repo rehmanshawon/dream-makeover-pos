@@ -7,6 +7,7 @@ import { InventoryModule } from '../inventory/inventory.module';
 import { SalesReturn } from './sales-return.entity';
 import { SalesReturnLine } from './sales-return-line.entity';
 import { SalesReturnsController } from './sales-returns.controller';
+import { LoyaltyModule } from '../loyalty/loyalty.module';
 import { SalesReturnsService } from './sales-returns.service';
 
 @Module({
@@ -15,6 +16,7 @@ import { SalesReturnsService } from './sales-returns.service';
     AuthCommonModule,
     TimeTrustModule,
     AccountingModule,
+    LoyaltyModule,
     InventoryModule,
   ],
   controllers: [SalesReturnsController],

@@ -17,6 +17,8 @@ import { PackageItem } from '../src/packages/package-item.entity';
 import { InventoryService } from '../src/inventory/inventory.service';
 import { StockMovementReason } from '../src/inventory/stock-movement-reason.enum';
 import { AccountingService } from '../src/accounting/accounting.service';
+import { LoyaltySettingsService } from '../src/loyalty/loyalty-settings.service';
+import { LoyaltySettings } from '../src/loyalty/loyalty-settings.entity';
 
 describe('CheckoutService', () => {
   let service: CheckoutService;
@@ -31,6 +33,7 @@ describe('CheckoutService', () => {
   let invoiceNumberService: InvoiceNumberService;
   let inventoryService: InventoryService;
   let accountingService: AccountingService;
+  let loyaltySettingsService: LoyaltySettingsService;
 
   beforeEach(async () => {
     const mockManager = {
@@ -104,6 +107,31 @@ describe('CheckoutService', () => {
       createSaleEntry: jest.fn(),
     } as unknown as AccountingService;
 
+    const defaultTiers = [
+      { tier: CustomerRewardTier.SILVER, minimumPoints: 0, redeemPoints: 0, discountMinor: 0 },
+      { tier: CustomerRewardTier.GOLD, minimumPoints: 200, redeemPoints: 0, discountMinor: 0 },
+      { tier: CustomerRewardTier.PLATINUM, minimumPoints: 500, redeemPoints: 0, discountMinor: 0 },
+      { tier: CustomerRewardTier.DIAMOND, minimumPoints: 1000, redeemPoints: 0, discountMinor: 0 },
+    ];
+    loyaltySettingsService = {
+      get: jest.fn().mockResolvedValue({
+        id: 1,
+        earningSpendMinor: 10000,
+        earningPoints: 1,
+        tiers: defaultTiers,
+      } as LoyaltySettings),
+      tierForPoints: jest.fn(
+        (points: number, tiers: typeof defaultTiers) =>
+          [...tiers]
+            .sort((a, b) => b.minimumPoints - a.minimumPoints)
+            .find((tier) => points >= tier.minimumPoints)?.tier ?? CustomerRewardTier.SILVER,
+      ),
+      tierSetting: jest.fn(
+        (tier: CustomerRewardTier, tiers: typeof defaultTiers) =>
+          tiers.find((setting) => setting.tier === tier) ?? defaultTiers[0]!,
+      ),
+    } as unknown as LoyaltySettingsService;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CheckoutService,
@@ -111,6 +139,7 @@ describe('CheckoutService', () => {
         { provide: InvoiceNumberService, useValue: invoiceNumberService },
         { provide: InventoryService, useValue: inventoryService },
         { provide: AccountingService, useValue: accountingService },
+        { provide: LoyaltySettingsService, useValue: loyaltySettingsService },
       ],
     }).compile();
 
@@ -208,6 +237,68 @@ describe('CheckoutService', () => {
     expect(result.customer).not.toBeNull();
     expect(result.customer?.name).toBe('Test Customer');
     expect(result.customer?.totalPointsAfterSale).toBe(6);
+  });
+
+  it('redeems a configured tier reward and earns points from cumulative paid spend', async () => {
+    const settings = (await loyaltySettingsService.get()) as LoyaltySettings;
+    settings.tiers = settings.tiers.map((tier) =>
+      tier.tier === CustomerRewardTier.GOLD
+        ? { ...tier, redeemPoints: 100, discountMinor: 5000 }
+        : tier,
+    );
+    jest.spyOn(loyaltySettingsService, 'get').mockResolvedValue(settings);
+
+    productRepo.findOne.mockResolvedValue({
+      id: 'p1',
+      name: 'Lipstick',
+      stock: 10,
+      sellingPriceMinor: 200000,
+    } as Product);
+    const customer = {
+      id: 'c1',
+      fullName: 'Test Customer',
+      phoneNumber: '01700000000',
+      rewardPoints: 250,
+      lifetimeSpendMinor: 9000,
+      rewardTier: CustomerRewardTier.GOLD,
+    } as Customer;
+    customerRepo.findOne.mockResolvedValue(customer);
+    customerRepo.save.mockImplementation(async (saved: Customer) => saved);
+    transactionRepo.create.mockImplementation(
+      (values: Partial<Transaction>) => values as Transaction,
+    );
+    transactionRepo.save.mockImplementation(
+      async (saved: Transaction) =>
+        ({
+          ...saved,
+          id: 'tx-reward',
+          invoiceId: 'DM-20260930-0001',
+          createdAt: new Date('2026-09-30T12:00:00.000Z'),
+        }) as Transaction,
+    );
+    itemRepo.create.mockImplementation(
+      (values: Partial<TransactionItem>) => values as TransactionItem,
+    );
+    itemRepo.save.mockImplementation(async (saved: TransactionItem) => saved);
+
+    const result = await service.checkout(
+      {
+        items: [{ itemType: TransactionItemType.PRODUCT, itemId: 'p1', quantity: 1 }],
+        customerId: 'c1',
+        redeemRewardPoints: true,
+        discountMinor: 0,
+        cashReceivedMinor: 195000,
+      },
+      'admin',
+    );
+
+    expect(result.rewardDiscountMinor).toBe(5000);
+    expect(result.discountMinor).toBe(5000);
+    expect(result.totalMinor).toBe(195000);
+    expect(result.rewardPointsRedeemed).toBe(100);
+    expect(result.loyaltyPointsEarned).toBe(20);
+    expect(customer.rewardPoints).toBe(170);
+    expect(customer.lifetimeSpendMinor).toBe(204000);
   });
 
   it('should throw error for insufficient stock', async () => {

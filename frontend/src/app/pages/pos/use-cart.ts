@@ -15,7 +15,10 @@ export interface CartState {
   customerId: string | null;
   customerName: string | null;
   customerTier: string | null;
+  customerRewardPoints: number;
   discountMinor: number;
+  redeemRewardPoints: boolean;
+  rewardDiscountMinor: number;
   cashReceivedMinor: number;
 }
 
@@ -24,7 +27,10 @@ const INITIAL_STATE: CartState = {
   customerId: null,
   customerName: null,
   customerTier: null,
+  customerRewardPoints: 0,
   discountMinor: 0,
+  redeemRewardPoints: false,
+  rewardDiscountMinor: 0,
   cashReceivedMinor: 0,
 };
 
@@ -37,9 +43,11 @@ type CartAction =
       customerId: string;
       customerName: string;
       customerTier: string;
+      customerRewardPoints: number;
     }
   | { type: 'CLEAR_CUSTOMER' }
   | { type: 'SET_DISCOUNT'; discountMinor: number }
+  | { type: 'SET_REWARD_REDEMPTION'; enabled: boolean; discountMinor: number }
   | { type: 'SET_CASH_RECEIVED'; cashReceivedMinor: number }
   | { type: 'CLEAR' };
 
@@ -95,6 +103,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         customerId: action.customerId,
         customerName: action.customerName,
         customerTier: action.customerTier,
+        customerRewardPoints: action.customerRewardPoints,
+        redeemRewardPoints: false,
+        rewardDiscountMinor: 0,
       };
 
     case 'CLEAR_CUSTOMER':
@@ -103,10 +114,20 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         customerId: null,
         customerName: null,
         customerTier: null,
+        customerRewardPoints: 0,
+        redeemRewardPoints: false,
+        rewardDiscountMinor: 0,
       };
 
     case 'SET_DISCOUNT':
       return { ...state, discountMinor: Math.max(0, action.discountMinor) };
+
+    case 'SET_REWARD_REDEMPTION':
+      return {
+        ...state,
+        redeemRewardPoints: action.enabled,
+        rewardDiscountMinor: action.enabled ? Math.max(0, action.discountMinor) : 0,
+      };
 
     case 'SET_CASH_RECEIVED':
       return {
@@ -129,6 +150,9 @@ export interface CartTotals {
   cashReceivedMinor: number;
   changeMinor: number;
   itemCount: number;
+  redeemRewardPoints: boolean;
+  rewardDiscountMinor: number;
+  redemptionAffordable: boolean;
 }
 
 /**
@@ -143,9 +167,15 @@ export function useCart(): {
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
   removeItem: (kind: CartItemKind, id: string) => void;
   setQuantity: (kind: CartItemKind, id: string, quantity: number) => void;
-  setCustomer: (customerId: string, customerName: string, customerTier: string) => void;
+  setCustomer: (
+    customerId: string,
+    customerName: string,
+    customerTier: string,
+    customerRewardPoints: number,
+  ) => void;
   clearCustomer: () => void;
   setDiscount: (discountMinor: number) => void;
+  setRewardRedemption: (enabled: boolean, discountMinor: number) => void;
   setCashReceived: (cashReceivedMinor: number) => void;
   clear: () => void;
 } {
@@ -157,9 +187,15 @@ export function useCart(): {
       0,
     );
 
-    // The discount cannot exceed the subtotal.
-    const effectiveDiscount = Math.min(state.discountMinor, subtotalMinor);
-    const totalMinor = subtotalMinor - effectiveDiscount;
+    const redemptionAffordable =
+      !state.redeemRewardPoints || state.rewardDiscountMinor <= subtotalMinor;
+    const effectiveRewardDiscount =
+      state.redeemRewardPoints && redemptionAffordable ? state.rewardDiscountMinor : 0;
+    const effectiveDiscount = Math.min(
+      state.discountMinor,
+      Math.max(0, subtotalMinor - effectiveRewardDiscount),
+    );
+    const totalMinor = subtotalMinor - effectiveDiscount - effectiveRewardDiscount;
 
     const changeMinor =
       state.cashReceivedMinor >= totalMinor ? state.cashReceivedMinor - totalMinor : 0;
@@ -169,12 +205,21 @@ export function useCart(): {
     return {
       subtotalMinor,
       discountMinor: effectiveDiscount,
+      redeemRewardPoints: state.redeemRewardPoints && redemptionAffordable,
+      rewardDiscountMinor: effectiveRewardDiscount,
+      redemptionAffordable,
       totalMinor,
       cashReceivedMinor: state.cashReceivedMinor,
       changeMinor,
       itemCount,
     };
-  }, [state.items, state.discountMinor, state.cashReceivedMinor]);
+  }, [
+    state.items,
+    state.discountMinor,
+    state.redeemRewardPoints,
+    state.rewardDiscountMinor,
+    state.cashReceivedMinor,
+  ]);
 
   const addItem = useCallback((item: Omit<CartItem, 'quantity'>): void => {
     dispatch({ type: 'ADD_ITEM', item });
@@ -189,8 +234,19 @@ export function useCart(): {
   }, []);
 
   const setCustomer = useCallback(
-    (customerId: string, customerName: string, customerTier: string): void => {
-      dispatch({ type: 'SET_CUSTOMER', customerId, customerName, customerTier });
+    (
+      customerId: string,
+      customerName: string,
+      customerTier: string,
+      customerRewardPoints: number,
+    ): void => {
+      dispatch({
+        type: 'SET_CUSTOMER',
+        customerId,
+        customerName,
+        customerTier,
+        customerRewardPoints,
+      });
     },
     [],
   );
@@ -201,6 +257,10 @@ export function useCart(): {
 
   const setDiscount = useCallback((discountMinor: number): void => {
     dispatch({ type: 'SET_DISCOUNT', discountMinor });
+  }, []);
+
+  const setRewardRedemption = useCallback((enabled: boolean, discountMinor: number): void => {
+    dispatch({ type: 'SET_REWARD_REDEMPTION', enabled, discountMinor });
   }, []);
 
   const setCashReceived = useCallback((cashReceivedMinor: number): void => {
@@ -220,6 +280,7 @@ export function useCart(): {
     setCustomer,
     clearCustomer,
     setDiscount,
+    setRewardRedemption,
     setCashReceived,
     clear,
   };

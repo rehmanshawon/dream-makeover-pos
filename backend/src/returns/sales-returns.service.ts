@@ -9,6 +9,7 @@ import { PaymentMethod } from '../salary-payments/payment-method.enum';
 import { CreateSalesReturnDto } from './dto/create-sales-return.dto';
 import { SalesReturn } from './sales-return.entity';
 import { SalesReturnLine } from './sales-return-line.entity';
+import { LoyaltySettingsService } from '../loyalty/loyalty-settings.service';
 
 @Injectable()
 export class SalesReturnsService {
@@ -16,6 +17,7 @@ export class SalesReturnsService {
     private readonly dataSource: DataSource,
     private readonly inventoryService: InventoryService,
     private readonly accountingService: AccountingService,
+    private readonly loyaltySettingsService: LoyaltySettingsService,
   ) {}
 
   async create(dto: CreateSalesReturnDto, createdBy: string): Promise<SalesReturn> {
@@ -25,6 +27,8 @@ export class SalesReturnsService {
     if (new Set(dto.lines.map((line) => line.transactionItemId)).size !== dto.lines.length) {
       throw new BadRequestException('A sale line may appear only once per return.');
     }
+
+    const loyaltySettings = await this.loyaltySettingsService.get();
 
     return this.dataSource.transaction(async (manager) => {
       const transactionRepo = manager.getRepository(Transaction);
@@ -126,12 +130,36 @@ export class SalesReturnsService {
         throw new BadRequestException('Return value exceeds supported accounting limits.');
       }
 
+      const priorRefundMinor = returns.reduce((sum, prior) => sum + prior.refundMinor, 0);
+      const priorPointsRemoved = returns.reduce((sum, prior) => sum + prior.rewardPointsRemoved, 0);
+      const priorPointsRestored = returns.reduce(
+        (sum, prior) => sum + prior.rewardPointsRestored,
+        0,
+      );
+      const cumulativeRefundMinor = priorRefundMinor + refundMinor;
+      const pointsRemovedTotal =
+        transaction.totalMinor > 0
+          ? Math.floor(
+              (transaction.loyaltyPointsEarned * cumulativeRefundMinor) / transaction.totalMinor,
+            )
+          : 0;
+      const pointsRestoredTotal =
+        transaction.totalMinor > 0
+          ? Math.floor(
+              (transaction.rewardPointsRedeemed * cumulativeRefundMinor) / transaction.totalMinor,
+            )
+          : 0;
+      const rewardPointsRemoved = Math.max(0, pointsRemovedTotal - priorPointsRemoved);
+      const rewardPointsRestored = Math.max(0, pointsRestoredTotal - priorPointsRestored);
+
       const salesReturn = await returnRepo.save(
         returnRepo.create({
           transactionId: transaction.id,
           returnDate: dto.returnDate,
           refundMethod: dto.refundMethod ?? PaymentMethod.CASH,
           refundMinor,
+          rewardPointsRemoved,
+          rewardPointsRestored,
           revenueReversalMinor: totals.revenueMinor,
           vatReversalMinor: totals.vatMinor,
           cogsReversalMinor: totals.cogsMinor,
@@ -181,9 +209,11 @@ export class SalesReturnsService {
         const customer = await customerRepo.findOne({ where: { id: transaction.customerId } });
         if (customer) {
           customer.lifetimeSpendMinor = Math.max(0, customer.lifetimeSpendMinor - refundMinor);
-          customer.rewardPoints = Math.max(
-            0,
-            customer.rewardPoints - Math.floor(refundMinor / 10000),
+          customer.rewardPoints =
+            Math.max(0, customer.rewardPoints - rewardPointsRemoved) + rewardPointsRestored;
+          customer.rewardTier = this.loyaltySettingsService.tierForPoints(
+            customer.rewardPoints,
+            loyaltySettings.tiers,
           );
           await customerRepo.save(customer);
         }

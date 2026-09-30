@@ -1,6 +1,7 @@
 import { useState, type JSX } from 'react';
 import { ApiError } from '../../../api/api-error';
 import { useCheckout } from '../../../api/checkout-hooks';
+import { useLoyaltySettings } from '../../../api/loyalty-settings-hooks';
 import { BUSINESS_INFO } from '../../../config/business';
 import type { CheckoutResponse } from '../../../types/checkout';
 import { CatalogPanel } from './CatalogPanel';
@@ -17,10 +18,28 @@ import './NewSalePage.css';
 export function NewSalePage(): JSX.Element {
   const cart = useCart();
   const checkout = useCheckout();
+  const loyaltySettings = useLoyaltySettings();
   const [confirmation, setConfirmation] = useState<CheckoutResponse | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
   const [printError, setPrintError] = useState<string | null>(null);
+
+  const tierSettings = loyaltySettings.data?.tiers ?? [];
+  const activeTier = [...tierSettings]
+    .sort((left, right) => right.minimumPoints - left.minimumPoints)
+    .find((tier) => cart.state.customerRewardPoints >= tier.minimumPoints);
+  const rewardOffer =
+    cart.state.customerId &&
+    activeTier &&
+    activeTier.redeemPoints > 0 &&
+    activeTier.discountMinor > 0 &&
+    cart.state.customerRewardPoints >= activeTier.redeemPoints
+      ? {
+          tier: activeTier.tier,
+          redeemPoints: activeTier.redeemPoints,
+          discountMinor: activeTier.discountMinor,
+        }
+      : null;
 
   const handleSubmit = async (): Promise<void> => {
     setSubmissionError(null);
@@ -98,11 +117,15 @@ export function NewSalePage(): JSX.Element {
         customerId={cart.state.customerId}
         customerName={cart.state.customerName}
         customerTier={cart.state.customerTier}
+        customerRewardPoints={cart.state.customerRewardPoints}
+        rewardOffer={rewardOffer}
+        redeemRewardPoints={cart.state.redeemRewardPoints}
         onRemoveItem={cart.removeItem}
         onSetQuantity={cart.setQuantity}
         onSelectCustomer={cart.setCustomer}
         onClearCustomer={cart.clearCustomer}
         onSetDiscount={cart.setDiscount}
+        onSetRewardRedemption={cart.setRewardRedemption}
         onSetCashReceived={cart.setCashReceived}
         onClearCart={cart.clear}
         onSubmit={handleSubmit}

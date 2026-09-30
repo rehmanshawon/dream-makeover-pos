@@ -21,6 +21,7 @@ export interface ReceiptBusiness {
 
 export interface ReceiptLoyalty {
   pointsEarned: number;
+  pointsRedeemed: number;
   totalPoints: number;
   tier: string;
 }
@@ -32,6 +33,8 @@ export interface ReceiptData {
   customer: ReceiptCustomer | null;
   items: ReceiptItem[];
   subtotalMinor: number;
+  manualDiscountMinor: number;
+  rewardDiscountMinor: number;
   discountMinor: number;
   totalMinor: number;
   cashReceivedMinor: number;

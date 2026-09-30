@@ -29,6 +29,7 @@ import { SupplierReturn } from '../purchases/supplier-return.entity';
 import { SupplierReturnLine } from '../purchases/supplier-return-line.entity';
 import { CostRevaluation } from '../inventory/cost-revaluation.entity';
 import { AccountingPeriod } from '../accounting/accounting-period.entity';
+import { LoyaltySettings } from '../loyalty/loyalty-settings.entity';
 import { JournalEntryPeriodSubscriber } from '../accounting/journal-entry-period.subscriber';
 const env = process.env;
 
@@ -68,6 +69,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
     SupplierReturnLine,
     CostRevaluation,
     AccountingPeriod,
+    LoyaltySettings,
   ],
   subscribers: [JournalEntryPeriodSubscriber],
   migrations,

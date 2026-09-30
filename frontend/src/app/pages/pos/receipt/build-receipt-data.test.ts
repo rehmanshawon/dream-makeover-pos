@@ -16,6 +16,8 @@ function baseResponse(overrides: Partial<CheckoutResponse> = {}): CheckoutRespon
     transactionId: 'tx-1',
     invoiceId: 'DM-20260915-0001',
     subtotalMinor: 200000,
+    manualDiscountMinor: 0,
+    rewardDiscountMinor: 0,
     discountMinor: 0,
     totalMinor: 200000,
     cashReceivedMinor: 300000,
@@ -31,6 +33,7 @@ function baseResponse(overrides: Partial<CheckoutResponse> = {}): CheckoutRespon
       },
     ],
     loyaltyPointsEarned: 0,
+    rewardPointsRedeemed: 0,
     customer: null,
     ...overrides,
   };

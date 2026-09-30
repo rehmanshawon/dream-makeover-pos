@@ -31,6 +31,7 @@ import { AccountingPeriod } from '../../src/accounting/accounting-period.entity'
 import { JournalEntryPeriodSubscriber } from '../../src/accounting/journal-entry-period.subscriber';
 import { BankReconciliation } from '../../src/accounting/bank-reconciliation.entity';
 import { BankReconciliationLine } from '../../src/accounting/bank-reconciliation-line.entity';
+import { LoyaltySettings } from '../../src/loyalty/loyalty-settings.entity';
 
 export const TEST_PRODUCT_CATEGORY_ID = '11111111-1111-4111-8111-111111111111';
 export const TEST_SERVICE_CATEGORY_ID = '22222222-2222-4222-8222-222222222222';
@@ -63,6 +64,7 @@ const TEST_TABLES = [
   'expenses',
   'categories',
   'accounting_accounts',
+  'loyalty_settings',
 ];
 
 const TEST_ACCOUNTING_ACCOUNTS: Account[] = [
@@ -351,6 +353,7 @@ export async function createTestDataSource(): Promise<DataSource> {
       SalesReturnLine,
       CostRevaluation,
       AccountingPeriod,
+      LoyaltySettings,
     ],
     subscribers: [JournalEntryPeriodSubscriber],
     synchronize: false,

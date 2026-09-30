@@ -52,6 +52,18 @@ export function SaleConfirmationModal({
             <dt>Total</dt>
             <dd>{formatBdt(response.totalMinor)}</dd>
           </div>
+          {response.manualDiscountMinor > 0 && (
+            <div className="sale-confirmation__fact">
+              <dt>Manual discount</dt>
+              <dd>{formatBdt(response.manualDiscountMinor)}</dd>
+            </div>
+          )}
+          {response.rewardDiscountMinor > 0 && (
+            <div className="sale-confirmation__fact">
+              <dt>Reward discount</dt>
+              <dd>{formatBdt(response.rewardDiscountMinor)}</dd>
+            </div>
+          )}
           <div className="sale-confirmation__fact">
             <dt>Cash received</dt>
             <dd>{formatBdt(response.cashReceivedMinor)}</dd>
@@ -66,20 +78,28 @@ export function SaleConfirmationModal({
           </div>
         </dl>
 
-        {response.customer && response.loyaltyPointsEarned > 0 && (
-          <div className="sale-confirmation__loyalty">
-            <p>
-              <strong>{response.loyaltyPointsEarned}</strong> loyalty{' '}
-              {response.loyaltyPointsEarned === 1 ? 'point' : 'points'} earned
-            </p>
-            <p className="sale-confirmation__tier">
-              Total points: <strong>{response.customer.totalPointsAfterSale}</strong>
-            </p>
-            <p className="sale-confirmation__tier">
-              Tier: <strong>{response.customer.tier}</strong>
-            </p>
-          </div>
-        )}
+        {response.customer &&
+          (response.loyaltyPointsEarned > 0 || response.rewardPointsRedeemed > 0) && (
+            <div className="sale-confirmation__loyalty">
+              {response.loyaltyPointsEarned > 0 && (
+                <p>
+                  <strong>{response.loyaltyPointsEarned}</strong> loyalty{' '}
+                  {response.loyaltyPointsEarned === 1 ? 'point' : 'points'} earned
+                </p>
+              )}
+              {response.rewardPointsRedeemed > 0 && (
+                <p>
+                  <strong>{response.rewardPointsRedeemed}</strong> reward points redeemed
+                </p>
+              )}
+              <p className="sale-confirmation__tier">
+                Total points: <strong>{response.customer.totalPointsAfterSale}</strong>
+              </p>
+              <p className="sale-confirmation__tier">
+                Tier: <strong>{response.customer.tier}</strong>
+              </p>
+            </div>
+          )}
 
         {printError && (
           <div className="sale-confirmation__print-error" role="alert">

@@ -3,15 +3,17 @@ import { UsersSection } from './UsersSection';
 import { CategoriesSection } from './CategoriesSection';
 import { SecuritySection } from './SecuritySection';
 import { BusinessInfoSection } from './BusinessInfoSection';
+import { LoyaltySection } from './LoyaltySection';
 import './SettingsPage.css';
 
-type SettingsTab = 'users' | 'categories' | 'security' | 'business';
+type SettingsTab = 'users' | 'categories' | 'security' | 'business' | 'loyalty';
 
 const TABS: { key: SettingsTab; label: string }[] = [
   { key: 'users', label: 'Users' },
   { key: 'categories', label: 'Categories' },
   { key: 'security', label: 'Security' },
   { key: 'business', label: 'Business info' },
+  { key: 'loyalty', label: 'Loyalty' },
 ];
 
 export function SettingsPage(): JSX.Element {
@@ -39,6 +41,7 @@ export function SettingsPage(): JSX.Element {
         {tab === 'categories' && <CategoriesSection />}
         {tab === 'security' && <SecuritySection />}
         {tab === 'business' && <BusinessInfoSection />}
+        {tab === 'loyalty' && <LoyaltySection />}
       </div>
     </div>
   );

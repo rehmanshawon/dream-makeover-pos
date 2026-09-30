@@ -39,6 +39,12 @@ export class SalesReturn {
   })
   refundMinor: number;
 
+  @Column({ name: 'reward_points_removed', type: 'int', unsigned: true, default: 0 })
+  rewardPointsRemoved: number = 0;
+
+  @Column({ name: 'reward_points_restored', type: 'int', unsigned: true, default: 0 })
+  rewardPointsRestored: number = 0;
+
   @Column({
     name: 'revenue_reversal_minor',
     type: 'bigint',

@@ -19,6 +19,8 @@ export class CheckoutResponseDto {
   transactionId: string;
   invoiceId: string;
   subtotalMinor: number;
+  manualDiscountMinor: number;
+  rewardDiscountMinor: number;
   discountMinor: number;
   totalMinor: number;
   cashReceivedMinor: number;
@@ -26,6 +28,7 @@ export class CheckoutResponseDto {
   cashier: string;
   items: CheckoutItemResponseDto[];
   loyaltyPointsEarned: number;
+  rewardPointsRedeemed: number;
   /**
    * Null for guest sales (no customer attached).
    */

@@ -11,7 +11,12 @@ import './CustomerPickerModal.css';
 interface CustomerPickerModalProps {
   open: boolean;
   onClose: () => void;
-  onSelect: (customerId: string, customerName: string, customerTier: string) => void;
+  onSelect: (
+    customerId: string,
+    customerName: string,
+    customerTier: string,
+    customerRewardPoints: number,
+  ) => void;
 }
 
 export function CustomerPickerModal({
@@ -76,7 +81,12 @@ export function CustomerPickerModal({
                   type="button"
                   className="customer-picker__option"
                   onClick={() => {
-                    onSelect(customer.id, customer.fullName, customer.rewardTier);
+                    onSelect(
+                      customer.id,
+                      customer.fullName,
+                      customer.rewardTier,
+                      customer.rewardPoints,
+                    );
                     onClose();
                   }}
                 >
@@ -111,7 +121,7 @@ export function CustomerPickerModal({
           // customer list once data is available.
           void (async () => {
             setCreateOpen(false);
-            onSelect(customer.id, customer.fullName, customer.rewardTier);
+            onSelect(customer.id, customer.fullName, customer.rewardTier, customer.rewardPoints);
             onClose();
           })();
         }}

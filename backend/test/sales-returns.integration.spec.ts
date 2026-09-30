@@ -5,6 +5,7 @@ import { AccountingService } from '../src/accounting/accounting.service';
 import { JournalEntry } from '../src/accounting/journal-entry.entity';
 import { JournalEntryType } from '../src/accounting/journal-entry-type.enum';
 import { Customer } from '../src/customers/customer.entity';
+import { CustomerRewardTier } from '../src/customers/customer-reward-tier.enum';
 import { Product } from '../src/products/product.entity';
 import { InventoryService } from '../src/inventory/inventory.service';
 import { PaymentMethod } from '../src/salary-payments/payment-method.enum';
@@ -13,6 +14,8 @@ import { TransactionItem, TransactionItemType } from '../src/transactions/transa
 import { SalesReturn } from '../src/returns/sales-return.entity';
 import { SalesReturnLine } from '../src/returns/sales-return-line.entity';
 import { SalesReturnsService } from '../src/returns/sales-returns.service';
+import { LoyaltySettings } from '../src/loyalty/loyalty-settings.entity';
+import { LoyaltySettingsService } from '../src/loyalty/loyalty-settings.service';
 import {
   createTestDataSource,
   TEST_PRODUCT_CATEGORY_ID,
@@ -34,7 +37,11 @@ describe('Sales returns (integration)', () => {
       dataSource.getRepository(JournalEntry),
     );
     const inventory = new InventoryService(dataSource, accounting);
-    service = new SalesReturnsService(dataSource, inventory, accounting);
+    const loyaltySettings = new LoyaltySettingsService(
+      dataSource.getRepository(LoyaltySettings),
+      dataSource.getRepository(Customer),
+    );
+    service = new SalesReturnsService(dataSource, inventory, accounting, loyaltySettings);
   });
 
   beforeEach(async () => {
@@ -150,5 +157,41 @@ describe('Sales returns (integration)', () => {
       stock: 0,
     });
     expect(await dataSource.getRepository(SalesReturn).count()).toBe(0);
+  });
+
+  it('restores redeemed points and removes sale-earned points on a full return', async () => {
+    const customer = await dataSource.getRepository(Customer).save(
+      dataSource.getRepository(Customer).create({
+        fullName: 'Reward Customer',
+        phoneNumber: '01700000001',
+        rewardTier: 'Silver' as CustomerRewardTier,
+        rewardPoints: 80,
+        lifetimeSpendMinor: 15002,
+      }),
+    );
+    await dataSource.getRepository(Transaction).update(transactionId, {
+      customerId: customer.id,
+      discountMinor: 5000,
+      rewardDiscountMinor: 5000,
+      rewardPointsRedeemed: 100,
+      loyaltyPointsEarned: 20,
+      totalMinor: 15002,
+    });
+
+    const returned = await service.create(
+      {
+        transactionId,
+        returnDate: '2026-09-30',
+        refundMethod: PaymentMethod.CASH,
+        lines: [{ transactionItemId: itemId, quantity: 2 }],
+      },
+      'admin',
+    );
+
+    const updatedCustomer = await dataSource.getRepository(Customer).findOneBy({ id: customer.id });
+    expect(returned.rewardPointsRemoved).toBe(20);
+    expect(returned.rewardPointsRestored).toBe(100);
+    expect(updatedCustomer?.rewardPoints).toBe(160);
+    expect(updatedCustomer?.lifetimeSpendMinor).toBe(0);
   });
 });

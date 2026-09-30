@@ -31,6 +31,7 @@ export class CreateServiceDto {
   @Min(1)
   durationMinutes: number;
 
+  @IsOptional()
   @IsInt()
   @Min(0)
   rewardPointWeight: number;

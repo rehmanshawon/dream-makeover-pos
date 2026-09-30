@@ -40,6 +40,40 @@
   margin-bottom: 2px;
 }
 
+.cart-panel__points {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.cart-panel__reward {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+}
+
+.cart-panel__reward strong {
+  font-size: var(--font-size-sm);
+}
+
+.cart-panel__reward p {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.cart-panel__reward .cart-panel__reward-error {
+  grid-column: 1 / -1;
+  color: var(--color-danger);
+}
+
+.cart-panel__row--reward {
+  color: var(--color-success);
+}
+
 .cart-panel__customer-actions {
   display: flex;
   gap: var(--space-1);

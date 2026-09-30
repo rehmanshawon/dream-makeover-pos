@@ -52,7 +52,7 @@ export function ServicesPage(): JSX.Element {
     {
       key: 'name',
       header: 'Name',
-      width: isAdmin ? '25%' : '30%',
+      width: isAdmin ? '30%' : '35%',
       render: (s) => <span className="service-cell__name">{s.name}</span>,
     },
     {
@@ -65,21 +65,14 @@ export function ServicesPage(): JSX.Element {
     {
       key: 'price',
       header: 'Price',
-      width: isAdmin ? '17%' : '20%',
+      width: isAdmin ? '21%' : '25%',
       render: (s) => formatBdt(s.priceMinor),
-      align: 'right',
-    },
-    {
-      key: 'rewardWeight',
-      header: 'Reward weight',
-      width: isAdmin ? '13%' : '15%',
-      render: (s) => `×${s.rewardPointWeight}`,
       align: 'right',
     },
     {
       key: 'active',
       header: 'Status',
-      width: isAdmin ? '16%' : '20%',
+      width: isAdmin ? '20%' : '25%',
       render: (s) => (
         <Badge variant={s.active ? 'success' : 'neutral'}>{s.active ? 'Active' : 'Inactive'}</Badge>
       ),

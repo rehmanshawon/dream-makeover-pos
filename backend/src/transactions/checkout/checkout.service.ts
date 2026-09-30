@@ -5,7 +5,7 @@ import { Transaction } from '../transaction.entity';
 import { TransactionItem, TransactionItemType } from '../transaction-item.entity';
 import { Product } from '../../products/product.entity';
 import { SalonService } from '../../services/service.entity';
-import { Customer, CustomerRewardTier } from '../../customers/customer.entity';
+import { Customer } from '../../customers/customer.entity';
 import { CheckoutRequestDto } from './dto/checkout-request.dto';
 import {
   CheckoutResponseDto,
@@ -17,6 +17,7 @@ import { Package } from '../../packages/package.entity';
 import { PackageItem } from '../../packages/package-item.entity';
 import { InventoryService } from '../../inventory/inventory.service';
 import { AccountingService } from '../../accounting/accounting.service';
+import { LoyaltySettingsService } from '../../loyalty/loyalty-settings.service';
 
 @Injectable()
 export class CheckoutService {
@@ -26,12 +27,15 @@ export class CheckoutService {
     private readonly invoiceNumberService: InvoiceNumberService,
     private readonly inventoryService: InventoryService,
     private readonly accountingService: AccountingService,
+    private readonly loyaltySettingsService: LoyaltySettingsService,
   ) {}
 
   async checkout(dto: CheckoutRequestDto, cashierName: string): Promise<CheckoutResponseDto> {
     if (!dto.items || dto.items.length === 0) {
       throw new BadRequestException('At least one item is required');
     }
+
+    const loyaltySettings = await this.loyaltySettingsService.get();
 
     return await this.dataSource.transaction(async (manager) => {
       const productRepo = manager.getRepository(Product);
@@ -185,8 +189,42 @@ export class CheckoutService {
         throw new BadRequestException('Discount cannot exceed subtotal');
       }
 
+      let rewardDiscountMinor = 0;
+      let rewardPointsRedeemed = 0;
+      let customer: Customer | null = null;
+      if (dto.customerId) {
+        customer = await customerRepo.findOne({ where: { id: dto.customerId } });
+        if (!customer) throw new NotFoundException('Customer not found');
+      }
+      if (dto.redeemRewardPoints) {
+        if (!customer) {
+          throw new BadRequestException('A customer must be selected to redeem reward points');
+        }
+        const currentTier = this.loyaltySettingsService.tierForPoints(
+          customer.rewardPoints,
+          loyaltySettings.tiers,
+        );
+        const tierSetting = this.loyaltySettingsService.tierSetting(
+          currentTier,
+          loyaltySettings.tiers,
+        );
+        if (
+          tierSetting.redeemPoints < 1 ||
+          tierSetting.discountMinor < 1 ||
+          customer.rewardPoints < tierSetting.redeemPoints
+        ) {
+          throw new BadRequestException('This customer is not eligible to redeem reward points');
+        }
+        if (tierSetting.discountMinor > subtotalMinor - dto.discountMinor) {
+          throw new BadRequestException('Sale total is too low for this reward discount');
+        }
+        rewardDiscountMinor = tierSetting.discountMinor;
+        rewardPointsRedeemed = tierSetting.redeemPoints;
+      }
+
+      const totalDiscountMinor = dto.discountMinor + rewardDiscountMinor;
       const vatMinor = 0;
-      const totalMinor = subtotalMinor - dto.discountMinor;
+      const totalMinor = subtotalMinor - totalDiscountMinor;
       if (dto.cashReceivedMinor < totalMinor) {
         throw new BadRequestException('Insufficient cash received');
       }
@@ -198,7 +236,10 @@ export class CheckoutService {
         invoiceId,
         customerId: dto.customerId ?? null,
         subtotalMinor,
-        discountMinor: dto.discountMinor,
+        discountMinor: totalDiscountMinor,
+        rewardDiscountMinor,
+        rewardPointsRedeemed,
+        loyaltyPointsEarned: 0,
         vatRatePercent: 0,
         vatMinor: 0,
         totalMinor,
@@ -234,7 +275,7 @@ export class CheckoutService {
         entryDate: (savedTransaction.createdAt ?? new Date()).toISOString().slice(0, 10),
         invoiceId,
         totalMinor,
-        revenueMinor: subtotalMinor - dto.discountMinor,
+        revenueMinor: totalMinor,
         vatMinor,
         cogsMinor: costOfGoodsSoldMinor,
         createdBy: cashierName,
@@ -243,18 +284,18 @@ export class CheckoutService {
       let loyaltyPointsEarned = 0;
       let customerResponse: CheckoutCustomerResponseDto | null = null;
 
-      if (dto.customerId) {
-        const customer = await customerRepo.findOne({
-          where: { id: dto.customerId },
-        });
-        if (!customer) {
-          throw new NotFoundException('Customer not found');
-        }
-
+      if (customer) {
+        const previousSpendMinor = customer.lifetimeSpendMinor;
         customer.lifetimeSpendMinor += totalMinor;
-        loyaltyPointsEarned = Math.floor(totalMinor / 10000);
-        customer.rewardPoints += loyaltyPointsEarned;
-        customer.rewardTier = this.calculateTier(customer.rewardPoints);
+        loyaltyPointsEarned =
+          (Math.floor(customer.lifetimeSpendMinor / loyaltySettings.earningSpendMinor) -
+            Math.floor(previousSpendMinor / loyaltySettings.earningSpendMinor)) *
+          loyaltySettings.earningPoints;
+        customer.rewardPoints = customer.rewardPoints - rewardPointsRedeemed + loyaltyPointsEarned;
+        customer.rewardTier = this.loyaltySettingsService.tierForPoints(
+          customer.rewardPoints,
+          loyaltySettings.tiers,
+        );
         const savedCustomer = await customerRepo.save(customer);
 
         customerResponse = {
@@ -267,26 +308,25 @@ export class CheckoutService {
         };
       }
 
+      savedTransaction.loyaltyPointsEarned = loyaltyPointsEarned;
+      await transactionRepo.save(savedTransaction);
+
       return {
         transactionId: savedTransaction.id,
         invoiceId: savedTransaction.invoiceId,
         subtotalMinor,
-        discountMinor: dto.discountMinor,
+        manualDiscountMinor: dto.discountMinor,
+        rewardDiscountMinor,
+        discountMinor: totalDiscountMinor,
         totalMinor,
         cashReceivedMinor: dto.cashReceivedMinor,
         changeMinor,
         cashier: cashierName,
         items: itemResponses,
         loyaltyPointsEarned,
+        rewardPointsRedeemed,
         customer: customerResponse,
       };
     });
-  }
-
-  private calculateTier(points: number): CustomerRewardTier {
-    if (points >= 1000) return CustomerRewardTier.DIAMOND;
-    if (points >= 500) return CustomerRewardTier.PLATINUM;
-    if (points >= 200) return CustomerRewardTier.GOLD;
-    return CustomerRewardTier.SILVER;
   }
 }

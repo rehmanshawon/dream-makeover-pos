@@ -23,7 +23,7 @@ export class SalonServicesService {
       categoryId: category.id,
       priceMinor: dto.priceMinor,
       durationMinutes: dto.durationMinutes,
-      rewardPointWeight: dto.rewardPointWeight,
+      rewardPointWeight: dto.rewardPointWeight ?? 1,
       active: dto.active ?? true,
     });
 

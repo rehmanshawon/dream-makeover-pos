@@ -26,6 +26,8 @@ function baseReceipt(overrides: Partial<ReceiptData> = {}): ReceiptData {
       },
     ],
     subtotalMinor: 350000,
+    manualDiscountMinor: 0,
+    rewardDiscountMinor: 0,
     discountMinor: 0,
     totalMinor: 350000,
     cashReceivedMinor: 500000,
@@ -189,7 +191,7 @@ describe('formatReceipt', () => {
     const withoutDiscount = textLines(baseReceipt({ discountMinor: 0 }));
     expect(withoutDiscount.some((l) => l.startsWith('Discount'))).toBe(false);
 
-    const withDiscount = textLines(baseReceipt({ discountMinor: 5000 }));
+    const withDiscount = textLines(baseReceipt({ manualDiscountMinor: 5000, discountMinor: 5000 }));
     expect(withDiscount.some((l) => l.startsWith('Discount'))).toBe(true);
     expect(withDiscount.some((l) => l.includes('50.00'))).toBe(true);
   });
@@ -200,7 +202,7 @@ describe('formatReceipt', () => {
 
     const withLoyalty = textLines(
       baseReceipt({
-        loyalty: { pointsEarned: 35, totalPoints: 285, tier: 'Gold' },
+        loyalty: { pointsEarned: 35, pointsRedeemed: 0, totalPoints: 285, tier: 'Gold' },
       }),
     );
     expect(withLoyalty.some((l) => l.startsWith('Points earned'))).toBe(true);

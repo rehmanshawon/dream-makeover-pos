@@ -106,6 +106,23 @@ describe('NewSalePage', () => {
           headers: { 'content-type': 'application/json' },
         });
       }
+      if (url.includes('/loyalty-settings')) {
+        return new Response(
+          JSON.stringify({
+            id: 1,
+            earningSpendMinor: 10000,
+            earningPoints: 1,
+            tiers: [
+              { tier: 'Silver', minimumPoints: 0, redeemPoints: 0, discountMinor: 0 },
+              { tier: 'Gold', minimumPoints: 200, redeemPoints: 0, discountMinor: 0 },
+              { tier: 'Platinum', minimumPoints: 500, redeemPoints: 0, discountMinor: 0 },
+              { tier: 'Diamond', minimumPoints: 1000, redeemPoints: 0, discountMinor: 0 },
+            ],
+            updatedAt: '2026-09-30T00:00:00.000Z',
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
       if (url.includes('/products')) {
         return new Response(JSON.stringify(PRODUCTS), {
           status: 200,
@@ -257,6 +274,104 @@ describe('NewSalePage', () => {
     await userEvent.click(screen.getByRole('button', { name: /new sale/i }));
     const cart = screen.getByRole('complementary', { name: /cart/i });
     expect(within(cart).getByText(/no items yet/i)).toBeInTheDocument();
+  });
+
+  it('offers an eligible reward and submits an operator-approved redemption', async () => {
+    mockEndpoints();
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async (input, init) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      if (url.endsWith('/loyalty-settings')) {
+        return new Response(
+          JSON.stringify({
+            id: 1,
+            earningSpendMinor: 10000,
+            earningPoints: 1,
+            tiers: [
+              { tier: 'Silver', minimumPoints: 0, redeemPoints: 0, discountMinor: 0 },
+              { tier: 'Gold', minimumPoints: 200, redeemPoints: 100, discountMinor: 5000 },
+              { tier: 'Platinum', minimumPoints: 500, redeemPoints: 0, discountMinor: 0 },
+              { tier: 'Diamond', minimumPoints: 1000, redeemPoints: 0, discountMinor: 0 },
+            ],
+            updatedAt: '2026-09-30T00:00:00.000Z',
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      if (url.includes('/customers')) {
+        return new Response(
+          JSON.stringify([
+            {
+              id: 'c1',
+              fullName: 'Alice Rahman',
+              phoneNumber: '01700000000',
+              area: null,
+              rewardTier: 'Gold',
+              rewardPoints: 250,
+              lifetimeSpendMinor: 500000,
+              createdAt: '2026-01-01T00:00:00.000Z',
+              updatedAt: '2026-01-01T00:00:00.000Z',
+            },
+          ]),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      if (url.endsWith('/checkout')) {
+        const body = JSON.parse(init?.body as string);
+        expect(body).toMatchObject({
+          customerId: 'c1',
+          redeemRewardPoints: true,
+          discountMinor: 0,
+          cashReceivedMinor: 200000,
+        });
+        return new Response(
+          JSON.stringify({
+            transactionId: 'tx-reward',
+            invoiceId: 'DM-20260930-0001',
+            subtotalMinor: 200000,
+            manualDiscountMinor: 0,
+            rewardDiscountMinor: 5000,
+            discountMinor: 5000,
+            totalMinor: 195000,
+            cashReceivedMinor: 200000,
+            changeMinor: 5000,
+            cashier: 'admin',
+            items: [],
+            loyaltyPointsEarned: 19,
+            rewardPointsRedeemed: 100,
+            customer: {
+              id: 'c1',
+              name: 'Alice Rahman',
+              phoneNumber: '01700000000',
+              tier: 'Silver',
+              totalPointsAfterSale: 169,
+              lifetimeSpendMinorAfterSale: 695000,
+            },
+          }),
+          { status: 201, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      return originalFetch(input, init);
+    }) as unknown as typeof fetch;
+
+    renderPage();
+    await screen.findByText('Test Facial');
+    await userEvent.click(screen.getByRole('button', { name: /add customer/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /alice rahman/i }));
+    await userEvent.click(screen.getByText('Test Facial'));
+
+    expect(await screen.findByText('Gold reward available')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /apply reward/i }));
+    expect(screen.getByText('Reward discount').parentElement).toHaveTextContent('৳50.00');
+
+    const cashInput = screen.getByLabelText(/cash received/i);
+    await userEvent.clear(cashInput);
+    await userEvent.type(cashInput, '2000');
+    await userEvent.click(screen.getByRole('button', { name: /complete sale/i }));
+
+    expect(await screen.findByText('Sale completed')).toBeInTheDocument();
+    expect(screen.getByText(/reward points redeemed/i)).toBeInTheDocument();
+    expect(screen.getByText('Reward discount').parentElement).toHaveTextContent('৳50.00');
   });
 
   it('preserves the cart and shows an error on checkout failure', async () => {

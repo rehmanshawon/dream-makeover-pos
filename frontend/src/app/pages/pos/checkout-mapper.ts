@@ -22,6 +22,8 @@ export function buildCheckoutRequest(
     cashReceivedMinor: totals.cashReceivedMinor,
   };
 
+  if (totals.redeemRewardPoints) request.redeemRewardPoints = true;
+
   if (customerId) {
     request.customerId = customerId;
   }
