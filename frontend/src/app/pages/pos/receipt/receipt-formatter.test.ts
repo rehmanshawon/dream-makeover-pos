@@ -185,7 +185,7 @@ describe('formatReceipt', () => {
   it('separates receipt labels from values with colons', () => {
     const lines = textLines(baseReceipt());
     expect(lines.some((l) => /Invoice No\s+:/.test(l))).toBe(true);
-    expect(lines.some((l) => /Customer Name\s+:\s+Guest$/.test(l))).toBe(true);
+    expect(lines.some((l) => /Customer Name\s+:\s+Guest/.test(l))).toBe(true);
     expect(lines.some((l) => /Subtotal\s+:/.test(l))).toBe(true);
     expect(
       lines
@@ -194,6 +194,32 @@ describe('formatReceipt', () => {
         )
         .every((line) => line.length === RECEIPT_WIDTH),
     ).toBe(true);
+  });
+
+  it('left-aligns transaction, payment, staff, and loyalty values after their colons', () => {
+    const lines = textLines(
+      baseReceipt({
+        customer: { name: 'Alice Rahman', phone: '0123456789', tier: 'Gold', totalPoints: 250 },
+        loyalty: { pointsEarned: 35, pointsRedeemed: 5, totalPoints: 280, tier: 'Gold' },
+      }),
+    );
+    const expectedValues = [
+      ['Invoice No', 'DM-20260915-0001'],
+      ['Customer Name', 'Alice Rahman'],
+      ['Mobile No', '0123456789'],
+      ['Payment Method', 'Cash'],
+      ['Staff Name', 'admin'],
+      ['Points earned', '35'],
+      ['Points redeemed', '5'],
+      ['Total points', '280'],
+      ['Tier', 'Gold'],
+    ] as const;
+
+    for (const [label, value] of expectedValues) {
+      const line = lines.find((candidate) => candidate.startsWith(label));
+      expect(line).toBeDefined();
+      expect(line?.slice((line?.indexOf(':') ?? -1) + 1).startsWith(` ${value}`)).toBe(true);
+    }
   });
 
   it('keeps all label colons in one vertical column', () => {

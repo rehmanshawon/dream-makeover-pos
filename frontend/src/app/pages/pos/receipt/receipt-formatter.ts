@@ -54,9 +54,9 @@ function formatTime(iso: string): string {
 function labelValue(label: string, value: string): string {
   const labelWidth = 16;
   const padded = truncate(label, labelWidth).padEnd(labelWidth);
-  const prefix = `${padded} :`;
+  const prefix = `${padded} : `;
   const remaining = RECEIPT_WIDTH - prefix.length;
-  return prefix + rightAlign(value, remaining);
+  return prefix + leftAlign(value, remaining);
 }
 
 function itemRow(
@@ -76,7 +76,7 @@ function itemRow(
 }
 
 function itemHeaderRow(): string {
-  return itemRow('SL', 'Service/Product', 'Qty', 'Rate(৳)', 'Amount(৳)');
+  return itemRow('SL', 'Service/Product', 'Qty', 'Rate', 'Amount');
 }
 
 function totalRow(label: string, value: string): string {
@@ -191,7 +191,6 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   lines.push(
     text(totalRow('Subtotal', formatMoney(data.subtotalMinor)), {
       bold: true,
-      medium: true,
     }),
   );
 
@@ -205,7 +204,6 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   lines.push(
     text(totalRow('Total Amount', formatMoney(data.totalMinor)), {
       bold: true,
-      medium: true,
     }),
   );
   lines.push(text(totalRow('Paid Amount', formatMoney(data.cashReceivedMinor))));
@@ -218,10 +216,10 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   // ---------------------------------------------------------------------------
   // 5. Footer info
   // ---------------------------------------------------------------------------
-  lines.push(text(labelValue('Payment Method', 'Cash')));
-  lines.push(text(labelValue('Staff Name', data.cashier)));
+  //lines.push(text(labelValue('Payment Method', 'Cash')));
+  //lines.push(text(labelValue('Staff Name', data.cashier)));
   //lines.push(text(labelValue('Remarks', 'Thank you for choosing Dream Makeover!')));
-  lines.push(text(divider()));
+  //lines.push(text(divider()));
 
   // ---------------------------------------------------------------------------
   // 6. Loyalty
