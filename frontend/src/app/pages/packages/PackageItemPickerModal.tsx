@@ -1,7 +1,7 @@
 import { useMemo, useState, type JSX } from 'react';
 import { Modal } from '../../../ui/Modal';
 import { Button } from '../../../ui/Button';
-import { Input } from '../../../ui/Input';
+import { SearchInput } from '../../../ui/SearchInput/SearchInput';
 import { Spinner } from '../../../ui/Spinner';
 import { EmptyState } from '../../../ui/EmptyState';
 import { formatBdt } from '../../../utils/format';
@@ -100,10 +100,11 @@ export function PackageItemPickerModal({
           </button>
         </div>
 
-        <Input
+        <SearchInput
           placeholder="Search items"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          suggestions={items.map((item) => item.name)}
+          onValueChange={setSearch}
         />
 
         <div className="picker__list">

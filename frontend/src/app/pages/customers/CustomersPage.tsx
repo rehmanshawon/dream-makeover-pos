@@ -4,7 +4,7 @@ import { useCustomers } from '../../../api/customer-hooks';
 import { Button } from '../../../ui/Button';
 import { Card } from '../../../ui/Card';
 import { EmptyState } from '../../../ui/EmptyState';
-import { Input } from '../../../ui/Input';
+import { SearchInput } from '../../../ui/SearchInput/SearchInput';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
 import { Badge, type BadgeVariant } from '../../../ui/Badge';
@@ -32,7 +32,10 @@ export function CustomersPage(): JSX.Element {
     const q = search.trim().toLowerCase();
     if (!q) return data;
     return data.filter(
-      (c) => c.fullName.toLowerCase().includes(q) || c.phoneNumber.toLowerCase().includes(q),
+      (c) =>
+        c.fullName.toLowerCase().includes(q) ||
+        c.phoneNumber.toLowerCase().includes(q) ||
+        (c.area ?? '').toLowerCase().includes(q),
     );
   }, [data, search]);
 
@@ -47,6 +50,11 @@ export function CustomersPage(): JSX.Element {
       header: 'Phone',
       align: 'center',
       render: (c) => c.phoneNumber,
+    },
+    {
+      key: 'area',
+      header: 'Area',
+      render: (c) => c.area || '—',
     },
     {
       key: 'rewardTier',
@@ -82,10 +90,17 @@ export function CustomersPage(): JSX.Element {
         actions={<Button onClick={() => setModalOpen(true)}>New customer</Button>}
       >
         <div className="customers-page__toolbar">
-          <Input
+          <SearchInput
             placeholder="Search by name or phone"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            suggestions={
+              data?.flatMap((customer) => [
+                customer.fullName,
+                customer.phoneNumber,
+                customer.area ?? '',
+              ]) ?? []
+            }
+            onValueChange={setSearch}
           />
         </div>
 

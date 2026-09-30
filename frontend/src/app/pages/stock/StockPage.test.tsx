@@ -114,7 +114,7 @@ describe('StockPage', () => {
     renderPage();
 
     expect(await screen.findByText('Lipstick')).toBeInTheDocument();
-    expect(screen.getByText('Foundation')).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getByText('Foundation')).toBeInTheDocument();
     expect(screen.getByText('Jamdani Saree')).toBeInTheDocument();
   });
 
@@ -170,7 +170,7 @@ describe('StockPage', () => {
     await userEvent.type(search, 'foun');
 
     expect(screen.queryByText('Lipstick')).not.toBeInTheDocument();
-    expect(screen.getByText('Foundation')).toBeInTheDocument();
+    expect(screen.getByRole('table')).toHaveTextContent('Foundation');
   });
 
   it('combines status and category filters', async () => {

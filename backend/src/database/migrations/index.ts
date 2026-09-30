@@ -37,6 +37,7 @@ import { AddSupplierReturnsAndCostRevaluation1700000000033 } from './17000000000
 import { AddBankReconciliations1700000000034 } from './1700000000034-AddBankReconciliations';
 import { RepairSalesReturnLinesTable1700000000035 } from './1700000000035-RepairSalesReturnLinesTable';
 import { AddAccountingPeriodControls1700000000036 } from './1700000000036-AddAccountingPeriodControls';
+import { AddAreaToCustomers1700000000037 } from './1700000000037-AddAreaToCustomers';
 
 export const migrations = [
   CreateCustomersTable1700000000000,
@@ -78,4 +79,5 @@ export const migrations = [
   AddBankReconciliations1700000000034,
   RepairSalesReturnLinesTable1700000000035,
   AddAccountingPeriodControls1700000000036,
+  AddAreaToCustomers1700000000037,
 ];

@@ -20,4 +20,9 @@ export class UpdateCustomerDto {
     message: 'phoneNumber must contain only digits, spaces, +, -, (, )',
   })
   phoneNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 150)
+  area?: string | null;
 }

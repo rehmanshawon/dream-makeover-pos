@@ -6,7 +6,7 @@ import { Button } from '../../../ui/Button';
 import { Card } from '../../../ui/Card';
 import { ConfirmDialog } from '../../../ui/ConfirmDialog';
 import { EmptyState } from '../../../ui/EmptyState';
-import { Input } from '../../../ui/Input';
+import { SearchInput } from '../../../ui/SearchInput/SearchInput';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
 import { Icon } from '../../components/Icon';
@@ -147,10 +147,11 @@ export function UsersSection(): JSX.Element {
       actions={<Button onClick={() => setCreateOpen(true)}>New user</Button>}
     >
       <div className="users-section__toolbar">
-        <Input
+        <SearchInput
           placeholder="Search by username or display name"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          suggestions={data?.flatMap((user) => [user.username, user.displayName]) ?? []}
+          onValueChange={setSearch}
         />
       </div>
 

@@ -6,7 +6,7 @@ import { ApiError } from '../../../api/api-error';
 import { Badge, type BadgeVariant } from '../../../ui/Badge';
 import { Card } from '../../../ui/Card';
 import { EmptyState } from '../../../ui/EmptyState';
-import { Input } from '../../../ui/Input';
+import { SearchInput } from '../../../ui/SearchInput/SearchInput';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
 import { formatBdt } from '../../../utils/format';
@@ -165,10 +165,11 @@ export function StockPage(): JSX.Element {
           </div>
 
           <div className="stock-page__search">
-            <Input
+            <SearchInput
               placeholder="Search products"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              suggestions={products.data?.map((product) => product.name) ?? []}
+              onValueChange={setSearch}
             />
           </div>
         </div>

@@ -96,6 +96,10 @@ export function CustomerDetailPage(): JSX.Element {
               <dd>{data.phoneNumber}</dd>
             </div>
             <div className="customer-detail__fact">
+              <dt>Area</dt>
+              <dd>{data.area || '—'}</dd>
+            </div>
+            <div className="customer-detail__fact">
               <dt>Reward points</dt>
               <dd>{data.rewardPoints.toLocaleString('en-BD')}</dd>
             </div>

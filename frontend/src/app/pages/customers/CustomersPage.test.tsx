@@ -18,6 +18,7 @@ const CUSTOMERS = [
     id: 'c1',
     fullName: 'Alice Rahman',
     phoneNumber: '01700000000',
+    area: 'Banani',
     rewardTier: 'Silver',
     rewardPoints: 0,
     lifetimeSpendMinor: 0,
@@ -28,6 +29,7 @@ const CUSTOMERS = [
     id: 'c2',
     fullName: 'Bob Chowdhury',
     phoneNumber: '01800000000',
+    area: 'Mirpur',
     rewardTier: 'Gold',
     rewardPoints: 250,
     lifetimeSpendMinor: 500000,
@@ -86,7 +88,19 @@ describe('CustomersPage', () => {
     await userEvent.type(search, 'Bob');
 
     expect(screen.queryByText('Alice Rahman')).not.toBeInTheDocument();
-    expect(screen.getByText('Bob Chowdhury')).toBeInTheDocument();
+    expect(screen.getByRole('table')).toHaveTextContent('Bob Chowdhury');
+    expect(screen.getByRole('option', { name: 'Bob Chowdhury' })).toBeInTheDocument();
+  });
+
+  it('searches customer records by area', async () => {
+    mockListCustomers();
+    renderPage();
+
+    await screen.findByText('Alice Rahman');
+    await userEvent.type(screen.getByPlaceholderText(/search by name or phone/i), 'Mirpur');
+
+    expect(screen.getByRole('table')).toHaveTextContent('Bob Chowdhury');
+    expect(screen.getByRole('table')).not.toHaveTextContent('Alice Rahman');
   });
 
   it('shows an empty state when there are no customers', async () => {
@@ -113,5 +127,46 @@ describe('CustomersPage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /new customer/i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByLabelText(/area \(optional\)/i)).toBeInTheDocument();
+  });
+
+  it('submits an optional area when creating a customer', async () => {
+    const fetchMock = vi.fn(async (input, init) => {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      if (url.endsWith('/customers') && init?.method === 'POST') {
+        return new Response(
+          JSON.stringify({
+            id: 'c3',
+            fullName: 'Aisha Khan',
+            phoneNumber: '01900000000',
+            area: 'Mirpur',
+            rewardTier: 'Silver',
+            rewardPoints: 0,
+            lifetimeSpendMinor: 0,
+            createdAt: '2026-03-01T00:00:00.000Z',
+            updatedAt: '2026-03-01T00:00:00.000Z',
+          }),
+          { status: 201, headers: { 'content-type': 'application/json' } },
+        );
+      }
+
+      return new Response(JSON.stringify(CUSTOMERS), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    renderPage();
+
+    await screen.findByText('Alice Rahman');
+    await userEvent.click(screen.getByRole('button', { name: /new customer/i }));
+    await userEvent.type(screen.getByLabelText(/full name/i), 'Aisha Khan');
+    await userEvent.type(screen.getByLabelText(/phone number/i), '01900000000');
+    await userEvent.type(screen.getByLabelText(/area \(optional\)/i), 'Mirpur');
+    await userEvent.click(screen.getByRole('button', { name: /create customer/i }));
+
+    expect(await screen.findByText('Detail view')).toBeInTheDocument();
+    const createCall = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST');
+    expect(JSON.parse(createCall?.[1]?.body as string)).toMatchObject({ area: 'Mirpur' });
   });
 });

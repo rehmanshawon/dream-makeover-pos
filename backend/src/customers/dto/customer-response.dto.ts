@@ -4,6 +4,7 @@ export class CustomerResponseDto {
   id: string;
   fullName: string;
   phoneNumber: string;
+  area: string | null;
   rewardTier: CustomerRewardTier;
   rewardPoints: number;
   lifetimeSpendMinor: number;

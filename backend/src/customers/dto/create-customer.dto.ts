@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, Length, Matches } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, Length, Matches } from 'class-validator';
 
 export class CreateCustomerDto {
   @IsString()
@@ -13,4 +13,9 @@ export class CreateCustomerDto {
     message: 'phoneNumber must contain only digits, spaces, +, -, (, )',
   })
   phoneNumber: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 150)
+  area?: string | null;
 }

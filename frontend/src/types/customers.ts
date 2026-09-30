@@ -4,6 +4,7 @@ export interface Customer {
   id: string;
   fullName: string;
   phoneNumber: string;
+  area?: string | null;
   rewardTier: CustomerRewardTier;
   rewardPoints: number;
   lifetimeSpendMinor: number;
@@ -14,9 +15,11 @@ export interface Customer {
 export interface CreateCustomerRequest {
   fullName: string;
   phoneNumber: string;
+  area?: string | null;
 }
 
 export interface UpdateCustomerRequest {
   fullName?: string;
   phoneNumber?: string;
+  area?: string | null;
 }

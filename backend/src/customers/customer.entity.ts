@@ -17,6 +17,9 @@ export class Customer {
   @Column({ name: 'full_name', type: 'varchar', length: 150 })
   fullName: string;
 
+  @Column({ name: 'area', type: 'varchar', length: 150, nullable: true })
+  area: string | null = null;
+
   @Index('uq_customers_phone', { unique: true })
   @Column({ name: 'phone_number', type: 'varchar', length: 20 })
   phoneNumber: string;

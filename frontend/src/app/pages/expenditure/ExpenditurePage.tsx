@@ -6,7 +6,7 @@ import { Button } from '../../../ui/Button';
 import { Card } from '../../../ui/Card';
 import { ConfirmDialog } from '../../../ui/ConfirmDialog';
 import { EmptyState } from '../../../ui/EmptyState';
-import { Input } from '../../../ui/Input';
+import { SearchInput } from '../../../ui/SearchInput/SearchInput';
 import { Select, type SelectOption } from '../../../ui/Select';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
@@ -212,11 +212,18 @@ export function ExpenditurePage(): JSX.Element {
             </div>
 
             <div className="expenditure__search">
-              <Input
+              <SearchInput
                 label="Search"
                 placeholder="Search payee, reference, or note"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                suggestions={
+                  data?.flatMap((expense) => [
+                    expense.payee ?? '',
+                    expense.reference ?? '',
+                    expense.note ?? '',
+                  ]) ?? []
+                }
+                onValueChange={setSearch}
               />
             </div>
           </div>

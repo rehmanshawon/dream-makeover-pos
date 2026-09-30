@@ -111,7 +111,7 @@ describe('ExpenditurePage', () => {
     await userEvent.type(search, 'desco');
 
     expect(screen.queryByText('Local vendor')).not.toBeInTheDocument();
-    expect(screen.getByText('DESCO')).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getByText('DESCO')).toBeInTheDocument();
   });
 
   it('searches by note', async () => {

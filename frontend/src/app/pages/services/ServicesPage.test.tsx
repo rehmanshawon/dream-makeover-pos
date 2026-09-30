@@ -79,7 +79,7 @@ describe('ServicesPage', () => {
     renderPage(ADMIN);
 
     expect(await screen.findByText('Bridal Facial')).toBeInTheDocument();
-    expect(screen.getByText('Hair Spa')).toBeInTheDocument();
+    expect(rtlWithin(screen.getByRole('table')).getByText('Hair Spa')).toBeInTheDocument();
   });
 
   it('shows the price formatted with Taka symbol', async () => {
@@ -116,7 +116,7 @@ describe('ServicesPage', () => {
     await userEvent.type(search, 'hair');
 
     expect(screen.queryByText('Bridal Facial')).not.toBeInTheDocument();
-    expect(screen.getByText('Hair Spa')).toBeInTheDocument();
+    expect(screen.getByRole('table')).toHaveTextContent('Hair Spa');
   });
 
   it('opens the create modal', async () => {

@@ -3,7 +3,7 @@ import { useProducts } from '../../../api/product-hooks';
 import { useSalonServices } from '../../../api/salon-service-hooks';
 import { usePackages } from '../../../api/package-hooks';
 import { useCategoryTree } from '../../../api/category-hooks';
-import { Input } from '../../../ui/Input';
+import { SearchInput } from '../../../ui/SearchInput/SearchInput';
 import { Spinner } from '../../../ui/Spinner';
 import { EmptyState } from '../../../ui/EmptyState';
 import { ItemCard } from './ItemCard';
@@ -137,10 +137,11 @@ export function CatalogPanel({ onAdd }: CatalogPanelProps): JSX.Element {
       </div>
 
       <div className="catalog-panel__search">
-        <Input
+        <SearchInput
           placeholder="Search items"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          suggestions={items.map((item) => item.name)}
+          onValueChange={setSearch}
         />
       </div>
 

@@ -95,12 +95,14 @@ describe('CustomersService', () => {
     const dto: CreateCustomerDto = {
       fullName: 'Rehman Shawon',
       phoneNumber: '01700000000',
+      area: 'Mirpur',
     };
 
     await service.create(dto);
     expect(createSpy).toHaveBeenCalledWith({
       fullName: dto.fullName,
       phoneNumber: dto.phoneNumber,
+      area: dto.area,
       rewardTier: CustomerRewardTier.SILVER,
       rewardPoints: 0,
       lifetimeSpendMinor: 0,
@@ -121,6 +123,7 @@ describe('CustomersService', () => {
       id: 'uuid-1',
       fullName: 'Rehman Shawon',
       phoneNumber: '01700000000',
+      area: 'Dhanmondi',
       rewardTier: CustomerRewardTier.SILVER,
       rewardPoints: 100,
       lifetimeSpendMinor: 50000,
@@ -136,6 +139,7 @@ describe('CustomersService', () => {
       id: customer.id,
       fullName: customer.fullName,
       phoneNumber: customer.phoneNumber,
+      area: customer.area,
       rewardTier: customer.rewardTier,
       rewardPoints: customer.rewardPoints,
       lifetimeSpendMinor: 50000,

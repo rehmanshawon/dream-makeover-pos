@@ -8,7 +8,7 @@ import { Badge, type BadgeVariant } from '../../../ui/Badge';
 import { Button } from '../../../ui/Button';
 import { Card } from '../../../ui/Card';
 import { EmptyState } from '../../../ui/EmptyState';
-import { Input } from '../../../ui/Input';
+import { SearchInput } from '../../../ui/SearchInput/SearchInput';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
 import { Icon } from '../../components/Icon';
@@ -236,10 +236,15 @@ export function CatalogPage(): JSX.Element {
         )}
 
         <div className="catalog-page__toolbar">
-          <Input
+          <SearchInput
             placeholder={`Search ${category.kind === 'SERVICE' ? 'services' : 'products'}`}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            suggestions={
+              category.kind === 'SERVICE'
+                ? filteredServices.map((service) => service.name)
+                : filteredProducts.map((product) => product.name)
+            }
+            onValueChange={setSearch}
           />
         </div>
 

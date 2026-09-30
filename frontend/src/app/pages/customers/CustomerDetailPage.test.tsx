@@ -41,6 +41,7 @@ describe('CustomerDetailPage', () => {
             id: 'c1',
             fullName: 'Alice Rahman',
             phoneNumber: '01700000000',
+            area: 'Mirpur',
             rewardTier: 'Gold',
             rewardPoints: 250,
             lifetimeSpendMinor: 500000,
@@ -58,6 +59,7 @@ describe('CustomerDetailPage', () => {
 
     expect(await screen.findAllByText('Alice Rahman')).toHaveLength(2);
     expect(screen.getByText('01700000000')).toBeInTheDocument();
+    expect(screen.getByText('Mirpur')).toBeInTheDocument();
     expect(screen.getByText(/250/)).toBeInTheDocument();
     expect(screen.getByText(/5,000\.00/)).toBeInTheDocument();
   });
@@ -120,6 +122,7 @@ describe('CustomerDetailPage', () => {
           id: 'c1',
           fullName: 'Alice Rahman',
           phoneNumber: '01700000000',
+          area: 'Mirpur',
           rewardTier: 'Gold',
           rewardPoints: 250,
           lifetimeSpendMinor: 500000,

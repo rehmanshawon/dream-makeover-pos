@@ -17,9 +17,10 @@ interface CustomerFormModalProps {
 interface FormState {
   fullName: string;
   phoneNumber: string;
+  area: string;
 }
 
-const EMPTY_FORM: FormState = { fullName: '', phoneNumber: '' };
+const EMPTY_FORM: FormState = { fullName: '', phoneNumber: '', area: '' };
 
 export function CustomerFormModal({
   open,
@@ -44,6 +45,7 @@ export function CustomerFormModal({
       setForm({
         fullName: customer.fullName,
         phoneNumber: customer.phoneNumber,
+        area: customer.area ?? '',
       });
     } else {
       setForm(EMPTY_FORM);
@@ -59,6 +61,7 @@ export function CustomerFormModal({
 
     const trimmedName = form.fullName.trim();
     const trimmedPhone = form.phoneNumber.trim();
+    const trimmedArea = form.area.trim();
 
     const nextErrors: Partial<FormState> = {};
     if (trimmedName.length < 3) {
@@ -80,12 +83,14 @@ export function CustomerFormModal({
           payload: {
             fullName: trimmedName,
             phoneNumber: trimmedPhone,
+            area: trimmedArea || null,
           },
         });
       } else {
         saved = await createMutation.mutateAsync({
           fullName: trimmedName,
           phoneNumber: trimmedPhone,
+          area: trimmedArea || null,
         });
       }
       onSaved?.(saved);
@@ -127,6 +132,15 @@ export function CustomerFormModal({
           onChange={(e) => setForm((s) => ({ ...s, phoneNumber: e.target.value }))}
           {...(fieldErrors.phoneNumber ? { error: fieldErrors.phoneNumber } : {})}
           hint="Used to identify returning customers"
+          disabled={submitting}
+        />
+
+        <Input
+          label="Area (optional)"
+          value={form.area}
+          onChange={(e) => setForm((s) => ({ ...s, area: e.target.value }))}
+          maxLength={150}
+          placeholder="e.g. Mirpur"
           disabled={submitting}
         />
 

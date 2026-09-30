@@ -4,7 +4,7 @@ import { useProducts } from '../../../api/product-hooks';
 import { Button } from '../../../ui/Button';
 import { Card } from '../../../ui/Card';
 import { EmptyState } from '../../../ui/EmptyState';
-import { Input } from '../../../ui/Input';
+import { SearchInput } from '../../../ui/SearchInput/SearchInput';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
 import { Badge, type BadgeVariant } from '../../../ui/Badge';
@@ -110,10 +110,11 @@ export function CategoryProductsPage({ slug }: CategoryProductsPageProps): JSX.E
         }
       >
         <div className="products-page__toolbar">
-          <Input
+          <SearchInput
             placeholder="Search by name"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            suggestions={filtered.map((product) => product.name)}
+            onValueChange={setSearch}
           />
         </div>
 

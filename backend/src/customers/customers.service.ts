@@ -30,6 +30,7 @@ export class CustomersService {
     const customer = this.customerRepository.create({
       fullName: dto.fullName,
       phoneNumber: dto.phoneNumber,
+      area: dto.area?.trim() || null,
       rewardTier: CustomerRewardTier.SILVER,
       rewardPoints: 0,
       lifetimeSpendMinor: 0,
@@ -63,6 +64,10 @@ export class CustomersService {
 
     if (dto.fullName !== undefined) {
       customer.fullName = dto.fullName;
+    }
+
+    if (dto.area !== undefined) {
+      customer.area = dto.area?.trim() || null;
     }
 
     const saved = await this.customerRepository.save(customer);
@@ -150,6 +155,7 @@ export class CustomersService {
       id: customer.id,
       fullName: customer.fullName,
       phoneNumber: customer.phoneNumber,
+      area: customer.area ?? null,
       rewardTier: customer.rewardTier,
       rewardPoints: customer.rewardPoints,
       lifetimeSpendMinor: customer.lifetimeSpendMinor,

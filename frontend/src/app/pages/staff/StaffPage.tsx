@@ -10,7 +10,7 @@ import { Badge, type BadgeVariant } from '../../../ui/Badge';
 import { Button } from '../../../ui/Button';
 import { Card } from '../../../ui/Card';
 import { EmptyState } from '../../../ui/EmptyState';
-import { Input } from '../../../ui/Input';
+import { SearchInput } from '../../../ui/SearchInput/SearchInput';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
 import { Icon } from '../../components/Icon';
@@ -185,10 +185,11 @@ export function StaffPage(): JSX.Element {
           </div>
 
           <div className="staff-page__search">
-            <Input
+            <SearchInput
               placeholder="Search by name or role"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              suggestions={data?.flatMap((employee) => [employee.fullName, employee.role]) ?? []}
+              onValueChange={setSearch}
             />
           </div>
         </div>

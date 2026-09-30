@@ -5,7 +5,7 @@ import { Badge } from '../../../ui/Badge';
 import { Button } from '../../../ui/Button';
 import { Card } from '../../../ui/Card';
 import { EmptyState } from '../../../ui/EmptyState';
-import { Input } from '../../../ui/Input';
+import { SearchInput } from '../../../ui/SearchInput/SearchInput';
 import { Spinner } from '../../../ui/Spinner';
 import { Table, type TableColumn } from '../../../ui/Table';
 import { Icon } from '../../components/Icon';
@@ -130,10 +130,11 @@ export function ServicesPage(): JSX.Element {
         }
       >
         <div className="services-page__toolbar">
-          <Input
+          <SearchInput
             placeholder="Search by name"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            suggestions={data?.map((service) => service.name) ?? []}
+            onValueChange={setSearch}
           />
         </div>
 

@@ -1,6 +1,6 @@
 import { useMemo, useState, type JSX } from 'react';
 import { Modal } from '../../../ui/Modal';
-import { Input } from '../../../ui/Input';
+import { SearchInput } from '../../../ui/SearchInput/SearchInput';
 import { Spinner } from '../../../ui/Spinner';
 import { EmptyState } from '../../../ui/EmptyState';
 import { Button } from '../../../ui/Button';
@@ -28,18 +28,28 @@ export function CustomerPickerModal({
     const q = search.trim().toLowerCase();
     if (!q) return data.slice(0, 50);
     return data.filter(
-      (c) => c.fullName.toLowerCase().includes(q) || c.phoneNumber.toLowerCase().includes(q),
+      (c) =>
+        c.fullName.toLowerCase().includes(q) ||
+        c.phoneNumber.toLowerCase().includes(q) ||
+        (c.area ?? '').toLowerCase().includes(q),
     );
   }, [data, search]);
 
   return (
     <Modal open={open} title="Select customer" onClose={onClose} size="md">
       <div className="customer-picker">
-        <Input
+        <SearchInput
           autoFocus
           placeholder="Search by name or phone"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          suggestions={
+            data?.flatMap((customer) => [
+              customer.fullName,
+              customer.phoneNumber,
+              customer.area ?? '',
+            ]) ?? []
+          }
+          onValueChange={setSearch}
         />
 
         {isLoading && (
