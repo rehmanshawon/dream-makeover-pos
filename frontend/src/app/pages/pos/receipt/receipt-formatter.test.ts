@@ -209,8 +209,9 @@ describe('formatReceipt', () => {
 
   it('includes the thank-you footer', () => {
     const lines = textLines(baseReceipt());
-    expect(lines.some((line) => line.trim() === 'Thank You')).toBe(true);
-    expect(lines.some((line) => line.trim() === 'Visit Again')).toBe(true);
+    expect(lines.some((line) => line.trim() === 'Thank you for choosing Dream Makeover!')).toBe(
+      true,
+    );
   });
 
   it('handles an empty items list gracefully', () => {

@@ -215,7 +215,7 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   // ---------------------------------------------------------------------------
   lines.push(text(labelValue('Payment Method', 'Cash')));
   lines.push(text(labelValue('Staff Name', data.cashier)));
-  lines.push(text(labelValue('Remarks', 'Thank you for choosing Dream Makeover!')));
+  //lines.push(text(labelValue('Remarks', 'Thank you for choosing Dream Makeover!')));
   lines.push(text(divider()));
 
   // ---------------------------------------------------------------------------
@@ -231,8 +231,8 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   // ---------------------------------------------------------------------------
   // 7. Footer greeting
   // ---------------------------------------------------------------------------
-  lines.push(text('Thank You', { align: 'center', bold: true, large: true }));
-  lines.push(text('Visit Again', { align: 'center' }));
+  //lines.push(text('Thank You', { align: 'center', bold: true, large: false }));
+  lines.push(text('Thank you for choosing Dream Makeover!', { align: 'center' }));
 
   return lines;
 }
