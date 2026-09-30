@@ -108,6 +108,27 @@ describe('useCart', () => {
     expect(result.current.totals.totalMinor).toBe(110000);
   });
 
+  it('recalculates VAT and the total when the VAT rate changes', () => {
+    const { result } = renderHook(() => useCart());
+
+    act(() => {
+      result.current.addItem({
+        kind: 'SERVICE',
+        id: 's1',
+        name: 'Facial',
+        unitPriceMinor: 200000,
+      });
+    });
+
+    act(() => {
+      result.current.setVatRate(5);
+    });
+
+    expect(result.current.totals.vatRatePercent).toBe(5);
+    expect(result.current.totals.vatMinor).toBe(10000);
+    expect(result.current.totals.totalMinor).toBe(210000);
+  });
+
   it('clamps discount to subtotal', () => {
     const { result } = renderHook(() => useCart());
 

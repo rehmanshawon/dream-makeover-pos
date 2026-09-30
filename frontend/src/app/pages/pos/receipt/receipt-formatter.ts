@@ -122,11 +122,11 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   // ---------------------------------------------------------------------------
   // 1. Header
   // ---------------------------------------------------------------------------
-  lines.push({
-    type: 'image',
-    src: '/logo.png',
-    maxWidthDots: 192,
-  });
+  // lines.push({
+  //   type: 'image',
+  //   src: '/logo.png',
+  //   maxWidthDots: 192,
+  // });
 
   lines.push(text('CASH RECEIPT', { align: 'center', bold: true, large: true }));
   lines.push(text(''));
@@ -213,8 +213,8 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   lines.push(
     text(totalRow('Total Amount', formatMoney(data.totalMinor)), {
       bold: true,
-      large: true,
-      inverse: true,
+      large: false,
+      inverse: false,
     }),
   );
   lines.push(text(totalRow('Paid Amount', formatMoney(data.cashReceivedMinor))));

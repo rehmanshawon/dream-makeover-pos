@@ -186,7 +186,7 @@ export function useCart(): {
       changeMinor,
       itemCount,
     };
-  }, [state.items, state.discountMinor, state.cashReceivedMinor]);
+  }, [state.items, state.discountMinor, state.vatRatePercent, state.cashReceivedMinor]);
 
   const addItem = useCallback((item: Omit<CartItem, 'quantity'>): void => {
     dispatch({ type: 'ADD_ITEM', item });

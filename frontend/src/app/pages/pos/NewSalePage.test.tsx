@@ -185,6 +185,25 @@ describe('NewSalePage', () => {
     expect(within(cart).getByText(/change/i).parentElement).toHaveTextContent('৳0.00');
   });
 
+  it('has one VAT rate input and updates the VAT amount and total', async () => {
+    mockEndpoints();
+    renderPage();
+
+    await screen.findByText('Test Facial');
+    await userEvent.click(screen.getByText('Test Facial'));
+
+    const cart = screen.getByRole('complementary', { name: /cart/i });
+    const vatRateInput = within(cart).getByLabelText(/vat rate/i);
+    expect(within(cart).getAllByLabelText(/vat rate/i)).toHaveLength(1);
+
+    await userEvent.type(vatRateInput, '5');
+
+    expect(within(cart).getByText(/vat amount \(5\.00%\)/i).parentElement).toHaveTextContent(
+      '৳100.00',
+    );
+    expect(within(cart).getByText('Total').parentElement).toHaveTextContent('৳2,100.00');
+  });
+
   it('submits the sale, shows confirmation, and clears the cart', async () => {
     mockEndpoints();
     renderPage();

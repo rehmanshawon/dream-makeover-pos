@@ -128,7 +128,7 @@ export function CartPanel({
         </div>
 
         <div className="cart-panel__row cart-panel__row--input">
-          <label htmlFor="cart-vat">VAT (%)</label>
+          <label htmlFor="cart-vat">VAT rate (%)</label>
           <input
             id="cart-vat"
             type="text"
@@ -146,7 +146,7 @@ export function CartPanel({
         </div>
 
         <div className="cart-panel__row">
-          <span>VAT ({totals.vatRatePercent.toFixed(2)}%)</span>
+          <span>VAT amount ({totals.vatRatePercent.toFixed(2)}%)</span>
           <span>{formatBdt(totals.vatMinor)}</span>
         </div>
 
