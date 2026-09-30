@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { createReadStream, createWriteStream } from 'node:fs';
@@ -208,18 +208,27 @@ export class DatabaseBackupsService {
 
   private async writeDatabaseDump(outputPath: string): Promise<void> {
     const config = this.mysqlConfig();
+    const dumpExecutable = process.env.MYSQLDUMP_PATH ?? 'mysqldump';
     const args = [
       `--host=${config.host}`,
       `--port=${config.port}`,
       `--user=${config.username}`,
       '--default-character-set=utf8mb4',
       '--single-transaction',
+      '--skip-lock-tables',
+      '--set-gtid-purged=OFF',
+      '--no-tablespaces',
       '--quick',
       '--triggers',
       '--hex-blob',
       config.database,
     ];
-    const child = spawn(process.env.MYSQLDUMP_PATH ?? 'mysqldump', args, {
+    const help = spawnSync(dumpExecutable, ['--help'], { encoding: 'utf8' });
+    if (help.error) throw help.error;
+    if (help.stdout.includes('--masking-policies'))
+      args.splice(args.length - 1, 0, '--skip-masking-policies');
+
+    const child = spawn(dumpExecutable, args, {
       env: { ...process.env, MYSQL_PWD: config.password },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
