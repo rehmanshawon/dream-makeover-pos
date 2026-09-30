@@ -21,6 +21,8 @@ export interface ReceiptTextLine {
   bold?: boolean;
   /** Render larger. ESC/POS: GS ! (double height + width). HTML: larger font. */
   large?: boolean;
+  /** Render medium size. ESC/POS: GS ! (normal height + width). HTML: medium font. */
+  medium?: boolean;
   /** Inverse (white on black). ESC/POS: GS B 1 ... GS B 0. HTML: dark background. */
   inverse?: boolean;
   /** Horizontal alignment. Default: left. */

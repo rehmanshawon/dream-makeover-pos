@@ -93,12 +93,13 @@ export class WebBluetoothReceiptPrinter implements ReceiptPrinter {
 
     if (line.bold) encoder.bold(true);
     if (line.large) encoder.size(2, 2);
+    if (line.medium) encoder.size(1.25, 1.25);
     if (line.inverse) encoder.invert(true);
 
     encoder.text(line.text);
 
     if (line.inverse) encoder.invert(false);
-    if (line.large) encoder.size(1, 1);
+    if (line.medium) encoder.size(1.25, 1.25);
     if (line.bold) encoder.bold(false);
 
     encoder.newline();

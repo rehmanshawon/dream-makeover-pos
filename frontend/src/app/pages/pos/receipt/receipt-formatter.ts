@@ -124,7 +124,7 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   // ---------------------------------------------------------------------------
   // 1. Header
   // ---------------------------------------------------------------------------
-  lines.push(text('CASH RECEIPT', { align: 'center', bold: true }));
+  lines.push(text('CASH RECEIPT', { align: 'center', bold: true, large: true }));
   lines.push(text(''));
   lines.push(
     text(data.business.name.toUpperCase(), {
@@ -190,7 +190,12 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   // ---------------------------------------------------------------------------
   // 4. Totals
   // ---------------------------------------------------------------------------
-  lines.push(text(totalRow('Subtotal', formatMoney(data.subtotalMinor))));
+  lines.push(
+    text(totalRow('Subtotal', formatMoney(data.subtotalMinor)), {
+      bold: true,
+      medium: true,
+    }),
+  );
 
   if (data.discountMinor > 0) {
     lines.push(text(totalRow('Discount', formatMoney(data.discountMinor))));
@@ -199,7 +204,7 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   lines.push(
     text(totalRow('Total Amount', formatMoney(data.totalMinor)), {
       bold: true,
-      large: false,
+      medium: true,
       inverse: false,
     }),
   );
