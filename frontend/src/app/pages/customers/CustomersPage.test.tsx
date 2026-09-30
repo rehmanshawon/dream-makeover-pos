@@ -127,7 +127,14 @@ describe('CustomersPage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /new customer/i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByLabelText(/area \(optional\)/i)).toBeInTheDocument();
+    const areaSelect = screen.getByLabelText(/area \(optional\)/i);
+    expect(areaSelect).toBeInTheDocument();
+    expect(areaSelect).toHaveValue('');
+    expect(areaSelect).not.toBeRequired();
+    expect(screen.getAllByRole('option')).toHaveLength(51);
+    expect(screen.getByRole('option', { name: 'Adabor' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Wari' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /\((DNCC|DSCC)\)/ })).not.toBeInTheDocument();
   });
 
   it('submits an optional area when creating a customer', async () => {
@@ -139,7 +146,7 @@ describe('CustomersPage', () => {
             id: 'c3',
             fullName: 'Aisha Khan',
             phoneNumber: '01900000000',
-            area: 'Mirpur',
+            area: 'Mirpur Model',
             rewardTier: 'Silver',
             rewardPoints: 0,
             lifetimeSpendMinor: 0,
@@ -162,11 +169,13 @@ describe('CustomersPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /new customer/i }));
     await userEvent.type(screen.getByLabelText(/full name/i), 'Aisha Khan');
     await userEvent.type(screen.getByLabelText(/phone number/i), '01900000000');
-    await userEvent.type(screen.getByLabelText(/area \(optional\)/i), 'Mirpur');
+    await userEvent.selectOptions(screen.getByLabelText(/area \(optional\)/i), 'Mirpur Model');
     await userEvent.click(screen.getByRole('button', { name: /create customer/i }));
 
     expect(await screen.findByText('Detail view')).toBeInTheDocument();
     const createCall = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST');
-    expect(JSON.parse(createCall?.[1]?.body as string)).toMatchObject({ area: 'Mirpur' });
+    expect(JSON.parse(createCall?.[1]?.body as string)).toMatchObject({
+      area: 'Mirpur Model',
+    });
   });
 });

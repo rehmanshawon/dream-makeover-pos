@@ -2,8 +2,10 @@ import { useEffect, useState, type FormEvent, type JSX } from 'react';
 import { Button } from '../../../ui/Button';
 import { Input } from '../../../ui/Input';
 import { Modal } from '../../../ui/Modal';
+import { Select } from '../../../ui/Select';
 import { ApiError } from '../../../api/api-error';
 import { useCreateCustomer, useUpdateCustomer } from '../../../api/customer-hooks';
+import { DHAKA_THANA_OPTIONS } from './dhaka-thanas';
 import './CustomerFormModal.css';
 import { Customer } from '@/types/customers';
 
@@ -37,6 +39,11 @@ export function CustomerFormModal({
   const updateMutation = useUpdateCustomer();
   const isEdit = Boolean(customer);
   const submitting = isEdit ? updateMutation.isPending : createMutation.isPending;
+  const existingArea = customer?.area?.replace(/ \((?:DNCC|DSCC)\)$/, '') ?? '';
+  const areaOptions =
+    existingArea && !DHAKA_THANA_OPTIONS.some(({ value }) => value === existingArea)
+      ? [{ value: existingArea, label: `${existingArea} (existing)` }, ...DHAKA_THANA_OPTIONS]
+      : DHAKA_THANA_OPTIONS;
 
   useEffect(() => {
     if (!open) return;
@@ -45,7 +52,7 @@ export function CustomerFormModal({
       setForm({
         fullName: customer.fullName,
         phoneNumber: customer.phoneNumber,
-        area: customer.area ?? '',
+        area: customer.area?.replace(/ \((?:DNCC|DSCC)\)$/, '') ?? '',
       });
     } else {
       setForm(EMPTY_FORM);
@@ -135,12 +142,11 @@ export function CustomerFormModal({
           disabled={submitting}
         />
 
-        <Input
+        <Select
           label="Area (optional)"
           value={form.area}
           onChange={(e) => setForm((s) => ({ ...s, area: e.target.value }))}
-          maxLength={150}
-          placeholder="e.g. Mirpur"
+          options={[{ value: '', label: 'No area selected' }, ...areaOptions]}
           disabled={submitting}
         />
 
