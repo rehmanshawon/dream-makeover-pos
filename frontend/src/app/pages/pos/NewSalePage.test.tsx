@@ -185,7 +185,7 @@ describe('NewSalePage', () => {
     expect(within(cart).getByText(/change/i).parentElement).toHaveTextContent('৳0.00');
   });
 
-  it('has one VAT rate input and updates the VAT amount and total', async () => {
+  it('does not show or add VAT to the sale total', async () => {
     mockEndpoints();
     renderPage();
 
@@ -193,15 +193,9 @@ describe('NewSalePage', () => {
     await userEvent.click(screen.getByText('Test Facial'));
 
     const cart = screen.getByRole('complementary', { name: /cart/i });
-    const vatRateInput = within(cart).getByLabelText(/vat rate/i);
-    expect(within(cart).getAllByLabelText(/vat rate/i)).toHaveLength(1);
-
-    await userEvent.type(vatRateInput, '5');
-
-    expect(within(cart).getByText(/vat amount \(5\.00%\)/i).parentElement).toHaveTextContent(
-      '৳100.00',
-    );
-    expect(within(cart).getByText('Total').parentElement).toHaveTextContent('৳2,100.00');
+    expect(within(cart).queryByLabelText(/vat rate/i)).not.toBeInTheDocument();
+    expect(within(cart).queryByText(/vat amount/i)).not.toBeInTheDocument();
+    expect(within(cart).getByText('Total').parentElement).toHaveTextContent('৳2,000.00');
   });
 
   it('submits the sale, shows confirmation, and clears the cart', async () => {
@@ -223,6 +217,7 @@ describe('NewSalePage', () => {
         const body = JSON.parse(init?.body as string);
         expect(body.items).toEqual([{ itemType: 'SERVICE', itemId: 's1', quantity: 1 }]);
         expect(body.cashReceivedMinor).toBe(300000);
+        expect(body).not.toHaveProperty('vatRatePercent');
         return new Response(
           JSON.stringify({
             transactionId: 'tx-1',

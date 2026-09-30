@@ -17,8 +17,6 @@ function baseResponse(overrides: Partial<CheckoutResponse> = {}): CheckoutRespon
     invoiceId: 'DM-20260915-0001',
     subtotalMinor: 200000,
     discountMinor: 0,
-    vatRatePercent: 0,
-    vatMinor: 0,
     totalMinor: 200000,
     cashReceivedMinor: 300000,
     changeMinor: 100000,

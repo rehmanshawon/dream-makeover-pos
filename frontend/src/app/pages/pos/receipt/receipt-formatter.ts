@@ -196,16 +196,6 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
     lines.push(text(totalRow('Discount', formatMoney(data.discountMinor))));
   }
 
-  const maybeVat = data as unknown as {
-    vatRatePercent?: number;
-    vatMinor?: number;
-  };
-  const vatRatePercent = typeof maybeVat.vatRatePercent === 'number' ? maybeVat.vatRatePercent : 0;
-  const vatMinor = typeof maybeVat.vatMinor === 'number' ? maybeVat.vatMinor : 0;
-  if (vatRatePercent > 0) {
-    lines.push(text(totalRow(`VAT (${vatRatePercent.toFixed(2)}%)`, formatMoney(vatMinor))));
-  }
-
   lines.push(
     text(totalRow('Total Amount', formatMoney(data.totalMinor)), {
       bold: true,

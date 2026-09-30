@@ -33,8 +33,6 @@ export interface ReceiptData {
   items: ReceiptItem[];
   subtotalMinor: number;
   discountMinor: number;
-  vatRatePercent: number;
-  vatMinor: number;
   totalMinor: number;
   cashReceivedMinor: number;
   changeMinor: number;

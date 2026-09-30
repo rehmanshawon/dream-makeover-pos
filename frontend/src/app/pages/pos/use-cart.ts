@@ -16,7 +16,6 @@ export interface CartState {
   customerName: string | null;
   customerTier: string | null;
   discountMinor: number;
-  vatRatePercent: number;
   cashReceivedMinor: number;
 }
 
@@ -26,7 +25,6 @@ const INITIAL_STATE: CartState = {
   customerName: null,
   customerTier: null,
   discountMinor: 0,
-  vatRatePercent: 0,
   cashReceivedMinor: 0,
 };
 
@@ -42,7 +40,6 @@ type CartAction =
     }
   | { type: 'CLEAR_CUSTOMER' }
   | { type: 'SET_DISCOUNT'; discountMinor: number }
-  | { type: 'SET_VAT_RATE'; vatRatePercent: number }
   | { type: 'SET_CASH_RECEIVED'; cashReceivedMinor: number }
   | { type: 'CLEAR' };
 
@@ -111,9 +108,6 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case 'SET_DISCOUNT':
       return { ...state, discountMinor: Math.max(0, action.discountMinor) };
 
-    case 'SET_VAT_RATE':
-      return { ...state, vatRatePercent: Math.min(100, Math.max(0, action.vatRatePercent)) };
-
     case 'SET_CASH_RECEIVED':
       return {
         ...state,
@@ -131,8 +125,6 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 export interface CartTotals {
   subtotalMinor: number;
   discountMinor: number;
-  vatRatePercent: number;
-  vatMinor: number;
   totalMinor: number;
   cashReceivedMinor: number;
   changeMinor: number;
@@ -154,7 +146,6 @@ export function useCart(): {
   setCustomer: (customerId: string, customerName: string, customerTier: string) => void;
   clearCustomer: () => void;
   setDiscount: (discountMinor: number) => void;
-  setVatRate: (vatRatePercent: number) => void;
   setCashReceived: (cashReceivedMinor: number) => void;
   clear: () => void;
 } {
@@ -168,8 +159,7 @@ export function useCart(): {
 
     // The discount cannot exceed the subtotal.
     const effectiveDiscount = Math.min(state.discountMinor, subtotalMinor);
-    const vatMinor = Math.round((subtotalMinor * state.vatRatePercent) / 100);
-    const totalMinor = subtotalMinor + vatMinor - effectiveDiscount;
+    const totalMinor = subtotalMinor - effectiveDiscount;
 
     const changeMinor =
       state.cashReceivedMinor >= totalMinor ? state.cashReceivedMinor - totalMinor : 0;
@@ -179,14 +169,12 @@ export function useCart(): {
     return {
       subtotalMinor,
       discountMinor: effectiveDiscount,
-      vatRatePercent: state.vatRatePercent,
-      vatMinor,
       totalMinor,
       cashReceivedMinor: state.cashReceivedMinor,
       changeMinor,
       itemCount,
     };
-  }, [state.items, state.discountMinor, state.vatRatePercent, state.cashReceivedMinor]);
+  }, [state.items, state.discountMinor, state.cashReceivedMinor]);
 
   const addItem = useCallback((item: Omit<CartItem, 'quantity'>): void => {
     dispatch({ type: 'ADD_ITEM', item });
@@ -215,10 +203,6 @@ export function useCart(): {
     dispatch({ type: 'SET_DISCOUNT', discountMinor });
   }, []);
 
-  const setVatRate = useCallback((vatRatePercent: number): void => {
-    dispatch({ type: 'SET_VAT_RATE', vatRatePercent });
-  }, []);
-
   const setCashReceived = useCallback((cashReceivedMinor: number): void => {
     dispatch({ type: 'SET_CASH_RECEIVED', cashReceivedMinor });
   }, []);
@@ -236,7 +220,6 @@ export function useCart(): {
     setCustomer,
     clearCustomer,
     setDiscount,
-    setVatRate,
     setCashReceived,
     clear,
   };

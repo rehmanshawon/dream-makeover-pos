@@ -155,21 +155,26 @@ describe('CheckoutService', () => {
     itemRepo.create.mockImplementation((data: any) => data);
     itemRepo.save.mockResolvedValue({} as TransactionItem);
 
-    const dto: CheckoutRequestDto = {
-      items: [
-        { itemType: TransactionItemType.PRODUCT, itemId: 'p1', quantity: 2 },
-        { itemType: TransactionItemType.SERVICE, itemId: 's1', quantity: 1 },
-      ],
-      customerId: 'c1',
-      discountMinor: 1000,
-      cashReceivedMinor: 70000,
-    };
+    const dto: CheckoutRequestDto = Object.assign(
+      {
+        items: [
+          { itemType: TransactionItemType.PRODUCT, itemId: 'p1', quantity: 2 },
+          { itemType: TransactionItemType.SERVICE, itemId: 's1', quantity: 1 },
+        ],
+        customerId: 'c1',
+        discountMinor: 1000,
+        cashReceivedMinor: 70000,
+      },
+      { vatRatePercent: 10 },
+    );
 
     const result = await service.checkout(dto, 'admin');
 
     expect(result.subtotalMinor).toBe(2 * 10000 + 50000); // 70000
     expect(result.discountMinor).toBe(1000);
     expect(result.totalMinor).toBe(69000);
+    expect(result).not.toHaveProperty('vatRatePercent');
+    expect(result).not.toHaveProperty('vatMinor');
     expect(result.cashReceivedMinor).toBe(70000);
     expect(result.changeMinor).toBe(1000);
     expect(inventoryService.applySaleMovement).toHaveBeenCalledWith(
@@ -196,6 +201,9 @@ describe('CheckoutService', () => {
     expect(accountingService.createSaleEntry).not.toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ totalMinor: 70000 }),
+    );
+    expect(transactionRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ vatRatePercent: 0, vatMinor: 0, totalMinor: 69000 }),
     );
     expect(result.customer).not.toBeNull();
     expect(result.customer?.name).toBe('Test Customer');

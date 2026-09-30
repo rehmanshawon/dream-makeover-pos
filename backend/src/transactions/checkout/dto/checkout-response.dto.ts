@@ -20,8 +20,6 @@ export class CheckoutResponseDto {
   invoiceId: string;
   subtotalMinor: number;
   discountMinor: number;
-  vatRatePercent: number;
-  vatMinor: number;
   totalMinor: number;
   cashReceivedMinor: number;
   changeMinor: number;

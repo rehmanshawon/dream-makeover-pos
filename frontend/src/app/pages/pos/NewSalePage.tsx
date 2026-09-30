@@ -103,7 +103,6 @@ export function NewSalePage(): JSX.Element {
         onSelectCustomer={cart.setCustomer}
         onClearCustomer={cart.clearCustomer}
         onSetDiscount={cart.setDiscount}
-        onSetVatRate={cart.setVatRate}
         onSetCashReceived={cart.setCashReceived}
         onClearCart={cart.clear}
         onSubmit={handleSubmit}

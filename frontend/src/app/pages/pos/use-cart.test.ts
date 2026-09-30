@@ -108,7 +108,7 @@ describe('useCart', () => {
     expect(result.current.totals.totalMinor).toBe(110000);
   });
 
-  it('recalculates VAT and the total when the VAT rate changes', () => {
+  it('calculates the total without adding VAT', () => {
     const { result } = renderHook(() => useCart());
 
     act(() => {
@@ -120,13 +120,7 @@ describe('useCart', () => {
       });
     });
 
-    act(() => {
-      result.current.setVatRate(5);
-    });
-
-    expect(result.current.totals.vatRatePercent).toBe(5);
-    expect(result.current.totals.vatMinor).toBe(10000);
-    expect(result.current.totals.totalMinor).toBe(210000);
+    expect(result.current.totals.totalMinor).toBe(200000);
   });
 
   it('clamps discount to subtotal', () => {

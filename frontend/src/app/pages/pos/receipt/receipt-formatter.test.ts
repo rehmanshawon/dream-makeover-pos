@@ -27,8 +27,6 @@ function baseReceipt(overrides: Partial<ReceiptData> = {}): ReceiptData {
     ],
     subtotalMinor: 350000,
     discountMinor: 0,
-    vatRatePercent: 0,
-    vatMinor: 0,
     totalMinor: 350000,
     cashReceivedMinor: 500000,
     changeMinor: 150000,
@@ -135,6 +133,10 @@ describe('formatReceipt', () => {
     expect(lines.some((l) => l.includes('Facial') && l.includes('1'))).toBe(true);
     expect(lines.some((l) => l.includes('Lipstick') && l.includes('2'))).toBe(true);
     expect(lines.some((l) => l.includes('SL') && l.includes('Service/Product'))).toBe(true);
+  });
+
+  it('does not include a VAT line', () => {
+    expect(textLines(baseReceipt()).some((line) => /\bVAT\b/i.test(line))).toBe(false);
   });
 
   it('aligns item amounts and every total value to the far-right receipt column', () => {

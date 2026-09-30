@@ -31,8 +31,6 @@ export function buildReceiptData(response: CheckoutResponse, business: BusinessI
     })),
     subtotalMinor: response.subtotalMinor,
     discountMinor: response.discountMinor,
-    vatRatePercent: response.vatRatePercent ?? 0,
-    vatMinor: response.vatMinor ?? 0,
     totalMinor: response.totalMinor,
     cashReceivedMinor: response.cashReceivedMinor,
     changeMinor: response.changeMinor,
