@@ -1,6 +1,6 @@
 # Dream Makeover POS
 
-Offline-first luxury beauty salon POS and business management system.
+Offline-first point-of-sale and business management system for Dream Makeover, a beauty salon and retail business.
 
 ## Architecture
 
@@ -10,7 +10,7 @@ This is an npm workspaces monorepo.
 |---|---|
 | `backend` | NestJS API and business logic |
 | `frontend` | React POS interface |
-| `desktop` | Electron desktop shell |
+| `desktop` | Placeholder package for the planned Electron desktop shell |
 
 ## Prerequisites
 
@@ -30,9 +30,34 @@ The backend verifies time against `TIME_SYNC_URL` over HTTPS every 30 seconds. P
 
 Configure `TIME_SYNC_URL`, `PAYROLL_OFFLINE_GRACE_HOURS`, and `PAYROLL_TIME_WARNING_HOURS` in `backend/.env`; defaults are shown in `backend/.env.example`.
 
-## Accounting Journal (Initial Scope)
+## Current Features
 
-The Accounts area includes a double-entry cash/bank journal for owner contributions, owner withdrawals, and cash-to-bank transfers. POS sales are posted automatically as cash received, sales revenue (after discounts), and VAT payable; operating expenses are posted automatically by category and payment method. Sale entries are created in the same database transaction as checkout. Expense changes update their linked journal entry in the same transaction. Cash, bank, and mobile-wallet payments credit asset accounts; card and other payments credit payable/clearing accounts. Inventory costs and payroll are not yet posted here, so the ledger is not yet a complete business balance. Expense and manual voucher changes require trusted time; POS checkout remains available while posting is time-locked.
+- POS checkout for products, services, and packages, with customer, discount, VAT, and payment handling.
+- Customer and loyalty records, product and service catalogs, inventory tracking, purchasing, supplier returns, and inventory cost adjustments.
+- Employee records, attendance, pay periods, salary payments, advances, and payslips. Payroll and attendance actions require trusted time; POS checkout remains available while payroll is time-locked.
+- Business reports for sales, revenue trends, top items, expenses, and financial summaries.
+- A4 print / Save as PDF actions for sales, operating expenses, inventory on hand, P&L, trial balance, balance sheet, and payroll period reports.
+- POS receipt printing through a browser print dialog, with Web Bluetooth ESC/POS printing available in supported Chromium browsers.
+
+## Accounting Scope
+
+The Accounts area uses a double-entry journal. It includes owner contributions and withdrawals, cash/bank transfers, automatic postings for sales, expenses, purchases, payroll payments, customer and supplier returns, inventory adjustments, and cost revaluations. The Accounts area also includes bank reconciliation, a trial balance, a balance sheet, and a practical operating P&L.
+
+Admins can close completed accounting months. Journal changes in a closed month are blocked; corrections are recorded as linked reversing entries in an open month. Reversing an accounting entry does not undo its source business transaction, which must be corrected through its own workflow.
+
+The operating P&L currently estimates cost of goods sold using current product purchase cost rather than a historical cost snapshot for each sale. Tax/statutory reports and a formal cash-flow statement have not been implemented; confirm local requirements with an accountant before relying on statutory outputs. This software is not a substitute for professional accounting advice.
+
+## Receipt Printing
+
+Browser receipt printing opens the system print dialog. For thermal output, select the installed receipt printer and its 80mm paper profile in the browser/OS print settings; the receipt formatter uses a 48-column layout. Web Bluetooth printing requires a supported Chromium browser and a compatible paired ESC/POS printer. General A4 reports use the browser print dialog and can be saved as PDF.
+
+## Database Migrations
+
+The backend is configured to run pending TypeORM migrations at startup. Back up the database before deploying updates, and verify startup logs and the resulting schema when a migration is introduced. Do not point integration tests at the business database; use `DB_DATABASE=dream_makeover_test`.
+
+## Desktop Status
+
+The `desktop` workspace is currently a placeholder and does not yet contain an Electron main process, preload bridge, or packaging configuration. The web application is the current runnable client.
 
 ## Scripts
 ```bash
@@ -41,6 +66,7 @@ npm run format
 npm run type-check
 npm run test
 npm run build
+npm run ci:all
 ```
 
 ## License

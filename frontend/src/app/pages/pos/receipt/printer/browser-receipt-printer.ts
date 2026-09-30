@@ -29,24 +29,28 @@ export class BrowserReceiptPrinter implements ReceiptPrinter {
       throw new Error('Unable to prepare the print window');
     }
 
-    // Let the popup render (including any images) before invoking print.
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    const images = Array.from(popup.document.images ?? []);
+    await Promise.all([
+      ...(popup.document.fonts ? [popup.document.fonts.ready] : []),
+      ...images.map((image) =>
+        image.complete
+          ? Promise.resolve()
+          : new Promise<void>((resolve) => {
+              image.addEventListener('load', () => resolve(), { once: true });
+              image.addEventListener('error', () => resolve(), { once: true });
+            }),
+      ),
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     try {
+      popup.addEventListener('afterprint', () => popup.close(), { once: true });
       popup.focus();
       popup.print();
     } catch {
       popup.close();
       throw new Error('Printing was blocked or failed');
     }
-
-    setTimeout(() => {
-      try {
-        popup.close();
-      } catch {
-        // Ignore; the popup may already be closed.
-      }
-    }, 500);
   }
 
   private buildHtml(lines: ReceiptLine[]): string {
@@ -57,27 +61,31 @@ export class BrowserReceiptPrinter implements ReceiptPrinter {
 <meta charset="utf-8" />
 <title>Receipt</title>
 <style>
-  @page { margin: 4mm; }
+  @page { size: 80mm auto; margin: 2mm; }
   html, body {
     margin: 0;
     padding: 0;
     background: #fff;
     color: #000;
+    box-sizing: border-box;
   }
   body {
-    padding: 8px;
+    width: 76mm;
     font-family: 'Courier New', Courier, monospace;
-    font-size: 12px;
-    line-height: 1.3;
+    font-size: 9.5px;
+    line-height: 1.25;
   }
   .line {
+    display: block;
+    width: 100%;
+    overflow: hidden;
     white-space: pre;
     font-family: inherit;
     font-size: inherit;
     line-height: inherit;
   }
   .line--bold   { font-weight: bold; }
-  .line--large  { font-size: 18px; font-weight: bold; line-height: 1.4; }
+  .line--large  { font-size: 16px; font-weight: bold; line-height: 1.35; }
   .line--center { text-align: center; }
   .line--right  { text-align: right; }
   .line--inverse {
@@ -85,8 +93,8 @@ export class BrowserReceiptPrinter implements ReceiptPrinter {
     color: #fff;
     padding: 2px 4px;
   }
-  .line--image  { text-align: center; margin: 6px 0; }
-  .line--image img { max-width: 180px; height: auto; }
+  .line--image  { text-align: center; margin: 4px 0; }
+  .line--image img { max-width: 48mm; height: auto; }
 </style>
 </head>
 <body>${body}</body>
