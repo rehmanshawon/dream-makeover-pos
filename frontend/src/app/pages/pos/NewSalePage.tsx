@@ -49,12 +49,24 @@ export function NewSalePage(): JSX.Element {
       return;
     }
 
-    if (cart.totals.cashReceivedMinor < cart.totals.totalMinor) {
+    if (
+      cart.state.paymentMethod === 'CASH' &&
+      cart.totals.cashReceivedMinor < cart.totals.totalMinor
+    ) {
       setSubmissionError('Cash received is less than the total.');
       return;
     }
 
-    const request = buildCheckoutRequest(cart.state.items, cart.totals, cart.state.customerId);
+    if (cart.state.paymentMethod === 'MOBILE' && !cart.state.mobileWalletProvider) {
+      setSubmissionError('Choose a mobile wallet provider.');
+      return;
+    }
+
+    const request = buildCheckoutRequest(cart.state.items, cart.totals, cart.state.customerId, {
+      paymentMethod: cart.state.paymentMethod,
+      mobileWalletProvider: cart.state.mobileWalletProvider,
+      paymentReference: cart.state.paymentReference,
+    });
 
     try {
       const response = await checkout.mutateAsync(request);
@@ -127,6 +139,12 @@ export function NewSalePage(): JSX.Element {
         onSetDiscount={cart.setDiscount}
         onSetRewardRedemption={cart.setRewardRedemption}
         onSetCashReceived={cart.setCashReceived}
+        paymentMethod={cart.state.paymentMethod}
+        mobileWalletProvider={cart.state.mobileWalletProvider}
+        paymentReference={cart.state.paymentReference}
+        onSetPaymentMethod={cart.setPaymentMethod}
+        onSetMobileWalletProvider={cart.setMobileWalletProvider}
+        onSetPaymentReference={cart.setPaymentReference}
         onClearCart={cart.clear}
         onSubmit={handleSubmit}
         submissionError={submissionError}

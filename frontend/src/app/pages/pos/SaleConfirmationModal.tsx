@@ -65,13 +65,33 @@ export function SaleConfirmationModal({
             </div>
           )}
           <div className="sale-confirmation__fact">
-            <dt>Cash received</dt>
+            <dt>{response.paymentMethod === 'CASH' ? 'Cash received' : 'Paid amount'}</dt>
             <dd>{formatBdt(response.cashReceivedMinor)}</dd>
           </div>
-          <div className="sale-confirmation__fact sale-confirmation__fact--highlight">
-            <dt>Change</dt>
-            <dd>{formatBdt(response.changeMinor)}</dd>
+          <div className="sale-confirmation__fact">
+            <dt>Payment method</dt>
+            <dd>
+              {response.paymentMethod === 'BANK'
+                ? 'Bank transfer'
+                : response.paymentMethod === 'MOBILE'
+                  ? `${response.mobileWalletProvider ?? 'Mobile wallet'}`
+                  : response.paymentMethod === 'CARD'
+                    ? 'Card'
+                    : 'Cash'}
+            </dd>
           </div>
+          {response.paymentReference && (
+            <div className="sale-confirmation__fact">
+              <dt>Reference</dt>
+              <dd>{response.paymentReference}</dd>
+            </div>
+          )}
+          {response.paymentMethod === 'CASH' && (
+            <div className="sale-confirmation__fact sale-confirmation__fact--highlight">
+              <dt>Change</dt>
+              <dd>{formatBdt(response.changeMinor)}</dd>
+            </div>
+          )}
           <div className="sale-confirmation__fact">
             <dt>Cashier</dt>
             <dd>{response.cashier}</dd>

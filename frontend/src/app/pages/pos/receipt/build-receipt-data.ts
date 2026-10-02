@@ -36,6 +36,9 @@ export function buildReceiptData(response: CheckoutResponse, business: BusinessI
     totalMinor: response.totalMinor,
     cashReceivedMinor: response.cashReceivedMinor,
     changeMinor: response.changeMinor,
+    paymentMethod: response.paymentMethod,
+    mobileWalletProvider: response.mobileWalletProvider,
+    paymentReference: response.paymentReference,
     loyalty:
       response.customer && (response.loyaltyPointsEarned > 0 || response.rewardPointsRedeemed > 0)
         ? {

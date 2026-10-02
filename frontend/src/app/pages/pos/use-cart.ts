@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useReducer } from 'react';
+import type { MobileWalletProvider, SalePaymentMethod } from '../../../types/checkout';
 
 export type CartItemKind = 'PRODUCT' | 'SERVICE' | 'PACKAGE';
 
@@ -20,6 +21,9 @@ export interface CartState {
   redeemRewardPoints: boolean;
   rewardDiscountMinor: number;
   cashReceivedMinor: number;
+  paymentMethod: SalePaymentMethod;
+  mobileWalletProvider: MobileWalletProvider | null;
+  paymentReference: string;
 }
 
 const INITIAL_STATE: CartState = {
@@ -32,6 +36,9 @@ const INITIAL_STATE: CartState = {
   redeemRewardPoints: false,
   rewardDiscountMinor: 0,
   cashReceivedMinor: 0,
+  paymentMethod: 'CASH',
+  mobileWalletProvider: null,
+  paymentReference: '',
 };
 
 type CartAction =
@@ -49,6 +56,9 @@ type CartAction =
   | { type: 'SET_DISCOUNT'; discountMinor: number }
   | { type: 'SET_REWARD_REDEMPTION'; enabled: boolean; discountMinor: number }
   | { type: 'SET_CASH_RECEIVED'; cashReceivedMinor: number }
+  | { type: 'SET_PAYMENT_METHOD'; paymentMethod: SalePaymentMethod }
+  | { type: 'SET_MOBILE_WALLET_PROVIDER'; provider: MobileWalletProvider | null }
+  | { type: 'SET_PAYMENT_REFERENCE'; reference: string }
   | { type: 'CLEAR' };
 
 function cartReducer(state: CartState, action: CartAction): CartState {
@@ -135,6 +145,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         cashReceivedMinor: Math.max(0, action.cashReceivedMinor),
       };
 
+    case 'SET_PAYMENT_METHOD':
+      return { ...state, paymentMethod: action.paymentMethod };
+
+    case 'SET_MOBILE_WALLET_PROVIDER':
+      return { ...state, mobileWalletProvider: action.provider };
+
+    case 'SET_PAYMENT_REFERENCE':
+      return { ...state, paymentReference: action.reference };
+
     case 'CLEAR':
       return INITIAL_STATE;
 
@@ -177,6 +196,9 @@ export function useCart(): {
   setDiscount: (discountMinor: number) => void;
   setRewardRedemption: (enabled: boolean, discountMinor: number) => void;
   setCashReceived: (cashReceivedMinor: number) => void;
+  setPaymentMethod: (paymentMethod: SalePaymentMethod) => void;
+  setMobileWalletProvider: (provider: MobileWalletProvider | null) => void;
+  setPaymentReference: (reference: string) => void;
   clear: () => void;
 } {
   const [state, dispatch] = useReducer(cartReducer, INITIAL_STATE);
@@ -267,6 +289,18 @@ export function useCart(): {
     dispatch({ type: 'SET_CASH_RECEIVED', cashReceivedMinor });
   }, []);
 
+  const setPaymentMethod = useCallback((paymentMethod: SalePaymentMethod): void => {
+    dispatch({ type: 'SET_PAYMENT_METHOD', paymentMethod });
+  }, []);
+
+  const setMobileWalletProvider = useCallback((provider: MobileWalletProvider | null): void => {
+    dispatch({ type: 'SET_MOBILE_WALLET_PROVIDER', provider });
+  }, []);
+
+  const setPaymentReference = useCallback((reference: string): void => {
+    dispatch({ type: 'SET_PAYMENT_REFERENCE', reference });
+  }, []);
+
   const clear = useCallback((): void => {
     dispatch({ type: 'CLEAR' });
   }, []);
@@ -282,6 +316,9 @@ export function useCart(): {
     setDiscount,
     setRewardRedemption,
     setCashReceived,
+    setPaymentMethod,
+    setMobileWalletProvider,
+    setPaymentReference,
     clear,
   };
 }

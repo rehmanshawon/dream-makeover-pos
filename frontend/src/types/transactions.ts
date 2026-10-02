@@ -1,3 +1,5 @@
+import type { MobileWalletProvider, SalePaymentMethod } from './checkout';
+
 export interface TransactionListItem {
   id: string;
   invoiceId: string;
@@ -61,6 +63,9 @@ export interface TransactionDetail {
   totalMinor: number;
   cashReceivedMinor: number;
   changeMinor: number;
+  paymentMethod: SalePaymentMethod;
+  mobileWalletProvider: MobileWalletProvider | null;
+  paymentReference: string | null;
   items: TransactionDetailItem[];
 }
 

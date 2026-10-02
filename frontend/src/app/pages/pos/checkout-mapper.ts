@@ -1,5 +1,9 @@
 import type { CartItem, CartTotals } from './use-cart';
-import type { CheckoutRequest } from '../../../types/checkout';
+import type {
+  CheckoutRequest,
+  MobileWalletProvider,
+  SalePaymentMethod,
+} from '../../../types/checkout';
 
 /**
  * Converts the cart state into a CheckoutRequest.
@@ -11,7 +15,13 @@ export function buildCheckoutRequest(
   items: CartItem[],
   totals: CartTotals,
   customerId: string | null,
+  payment: {
+    paymentMethod: SalePaymentMethod;
+    mobileWalletProvider: MobileWalletProvider | null;
+    paymentReference: string;
+  } = { paymentMethod: 'CASH', mobileWalletProvider: null, paymentReference: '' },
 ): CheckoutRequest {
+  const isCash = payment.paymentMethod === 'CASH';
   const request: CheckoutRequest = {
     items: items.map((item) => ({
       itemType: item.kind,
@@ -19,8 +29,15 @@ export function buildCheckoutRequest(
       quantity: item.quantity,
     })),
     discountMinor: totals.discountMinor,
-    cashReceivedMinor: totals.cashReceivedMinor,
+    cashReceivedMinor: isCash ? totals.cashReceivedMinor : totals.totalMinor,
+    paymentMethod: payment.paymentMethod,
   };
+
+  if (payment.paymentMethod === 'MOBILE' && payment.mobileWalletProvider) {
+    request.mobileWalletProvider = payment.mobileWalletProvider;
+  }
+  const paymentReference = payment.paymentReference.trim();
+  if (paymentReference) request.paymentReference = paymentReference;
 
   if (totals.redeemRewardPoints) request.redeemRewardPoints = true;
 

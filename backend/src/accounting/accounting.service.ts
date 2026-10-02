@@ -12,6 +12,7 @@ import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { SalaryPaymentType } from '../salary-payments/salary-payment-type.enum';
 import { PaymentMethod } from '../salary-payments/payment-method.enum';
 import { PurchasePaymentMethod } from '../purchases/purchase-payment-method.enum';
+import { SalePaymentMethod } from '../transactions/sale-payment-method.enum';
 import { BankReconciliation } from './bank-reconciliation.entity';
 import { BankReconciliationLine } from './bank-reconciliation-line.entity';
 import { CreateBankReconciliationDto } from './dto/create-bank-reconciliation.dto';
@@ -1015,6 +1016,7 @@ export class AccountingService {
       entryDate: string;
       invoiceId: string;
       totalMinor: number;
+      paymentMethod: SalePaymentMethod;
       revenueMinor: number;
       vatMinor: number;
       cogsMinor: number;
@@ -1024,10 +1026,16 @@ export class AccountingService {
     if (sale.totalMinor === 0 && sale.cogsMinor === 0) return;
 
     const accountRepo = manager.getRepository(Account);
-    const [cashAccount, revenueAccount, vatAccount, cogsAccount, inventoryAccount] =
+    const collectionAccountCode: Record<SalePaymentMethod, string> = {
+      [SalePaymentMethod.CASH]: 'CASH',
+      [SalePaymentMethod.CARD]: 'CARD_CLEARING',
+      [SalePaymentMethod.BANK]: 'BANK',
+      [SalePaymentMethod.MOBILE]: 'MOBILE_WALLET',
+    };
+    const [collectionAccount, revenueAccount, vatAccount, cogsAccount, inventoryAccount] =
       await Promise.all([
         sale.totalMinor > 0
-          ? accountRepo.findOne({ where: { code: 'CASH' } })
+          ? accountRepo.findOne({ where: { code: collectionAccountCode[sale.paymentMethod] } })
           : Promise.resolve(null),
         sale.revenueMinor > 0
           ? accountRepo.findOne({ where: { code: 'SALES_REVENUE' } })
@@ -1043,7 +1051,7 @@ export class AccountingService {
           : Promise.resolve(null),
       ]);
     if (
-      (sale.totalMinor > 0 && !cashAccount) ||
+      (sale.totalMinor > 0 && !collectionAccount) ||
       (sale.revenueMinor > 0 && !revenueAccount) ||
       (sale.vatMinor > 0 && !vatAccount) ||
       (sale.cogsMinor > 0 && (!cogsAccount || !inventoryAccount))
@@ -1065,11 +1073,11 @@ export class AccountingService {
     );
 
     const lines = [];
-    if (cashAccount && sale.totalMinor > 0) {
+    if (collectionAccount && sale.totalMinor > 0) {
       lines.push(
         lineRepo.create({
           entryId: entry.id,
-          accountId: cashAccount.id,
+          accountId: collectionAccount.id,
           debitMinor: sale.totalMinor,
           creditMinor: 0,
         }),

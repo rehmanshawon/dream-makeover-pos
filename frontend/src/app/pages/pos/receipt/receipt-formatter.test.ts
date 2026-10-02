@@ -32,6 +32,9 @@ function baseReceipt(overrides: Partial<ReceiptData> = {}): ReceiptData {
     totalMinor: 350000,
     cashReceivedMinor: 500000,
     changeMinor: 150000,
+    paymentMethod: 'CASH',
+    mobileWalletProvider: null,
+    paymentReference: null,
     loyalty: null,
     business: BUSINESS,
     ...overrides,
@@ -270,6 +273,23 @@ describe('formatReceipt', () => {
   it('includes the thank-you footer', () => {
     const lines = textLines(baseReceipt());
     expect(lines.some((line) => line.trim() === 'Thank you for choosing Dream Makeover!')).toBe(
+      true,
+    );
+  });
+
+  it('prints the selected payment method, wallet provider, and reference', () => {
+    const lines = textLines(
+      baseReceipt({
+        paymentMethod: 'MOBILE',
+        mobileWalletProvider: 'BKASH',
+        paymentReference: 'TX-123',
+      }),
+    );
+
+    expect(lines.some((line) => line.startsWith('Payment Method') && line.includes('BKASH'))).toBe(
+      true,
+    );
+    expect(lines.some((line) => line.startsWith('Reference') && line.includes('TX-123'))).toBe(
       true,
     );
   });

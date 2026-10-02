@@ -9,6 +9,8 @@ import {
 } from 'typeorm';
 import { Customer } from '../customers/customer.entity';
 import { bigintTransformer } from '../common/transformers/bigint.transformer';
+import { SalePaymentMethod } from './sale-payment-method.enum';
+import { MobileWalletProvider } from './mobile-wallet-provider.enum';
 
 @Entity('transactions')
 export class Transaction {
@@ -104,6 +106,25 @@ export class Transaction {
     transformer: bigintTransformer,
   })
   cashReceivedMinor: number;
+
+  @Column({
+    name: 'payment_method',
+    type: 'enum',
+    enum: SalePaymentMethod,
+    default: SalePaymentMethod.CASH,
+  })
+  paymentMethod: SalePaymentMethod = SalePaymentMethod.CASH;
+
+  @Column({
+    name: 'mobile_wallet_provider',
+    type: 'enum',
+    enum: MobileWalletProvider,
+    nullable: true,
+  })
+  mobileWalletProvider: MobileWalletProvider | null = null;
+
+  @Column({ name: 'payment_reference', type: 'varchar', length: 100, nullable: true })
+  paymentReference: string | null = null;
 
   @Column({
     name: 'change_minor',

@@ -22,6 +22,9 @@ function baseResponse(overrides: Partial<CheckoutResponse> = {}): CheckoutRespon
     totalMinor: 200000,
     cashReceivedMinor: 300000,
     changeMinor: 100000,
+    paymentMethod: 'CASH',
+    mobileWalletProvider: null,
+    paymentReference: null,
     cashier: 'admin',
     items: [
       {
@@ -48,6 +51,22 @@ describe('buildReceiptData', () => {
     expect(receipt.items).toHaveLength(1);
     expect(receipt.items[0]!.name).toBe('Facial');
     expect(receipt.totalMinor).toBe(200000);
+    expect(receipt.paymentMethod).toBe('CASH');
+  });
+
+  it('preserves non-cash payment details for the receipt', () => {
+    const receipt = buildReceiptData(
+      baseResponse({
+        paymentMethod: 'MOBILE',
+        mobileWalletProvider: 'BKASH',
+        paymentReference: 'TX-123',
+      }),
+      BUSINESS,
+    );
+
+    expect(receipt.paymentMethod).toBe('MOBILE');
+    expect(receipt.mobileWalletProvider).toBe('BKASH');
+    expect(receipt.paymentReference).toBe('TX-123');
   });
 
   it('sets customer to null for guest sales', () => {

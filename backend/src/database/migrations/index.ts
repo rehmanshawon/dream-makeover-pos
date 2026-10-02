@@ -40,6 +40,7 @@ import { AddAccountingPeriodControls1700000000036 } from './1700000000036-AddAcc
 import { AddAreaToCustomers1700000000037 } from './1700000000037-AddAreaToCustomers';
 import { CreateLoyaltySettings1700000000038 } from './1700000000038-CreateLoyaltySettings';
 import { TrackLoyaltyTransactions1700000000039 } from './1700000000039-TrackLoyaltyTransactions';
+import { AddSalePaymentDetails1700000000040 } from './1700000000040-AddSalePaymentDetails';
 
 export const migrations = [
   CreateCustomersTable1700000000000,
@@ -84,4 +85,5 @@ export const migrations = [
   AddAreaToCustomers1700000000037,
   CreateLoyaltySettings1700000000038,
   TrackLoyaltyTransactions1700000000039,
+  AddSalePaymentDetails1700000000040,
 ];

@@ -201,6 +201,9 @@ export class TransactionsService {
       totalMinor: transaction.totalMinor,
       cashReceivedMinor: transaction.cashReceivedMinor,
       changeMinor: transaction.changeMinor,
+      paymentMethod: transaction.paymentMethod,
+      mobileWalletProvider: transaction.mobileWalletProvider,
+      paymentReference: transaction.paymentReference,
       items: items.map((item) => ({
         id: item.id,
         itemType: item.itemType,

@@ -1,3 +1,6 @@
+import { SalePaymentMethod } from '../../sale-payment-method.enum';
+import { MobileWalletProvider } from '../../mobile-wallet-provider.enum';
+
 export class CheckoutItemResponseDto {
   itemType: string;
   itemName: string;
@@ -25,6 +28,9 @@ export class CheckoutResponseDto {
   totalMinor: number;
   cashReceivedMinor: number;
   changeMinor: number;
+  paymentMethod: SalePaymentMethod;
+  mobileWalletProvider: MobileWalletProvider | null;
+  paymentReference: string | null;
   cashier: string;
   items: CheckoutItemResponseDto[];
   loyaltyPointsEarned: number;

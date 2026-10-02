@@ -1,4 +1,6 @@
 export type CheckoutItemType = 'PRODUCT' | 'SERVICE' | 'PACKAGE';
+export type SalePaymentMethod = 'CASH' | 'CARD' | 'BANK' | 'MOBILE';
+export type MobileWalletProvider = 'BKASH' | 'ROCKET' | 'NAGAD' | 'OTHER';
 
 export interface CheckoutRequestItem {
   itemType: CheckoutItemType;
@@ -12,6 +14,9 @@ export interface CheckoutRequest {
   redeemRewardPoints?: boolean;
   discountMinor: number;
   cashReceivedMinor: number;
+  paymentMethod: SalePaymentMethod;
+  mobileWalletProvider?: MobileWalletProvider;
+  paymentReference?: string;
 }
 
 export interface CheckoutResponseItem {
@@ -41,6 +46,9 @@ export interface CheckoutResponse {
   totalMinor: number;
   cashReceivedMinor: number;
   changeMinor: number;
+  paymentMethod: SalePaymentMethod;
+  mobileWalletProvider: MobileWalletProvider | null;
+  paymentReference: string | null;
   cashier: string;
   items: CheckoutResponseItem[];
   loyaltyPointsEarned: number;

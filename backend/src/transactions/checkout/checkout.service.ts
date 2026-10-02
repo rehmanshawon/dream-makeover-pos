@@ -18,6 +18,7 @@ import { PackageItem } from '../../packages/package-item.entity';
 import { InventoryService } from '../../inventory/inventory.service';
 import { AccountingService } from '../../accounting/accounting.service';
 import { LoyaltySettingsService } from '../../loyalty/loyalty-settings.service';
+import { SalePaymentMethod } from '../sale-payment-method.enum';
 
 @Injectable()
 export class CheckoutService {
@@ -225,10 +226,20 @@ export class CheckoutService {
       const totalDiscountMinor = dto.discountMinor + rewardDiscountMinor;
       const vatMinor = 0;
       const totalMinor = subtotalMinor - totalDiscountMinor;
-      if (dto.cashReceivedMinor < totalMinor) {
+      const paymentMethod = dto.paymentMethod ?? SalePaymentMethod.CASH;
+      if (paymentMethod === SalePaymentMethod.MOBILE && !dto.mobileWalletProvider) {
+        throw new BadRequestException('Choose a mobile wallet provider');
+      }
+      if (paymentMethod !== SalePaymentMethod.MOBILE && dto.mobileWalletProvider) {
+        throw new BadRequestException('A mobile wallet provider is only valid for mobile wallet payments');
+      }
+      if (paymentMethod === SalePaymentMethod.CASH && dto.cashReceivedMinor < totalMinor) {
         throw new BadRequestException('Insufficient cash received');
       }
-      const changeMinor = dto.cashReceivedMinor - totalMinor;
+      const cashReceivedMinor =
+        paymentMethod === SalePaymentMethod.CASH ? dto.cashReceivedMinor : totalMinor;
+      const changeMinor = paymentMethod === SalePaymentMethod.CASH ? cashReceivedMinor - totalMinor : 0;
+      const paymentReference = dto.paymentReference?.trim() || null;
 
       const invoiceId = await this.invoiceNumberService.next();
 
@@ -243,8 +254,11 @@ export class CheckoutService {
         vatRatePercent: 0,
         vatMinor: 0,
         totalMinor,
-        cashReceivedMinor: dto.cashReceivedMinor,
+        cashReceivedMinor,
         changeMinor,
+        paymentMethod,
+        mobileWalletProvider: dto.mobileWalletProvider ?? null,
+        paymentReference,
         cashier: cashierName,
       });
       const savedTransaction = await transactionRepo.save(transaction);
@@ -275,6 +289,7 @@ export class CheckoutService {
         entryDate: (savedTransaction.createdAt ?? new Date()).toISOString().slice(0, 10),
         invoiceId,
         totalMinor,
+        paymentMethod,
         revenueMinor: totalMinor,
         vatMinor,
         cogsMinor: costOfGoodsSoldMinor,
@@ -319,8 +334,11 @@ export class CheckoutService {
         rewardDiscountMinor,
         discountMinor: totalDiscountMinor,
         totalMinor,
-        cashReceivedMinor: dto.cashReceivedMinor,
+        cashReceivedMinor,
         changeMinor,
+        paymentMethod,
+        mobileWalletProvider: dto.mobileWalletProvider ?? null,
+        paymentReference,
         cashier: cashierName,
         items: itemResponses,
         loyaltyPointsEarned,

@@ -5,6 +5,7 @@ import { formatBdt, parseTakaToMinor, minorToTakaInput } from '../../../utils/fo
 import { CartRow } from './CartRow';
 import { CustomerPickerModal } from './CustomerPickerModal';
 import type { CartItem, CartTotals } from './use-cart';
+import type { MobileWalletProvider, SalePaymentMethod } from '../../../types/checkout';
 import './CartPanel.css';
 
 interface CartPanelProps {
@@ -23,6 +24,12 @@ interface CartPanelProps {
   onSetDiscount: (minorUnits: number) => void;
   onSetRewardRedemption: (enabled: boolean, discountMinor: number) => void;
   onSetCashReceived: (minorUnits: number) => void;
+  paymentMethod: SalePaymentMethod;
+  mobileWalletProvider: MobileWalletProvider | null;
+  paymentReference: string;
+  onSetPaymentMethod: (method: SalePaymentMethod) => void;
+  onSetMobileWalletProvider: (provider: MobileWalletProvider | null) => void;
+  onSetPaymentReference: (reference: string) => void;
   onClearCart: () => void;
   submissionError: string | null;
   submitting: boolean;
@@ -45,6 +52,12 @@ export function CartPanel({
   onSetDiscount,
   onSetRewardRedemption,
   onSetCashReceived,
+  paymentMethod,
+  mobileWalletProvider,
+  paymentReference,
+  onSetPaymentMethod,
+  onSetMobileWalletProvider,
+  onSetPaymentReference,
   onClearCart,
   submissionError,
   submitting,
@@ -56,7 +69,8 @@ export function CartPanel({
 
   const canSubmit =
     items.length > 0 &&
-    totals.cashReceivedMinor >= totals.totalMinor &&
+    (paymentMethod !== 'CASH' || totals.cashReceivedMinor >= totals.totalMinor) &&
+    (paymentMethod !== 'MOBILE' || mobileWalletProvider !== null) &&
     totals.redemptionAffordable;
 
   return (
@@ -179,25 +193,81 @@ export function CartPanel({
         </div>
 
         <div className="cart-panel__row cart-panel__row--input">
-          <label htmlFor="cart-cash">Cash received (৳)</label>
-          <input
-            id="cart-cash"
-            type="text"
-            inputMode="decimal"
-            className="cart-panel__input"
-            value={cashInput}
-            onChange={(e) => {
-              setCashInput(e.target.value);
-              const minor = parseTakaToMinor(e.target.value);
-              onSetCashReceived(minor ?? 0);
-            }}
-          />
+          <label htmlFor="cart-payment-method">Payment method</label>
+          <select
+            id="cart-payment-method"
+            className="cart-panel__input cart-panel__input--payment"
+            value={paymentMethod}
+            onChange={(event) => onSetPaymentMethod(event.target.value as SalePaymentMethod)}
+          >
+            <option value="CASH">Cash</option>
+            <option value="CARD">Card</option>
+            <option value="BANK">Bank transfer</option>
+            <option value="MOBILE">Mobile wallet</option>
+          </select>
         </div>
 
-        <div className="cart-panel__row cart-panel__row--change">
-          <span>Change</span>
-          <span>{formatBdt(totals.changeMinor)}</span>
-        </div>
+        {paymentMethod === 'MOBILE' && (
+          <div className="cart-panel__row cart-panel__row--input">
+            <label htmlFor="cart-wallet-provider">Wallet provider</label>
+            <select
+              id="cart-wallet-provider"
+              className="cart-panel__input cart-panel__input--payment"
+              value={mobileWalletProvider ?? ''}
+              onChange={(event) =>
+                onSetMobileWalletProvider(
+                  event.target.value ? (event.target.value as MobileWalletProvider) : null,
+                )
+              }
+              required
+            >
+              <option value="">Select provider</option>
+              <option value="BKASH">bKash</option>
+              <option value="ROCKET">Rocket</option>
+              <option value="NAGAD">Nagad</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+        )}
+
+        {paymentMethod !== 'CASH' && (
+          <div className="cart-panel__row cart-panel__row--input">
+            <label htmlFor="cart-payment-reference">Reference</label>
+            <input
+              id="cart-payment-reference"
+              type="text"
+              className="cart-panel__input cart-panel__input--payment"
+              value={paymentReference}
+              maxLength={100}
+              onChange={(event) => onSetPaymentReference(event.target.value)}
+            />
+          </div>
+        )}
+
+        {paymentMethod === 'CASH' && (
+          <>
+            <div className="cart-panel__row cart-panel__row--input">
+              <label htmlFor="cart-cash">Cash received (৳)</label>
+              <input
+                id="cart-cash"
+                type="text"
+                inputMode="decimal"
+                className="cart-panel__input"
+                value={cashInput}
+                onChange={(e) => {
+                  setCashInput(e.target.value);
+                  const minor = parseTakaToMinor(e.target.value);
+                  onSetCashReceived(minor ?? 0);
+                }}
+              />
+            </div>
+
+            <div className="cart-panel__row cart-panel__row--change">
+              <span>Change</span>
+              <span>{formatBdt(totals.changeMinor)}</span>
+            </div>
+          </>
+        )}
       </section>
 
       {submissionError && (

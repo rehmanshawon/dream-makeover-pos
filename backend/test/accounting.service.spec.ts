@@ -21,6 +21,12 @@ function createService() {
       type: AccountType.ASSET,
     } as Account,
     {
+      id: 'card-clearing-id',
+      code: 'CARD_CLEARING',
+      name: 'Card clearing receivable',
+      type: AccountType.ASSET,
+    } as Account,
+    {
       id: 'advance-id',
       code: 'EMPLOYEE_ADVANCES',
       name: 'Employee advances',
@@ -322,6 +328,7 @@ describe('AccountingService', () => {
       entryDate: '2026-09-28',
       invoiceId: 'DM-20260928-0001',
       totalMinor: 110000,
+      paymentMethod: 'CASH',
       revenueMinor: 100000,
       vatMinor: 10000,
       createdBy: 'admin',
@@ -339,6 +346,33 @@ describe('AccountingService', () => {
       expect.objectContaining({ accountId: 'revenue-id', debitMinor: 0, creditMinor: 100000 }),
       expect.objectContaining({ accountId: 'vat-id', debitMinor: 0, creditMinor: 10000 }),
     ]);
+  });
+
+  it.each([
+    ['CARD', 'card-clearing-id'],
+    ['BANK', 'bank-id'],
+    ['MOBILE', 'mobile-id'],
+  ] as const)('posts %s sale collections to the matching asset account', async (method, accountId) => {
+    const { service, lineRepository, manager } = createService();
+
+    await service.createSaleEntry(manager as EntityManager, {
+      sourceTransactionId: 'transaction-2',
+      entryDate: '2026-09-28',
+      invoiceId: 'DM-20260928-0002',
+      totalMinor: 50000,
+      paymentMethod: method,
+      revenueMinor: 50000,
+      vatMinor: 0,
+      cogsMinor: 0,
+      createdBy: 'admin',
+    });
+
+    expect(lineRepository.save).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ accountId, debitMinor: 50000, creditMinor: 0 }),
+        expect.objectContaining({ accountId: 'revenue-id', debitMinor: 0, creditMinor: 50000 }),
+      ]),
+    );
   });
 
   it('rejects a transfer between the same account before opening a database transaction', async () => {

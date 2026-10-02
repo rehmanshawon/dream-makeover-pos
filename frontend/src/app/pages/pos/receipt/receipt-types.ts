@@ -1,3 +1,5 @@
+import type { MobileWalletProvider, SalePaymentMethod } from '../../../../types/checkout';
+
 export interface ReceiptItem {
   name: string;
   quantity: number;
@@ -39,6 +41,9 @@ export interface ReceiptData {
   totalMinor: number;
   cashReceivedMinor: number;
   changeMinor: number;
+  paymentMethod: SalePaymentMethod;
+  mobileWalletProvider: MobileWalletProvider | null;
+  paymentReference: string | null;
   loyalty: ReceiptLoyalty | null;
   business: ReceiptBusiness;
 }

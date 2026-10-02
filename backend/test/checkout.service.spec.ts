@@ -205,6 +205,7 @@ describe('CheckoutService', () => {
     expect(result).not.toHaveProperty('vatRatePercent');
     expect(result).not.toHaveProperty('vatMinor');
     expect(result.cashReceivedMinor).toBe(70000);
+    expect(result.paymentMethod).toBe('CASH');
     expect(result.changeMinor).toBe(1000);
     expect(inventoryService.applySaleMovement).toHaveBeenCalledWith(
       expect.anything(),
@@ -221,6 +222,7 @@ describe('CheckoutService', () => {
         sourceTransactionId: 't1',
         entryDate: '2026-09-28',
         totalMinor: 69000,
+        paymentMethod: 'CASH',
         revenueMinor: 69000,
         vatMinor: 0,
         cogsMinor: 50000,
@@ -338,6 +340,62 @@ describe('CheckoutService', () => {
     };
 
     await expect(service.checkout(dto, 'admin')).rejects.toThrow('Insufficient cash received');
+  });
+
+  it('requires a provider for mobile wallet checkout', async () => {
+    productRepo.findOne.mockResolvedValue({
+      id: 'p1',
+      name: 'Lipstick',
+      stock: 5,
+      sellingPriceMinor: 10000,
+    } as Product);
+
+    await expect(
+      service.checkout(
+        {
+          items: [{ itemType: TransactionItemType.PRODUCT, itemId: 'p1', quantity: 1 }],
+          discountMinor: 0,
+          cashReceivedMinor: 0,
+          paymentMethod: 'MOBILE',
+        },
+        'admin',
+      ),
+    ).rejects.toThrow('Choose a mobile wallet provider');
+  });
+
+  it('records mobile wallet tender with the sale total and no cash change', async () => {
+    const product = { id: 'p1', name: 'Lipstick', stock: 5, sellingPriceMinor: 10000 } as Product;
+    productRepo.findOne.mockResolvedValue(product);
+    productRepo.save.mockResolvedValue(product);
+    transactionRepo.create.mockImplementation((values: Partial<Transaction>) => values as Transaction);
+    transactionRepo.save.mockImplementation(
+      async (saved: Transaction) =>
+        ({ ...saved, id: 't-mobile', invoiceId: 'DM-20260930-0002', createdAt: new Date() }) as Transaction,
+    );
+    itemRepo.create.mockImplementation((values: Partial<TransactionItem>) => values as TransactionItem);
+    itemRepo.save.mockImplementation(async (saved: TransactionItem) => saved);
+
+    const result = await service.checkout(
+      {
+        items: [{ itemType: TransactionItemType.PRODUCT, itemId: 'p1', quantity: 1 }],
+        discountMinor: 0,
+        cashReceivedMinor: 0,
+        paymentMethod: 'MOBILE',
+        mobileWalletProvider: 'BKASH',
+        paymentReference: '  TX-123  ',
+      },
+      'admin',
+    );
+
+    expect(result.paymentMethod).toBe('MOBILE');
+    expect(result.mobileWalletProvider).toBe('BKASH');
+    expect(result.paymentReference).toBe('TX-123');
+    expect(result.cashReceivedMinor).toBe(10000);
+    expect(result.changeMinor).toBe(0);
+    expect(accountingService.createSaleEntry).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ paymentMethod: 'MOBILE' }),
+    );
   });
 
   it('sells a package and reduces stock of contained products', async () => {

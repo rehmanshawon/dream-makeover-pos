@@ -216,8 +216,19 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   // ---------------------------------------------------------------------------
   // 5. Footer info
   // ---------------------------------------------------------------------------
-  //lines.push(text(labelValue('Payment Method', 'Cash')));
-  //lines.push(text(labelValue('Staff Name', data.cashier)));
+  const paymentMethodLabel =
+    data.paymentMethod === 'BANK'
+      ? 'Bank transfer'
+      : data.paymentMethod === 'MOBILE'
+        ? data.mobileWalletProvider ?? 'Mobile wallet'
+        : data.paymentMethod === 'CARD'
+          ? 'Card'
+          : 'Cash';
+  lines.push(text(labelValue('Payment Method', paymentMethodLabel)));
+  if (data.paymentReference) {
+    lines.push(text(labelValue('Reference', data.paymentReference)));
+  }
+  lines.push(text(labelValue('Staff Name', data.cashier)));
   //lines.push(text(labelValue('Remarks', 'Thank you for choosing Dream Makeover!')));
   //lines.push(text(divider()));
 

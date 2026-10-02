@@ -1,3 +1,6 @@
+import { SalePaymentMethod } from '../sale-payment-method.enum';
+import { MobileWalletProvider } from '../mobile-wallet-provider.enum';
+
 export class TransactionDetailItemDto {
   id: string;
   itemType: string;
@@ -25,5 +28,8 @@ export class TransactionDetailDto {
   totalMinor: number;
   cashReceivedMinor: number;
   changeMinor: number;
+  paymentMethod: SalePaymentMethod;
+  mobileWalletProvider: MobileWalletProvider | null;
+  paymentReference: string | null;
   items: TransactionDetailItemDto[];
 }

@@ -145,6 +145,11 @@
   box-shadow: 0 0 0 3px var(--color-accent-soft);
 }
 
+.cart-panel__input--payment {
+  width: 150px;
+  text-align: left;
+}
+
 .cart-panel__footer {
   padding: var(--space-4);
   border-top: 1px solid var(--color-border);

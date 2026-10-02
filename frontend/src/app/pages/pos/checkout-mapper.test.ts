@@ -61,7 +61,33 @@ describe('buildCheckoutRequest', () => {
     const result = buildCheckoutRequest(ITEMS, TOTALS, null);
     expect(result.discountMinor).toBe(10000);
     expect(result.cashReceivedMinor).toBe(500000);
+    expect(result.paymentMethod).toBe('CASH');
     expect(result).not.toHaveProperty('vatRatePercent');
+  });
+
+  it('uses the sale total as paid amount for non-cash tenders', () => {
+    const result = buildCheckoutRequest(ITEMS, TOTALS, null, {
+      paymentMethod: 'BANK',
+      mobileWalletProvider: null,
+      paymentReference: '',
+    });
+
+    expect(result.paymentMethod).toBe('BANK');
+    expect(result.cashReceivedMinor).toBe(TOTALS.totalMinor);
+    expect(result).not.toHaveProperty('mobileWalletProvider');
+  });
+
+  it('includes a mobile wallet provider and trimmed payment reference', () => {
+    const result = buildCheckoutRequest(ITEMS, TOTALS, null, {
+      paymentMethod: 'MOBILE',
+      mobileWalletProvider: 'BKASH',
+      paymentReference: '  TX-123  ',
+    });
+
+    expect(result.paymentMethod).toBe('MOBILE');
+    expect(result.mobileWalletProvider).toBe('BKASH');
+    expect(result.paymentReference).toBe('TX-123');
+    expect(result.cashReceivedMinor).toBe(TOTALS.totalMinor);
   });
 
   it('includes customerId when provided', () => {
