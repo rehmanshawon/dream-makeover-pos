@@ -15,15 +15,21 @@
     "type-check": "npm run type-check --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
+    "desktop:dev": "concurrently --kill-others \"npm run dev --workspace frontend -- --host localhost\" \"wait-on http://localhost:5173 && npm run dev --workspace desktop\"",
+    "desktop:package:win": "npm run build --workspace frontend && npm run build --workspace desktop && electron-builder --projectDir . --config desktop/electron-builder.yml --win nsis",
     "ci:all": "npm run lint && npm run type-check && npm run test && npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "concurrently": "^10.0.5",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3",
-    "typescript-eslint": "^8.15.0"
+    "typescript-eslint": "^8.15.0",
+    "wait-on": "^9.5.1"
   },
   "engines": {
     "node": ">=20.0.0",

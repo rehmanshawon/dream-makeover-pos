@@ -10,7 +10,7 @@ This is an npm workspaces monorepo.
 |---|---|
 | `backend` | NestJS API and business logic |
 | `frontend` | React POS interface |
-| `desktop` | Placeholder package for the planned Electron desktop shell |
+| `desktop` | Electron desktop shell and Windows installer |
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ Configure `TIME_SYNC_URL`, `PAYROLL_OFFLINE_GRACE_HOURS`, and `PAYROLL_TIME_WARN
 - Employee records, attendance, pay periods, salary payments, advances, and payslips. Payroll and attendance actions require trusted time; POS checkout remains available while payroll is time-locked.
 - Business reports for sales, revenue trends, top items, expenses, and financial summaries.
 - A4 print / Save as PDF actions for sales, operating expenses, inventory on hand, P&L, trial balance, balance sheet, and payroll period reports.
-- POS receipt printing through a browser print dialog, with Web Bluetooth ESC/POS printing available in supported Chromium browsers.
+- POS receipt printing through browser print, Web Bluetooth ESC/POS, or the Windows Electron desktop app.
 
 ## Accounting Scope
 
@@ -57,7 +57,9 @@ The backend is configured to run pending TypeORM migrations at startup. Back up 
 
 ## Desktop Status
 
-The `desktop` workspace is currently a placeholder and does not yet contain an Electron main process, preload bridge, or packaging configuration. The web application is the current runnable client.
+Run `npm run desktop:dev` to start the web frontend and Electron shell together. The desktop app uses Chromium Web Bluetooth for compatible BLE ESC/POS printers and presents a native Windows device chooser when more than one compatible printer is discovered. The existing backend and MySQL database must be running, and the backend CORS configuration must allow `http://localhost:5173`.
+
+Run `npm run desktop:package:win` on Windows to build an NSIS installer in `desktop/release`. Configure `frontend/.env` with the backend API URL before building; the installer packages the frontend and Electron shell, not the backend or database.
 
 ## Scripts
 ```bash

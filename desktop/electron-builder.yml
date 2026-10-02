@@ -1,0 +1,22 @@
+appId: com.dreammakeover.pos
+productName: Dream Makeover POS
+directories:
+  output: desktop/release
+files:
+  - desktop/dist/**/*
+  - frontend/dist/**/*
+  - desktop/package.json
+  - package.json
+  - '!**/*.map'
+extraMetadata:
+  main: desktop/dist/index.js
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true

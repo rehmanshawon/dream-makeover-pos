@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "description": "Electron desktop shell for Dream Makeover POS",
+  "main": "dist/index.js",
   "scripts": {
+    "dev": "npm run build && electron .",
+    "start": "electron .",
     "type-check": "tsc --noEmit",
     "test": "echo \"No desktop tests yet\" && exit 0",
     "build": "tsc"
