@@ -7,8 +7,8 @@
  *   - 49535343-...  Microchip Transparent UART (common on thermal printers)
  *   - e7810a71-...  Alternate ESC/POS service used by many POS printers
  *
- * We include all four so Chrome lists the printer in the pairing dialog.
- * The library auto-detects the correct write characteristic per service.
+ * We include supported printer services in the pairing dialog and probe each
+ * one for a writable characteristic after the device is selected.
  */
 export const PRINTER_SERVICE_UUIDS: string[] = [
   '000018f0-0000-1000-8000-00805f9b34fb',

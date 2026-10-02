@@ -15,7 +15,7 @@
     "type-check": "npm run type-check --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
-    "desktop:dev": "concurrently --kill-others \"npm run dev --workspace frontend -- --host localhost\" \"wait-on http://localhost:5173 && npm run dev --workspace desktop\"",
+    "desktop:dev": "concurrently \"npm run dev --workspace frontend -- --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && npm run dev --workspace desktop\"",
     "desktop:package:win": "npm run build --workspace frontend && npm run build --workspace desktop && electron-builder --projectDir . --config desktop/electron-builder.yml --win nsis",
     "ci:all": "npm run lint && npm run type-check && npm run test && npm run build"
   },

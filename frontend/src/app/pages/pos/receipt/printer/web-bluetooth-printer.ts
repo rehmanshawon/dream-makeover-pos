@@ -1,15 +1,49 @@
 import ReceiptPrinterEncoder from '@point-of-sale/receipt-printer-encoder';
 import type { ReceiptImageLine, ReceiptLine, ReceiptPrinter } from './receipt-printer';
 import {
+  PRINTER_SERVICE_UUIDS,
   PRINTER_FEED_BEFORE_CUT,
   PRINTER_PAPER_WIDTH,
   PRINTER_DEVICE_STORAGE_KEY,
 } from './printer-config';
 
 type BluetoothPrinter = {
-  connect: () => Promise<unknown>;
-  print: (data: unknown) => Promise<unknown>;
-  device?: { id?: string };
+  device: BluetoothDevice;
+  characteristic: BluetoothCharacteristic;
+};
+
+type BluetoothCharacteristic = {
+  uuid: string;
+  properties: { write: boolean; writeWithoutResponse: boolean };
+  writeValueWithResponse?: (data: Uint8Array) => Promise<void>;
+  writeValueWithoutResponse?: (data: Uint8Array) => Promise<void>;
+};
+
+type BluetoothService = {
+  uuid: string;
+  getCharacteristics: () => Promise<BluetoothCharacteristic[]>;
+};
+
+type BluetoothGattServer = {
+  connected: boolean;
+  getPrimaryService: (uuid: string) => Promise<BluetoothService>;
+  getPrimaryServices: () => Promise<BluetoothService[]>;
+};
+
+type BluetoothDevice = {
+  id: string;
+  gatt: {
+    connect: () => Promise<BluetoothGattServer>;
+    disconnect: () => void;
+  };
+  addEventListener: (event: 'gattserverdisconnected', listener: () => void) => void;
+};
+
+type BluetoothApi = {
+  requestDevice: (options: {
+    filters: Array<{ services: string[] }>;
+    optionalServices: string[];
+  }) => Promise<BluetoothDevice>;
 };
 
 const DEFAULT_IMAGE_WIDTH_DOTS = 256;
@@ -18,6 +52,54 @@ const PRINTER_STANDARD_LINE_HEIGHT_DOTS = 24;
 const MEDIUM_LINE_HEIGHT_SCALE = 1.5;
 const BLUETOOTH_CHUNK_SIZE = 100;
 const BLUETOOTH_CHUNK_DELAY_MS = 30;
+
+async function discoverPrinterCharacteristic(server: BluetoothGattServer): Promise<{
+  characteristic: BluetoothCharacteristic | undefined;
+  exposedServices: string;
+  serviceDiagnostics: string[];
+}> {
+  let characteristic: BluetoothCharacteristic | undefined;
+  let exposedServices: string;
+  const serviceDiagnostics: string[] = [];
+
+  try {
+    exposedServices = (await server.getPrimaryServices()).map((service) => service.uuid).join(', ');
+    if (!exposedServices) exposedServices = 'none';
+  } catch (error) {
+    exposedServices = `enumeration failed (${error instanceof Error ? `${error.name}: ${error.message}` : String(error)})`;
+  }
+
+  for (const serviceUuid of PRINTER_SERVICE_UUIDS) {
+    try {
+      const service = await server.getPrimaryService(serviceUuid);
+      const characteristics = await service.getCharacteristics();
+      serviceDiagnostics.push(
+        `${serviceUuid}: ${
+          characteristics.length
+            ? characteristics
+                .map(
+                  (item) =>
+                    `${item.uuid} [write=${item.properties.write}, writeWithoutResponse=${item.properties.writeWithoutResponse}]`,
+                )
+                .join(', ')
+            : 'no characteristics'
+        }`,
+      );
+      characteristic =
+        characteristics.find((item) => item.properties.write && item.writeValueWithResponse) ??
+        characteristics.find(
+          (item) => item.properties.writeWithoutResponse && item.writeValueWithoutResponse,
+        );
+      if (characteristic) break;
+    } catch (error) {
+      serviceDiagnostics.push(
+        `${serviceUuid}: unavailable (${error instanceof Error ? `${error.name}: ${error.message}` : String(error)})`,
+      );
+    }
+  }
+
+  return { characteristic, exposedServices, serviceDiagnostics };
+}
 
 /**
  * Prints receipts over Bluetooth Low Energy using the Web Bluetooth API.
@@ -34,25 +116,46 @@ export class WebBluetoothReceiptPrinter implements ReceiptPrinter {
   private printer: BluetoothPrinter | null = null;
 
   async connect(): Promise<string> {
-    const bluetooth = (navigator as Navigator & { bluetooth?: unknown }).bluetooth;
+    const bluetooth = (navigator as Navigator & { bluetooth?: BluetoothApi }).bluetooth;
     if (!bluetooth) {
       throw new Error(
         'Web Bluetooth is not available in this browser. Use Chrome, Edge, or Opera.',
       );
     }
 
-    const { default: WebBluetoothReceiptPrinterClass } =
-      await import('@point-of-sale/webbluetooth-receipt-printer');
-    const printer: BluetoothPrinter = new WebBluetoothReceiptPrinterClass();
-    await printer.connect();
+    const device = await bluetooth.requestDevice({
+      filters: PRINTER_SERVICE_UUIDS.map((service) => ({ services: [service] })),
+      optionalServices: PRINTER_SERVICE_UUIDS,
+    });
+    let server = await device.gatt.connect();
+    let discovery = await discoverPrinterCharacteristic(server);
 
-    this.printer = printer;
-    const deviceId = printer.device?.id;
-    if (typeof deviceId === 'string') {
-      this.storeDeviceId(deviceId);
-      return deviceId;
+    if (!server.connected) {
+      server = await device.gatt.connect();
+      discovery = await discoverPrinterCharacteristic(server);
     }
-    return 'connected';
+
+    if (!server.connected) {
+      device.gatt.disconnect();
+      throw new Error(
+        'The Bluetooth connection dropped during printer discovery. Keep the printer powered on and disconnect other devices before trying again.',
+      );
+    }
+
+    if (!discovery.characteristic) {
+      device.gatt.disconnect();
+      throw new Error(
+        `The selected printer has no writable receipt service. Exposed services: ${discovery.exposedServices}. Configured checks: ${discovery.serviceDiagnostics.join('; ')}`,
+      );
+    }
+
+    const printer = { device, characteristic: discovery.characteristic };
+    device.addEventListener('gattserverdisconnected', () => {
+      if (this.printer?.device === device) this.printer = null;
+    });
+    this.printer = printer;
+    this.storeDeviceId(device.id);
+    return device.id;
   }
 
   async print(lines: ReceiptLine[]): Promise<void> {
@@ -78,7 +181,18 @@ export class WebBluetoothReceiptPrinter implements ReceiptPrinter {
 
     const data = encoder.encode();
     for (let offset = 0; offset < data.length; offset += BLUETOOTH_CHUNK_SIZE) {
-      await this.printer!.print(data.slice(offset, offset + BLUETOOTH_CHUNK_SIZE));
+      const characteristic = this.printer!.characteristic;
+      const chunk = data.slice(offset, offset + BLUETOOTH_CHUNK_SIZE);
+      if (characteristic.properties.write && characteristic.writeValueWithResponse) {
+        await characteristic.writeValueWithResponse(chunk);
+      } else if (
+        characteristic.properties.writeWithoutResponse &&
+        characteristic.writeValueWithoutResponse
+      ) {
+        await characteristic.writeValueWithoutResponse(chunk);
+      } else {
+        throw new Error('The printer disconnected before the receipt finished printing.');
+      }
       if (offset + BLUETOOTH_CHUNK_SIZE < data.length) {
         await new Promise((resolve) => setTimeout(resolve, BLUETOOTH_CHUNK_DELAY_MS));
       }

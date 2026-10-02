@@ -3,7 +3,7 @@ import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { extname, resolve, sep } from 'node:path';
 
-const RENDERER_HOST = 'localhost';
+const RENDERER_HOST = '127.0.0.1';
 const RENDERER_PORT = 5173;
 const DEVELOPMENT_URL = `http://${RENDERER_HOST}:${RENDERER_PORT}`;
 
@@ -160,7 +160,24 @@ function createMainWindow(): BrowserWindow {
 	});
 
 	installBluetoothPicker(window);
-	window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+	window.webContents.setWindowOpenHandler(({ url }) => {
+		if (url !== 'about:blank') return { action: 'deny' };
+
+		return {
+			action: 'allow',
+			overrideBrowserWindowOptions: {
+				width: 440,
+				height: 680,
+				autoHideMenuBar: true,
+				title: 'Receipt',
+				webPreferences: {
+					contextIsolation: true,
+					nodeIntegration: false,
+					sandbox: true,
+				},
+			},
+		};
+	});
 	window.webContents.on('will-navigate', (event, url) => {
 		if (new URL(url).origin !== DEVELOPMENT_URL) event.preventDefault();
 	});

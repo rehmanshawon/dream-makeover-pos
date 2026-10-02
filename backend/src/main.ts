@@ -9,7 +9,7 @@ import { AppModule } from './app.module';
  * Parses the CORS_ALLOWED_ORIGINS env variable into an array.
  *
  * Multiple origins are separated by commas. Whitespace is trimmed.
- * An empty value disables CORS entirely (useful for tests).
+ * An empty value disables extra configured origins (useful for tests).
  *
  * `null` is a valid entry and allows requests with no Origin header
  * (typically from Electron's file:// context and from non-browser
@@ -28,7 +28,11 @@ async function bootstrap(): Promise<void> {
   mkdirSync(join(process.cwd(), 'uploads', 'employees'), { recursive: true });
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' });
 
-  const allowedOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
+  const allowedOrigins = [
+    'http://127.0.0.1:5173',
+    'http://localhost:5173',
+    ...parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS),
+  ];
 
   app.enableCors({
     origin: allowedOrigins,

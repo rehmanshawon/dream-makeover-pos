@@ -9,7 +9,6 @@ const { encodedTexts, encodedImages, encodedNewlines, encodedFonts, encoderOptio
     encoderOptions: { imageMode: '', feedBeforeCut: 0 },
   }),
 );
-
 vi.mock('@point-of-sale/receipt-printer-encoder', () => ({
   default: class {
     constructor(options: { imageMode: string; feedBeforeCut: number }) {
@@ -61,6 +60,51 @@ vi.mock('@point-of-sale/receipt-printer-encoder', () => ({
 
 import { WebBluetoothReceiptPrinter } from './web-bluetooth-printer';
 
+function mockBluetooth(serviceUuid: string) {
+  let disconnectListener: (() => void) | undefined;
+  const write = vi.fn().mockResolvedValue(undefined);
+  const characteristic = {
+    uuid: '00002af1-0000-1000-8000-00805f9b34fb',
+    properties: { write: true, writeWithoutResponse: false },
+    writeValueWithResponse: write,
+  };
+  const service = { getCharacteristics: vi.fn().mockResolvedValue([characteristic]) };
+  const server = {
+    connected: true,
+    getPrimaryServices: vi.fn().mockResolvedValue([{ uuid: serviceUuid }]),
+    getPrimaryService: vi.fn(async (uuid: string) => {
+      if (uuid !== serviceUuid) throw new Error('Service not found');
+      return service;
+    }),
+  };
+  const device = {
+    id: 'test-device',
+    gatt: {
+      connect: vi.fn().mockImplementation(async () => {
+        server.connected = true;
+        return server;
+      }),
+      disconnect: vi.fn(),
+    },
+    addEventListener: vi.fn((_event: string, listener: () => void) => {
+      disconnectListener = listener;
+    }),
+  };
+  const requestDevice = vi.fn().mockResolvedValue(device);
+  Object.defineProperty(navigator, 'bluetooth', {
+    configurable: true,
+    value: { requestDevice },
+  });
+
+  return {
+    requestDevice,
+    device,
+    server,
+    write,
+    disconnect: () => disconnectListener?.(),
+  };
+}
+
 describe('WebBluetoothReceiptPrinter', () => {
   beforeEach(() => {
     encodedTexts.length = 0;
@@ -74,7 +118,14 @@ describe('WebBluetoothReceiptPrinter', () => {
   it('sends receipt lines in their formatted order', async () => {
     const printer = new WebBluetoothReceiptPrinter();
     const write = vi.fn().mockResolvedValue(undefined);
-    Object.assign(printer, { printer: { print: write } });
+    Object.assign(printer, {
+      printer: {
+        characteristic: {
+          properties: { write: true, writeWithoutResponse: false },
+          writeValueWithResponse: write,
+        },
+      },
+    });
 
     await printer.print([
       { type: 'text', text: 'CASH RECEIPT', align: 'center' },
@@ -111,7 +162,14 @@ describe('WebBluetoothReceiptPrinter', () => {
 
     const printer = new WebBluetoothReceiptPrinter();
     const write = vi.fn().mockResolvedValue(undefined);
-    Object.assign(printer, { printer: { print: write } });
+    Object.assign(printer, {
+      printer: {
+        characteristic: {
+          properties: { write: true, writeWithoutResponse: false },
+          writeValueWithResponse: write,
+        },
+      },
+    });
 
     await printer.print([
       { type: 'text', text: 'Subtotal'.padEnd(64), bold: true, medium: true },
@@ -124,5 +182,69 @@ describe('WebBluetoothReceiptPrinter', () => {
     expect(encodedNewlines.count).toBe(1);
     expect(encoderOptions.imageMode).toBe('raster');
     expect(write).toHaveBeenCalledTimes(3);
+  });
+
+  it('connects through alternate printer services and reconnects after disconnect', async () => {
+    const bluetooth = mockBluetooth('e7810a71-73ae-499d-8c15-faa9aef0c3f2');
+    const printer = new WebBluetoothReceiptPrinter();
+
+    await printer.connect();
+    bluetooth.disconnect();
+    await printer.print([{ type: 'text', text: 'RECEIPT' }]);
+
+    expect(bluetooth.requestDevice).toHaveBeenCalledTimes(2);
+    expect(bluetooth.write).toHaveBeenCalledTimes(3);
+  });
+
+  it('rejects a selected device without a writable printer characteristic', async () => {
+    const bluetooth = mockBluetooth('e7810a71-73ae-499d-8c15-faa9aef0c3f2');
+    bluetooth.server.getPrimaryService.mockImplementation(async () => ({
+      getCharacteristics: vi.fn().mockResolvedValue([
+        {
+          uuid: '00002af1-0000-1000-8000-00805f9b34fb',
+          properties: { write: false, writeWithoutResponse: false },
+        },
+      ]),
+    }));
+    const printer = new WebBluetoothReceiptPrinter();
+
+    await expect(printer.connect()).rejects.toThrow(
+      'Exposed services: e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+    );
+    expect((await bluetooth.requestDevice.mock.results[0]!.value).gatt.disconnect).toHaveBeenCalled();
+    expect(bluetooth.write).not.toHaveBeenCalled();
+  });
+
+  it('reconnects once when the GATT server drops during discovery', async () => {
+    const bluetooth = mockBluetooth('e7810a71-73ae-499d-8c15-faa9aef0c3f2');
+    bluetooth.server.getPrimaryServices.mockImplementationOnce(async () => {
+      bluetooth.server.connected = false;
+      throw new DOMException('GATT Server is disconnected.', 'NetworkError');
+    });
+    const printer = new WebBluetoothReceiptPrinter();
+
+    await printer.connect();
+
+    expect(bluetooth.device.gatt.connect).toHaveBeenCalledTimes(2);
+  });
+
+  it('asks the user to select from the configured printer services', async () => {
+    const bluetooth = mockBluetooth('000018f0-0000-1000-8000-00805f9b34fb');
+    const printer = new WebBluetoothReceiptPrinter();
+
+    await printer.connect();
+
+    expect(bluetooth.requestDevice).toHaveBeenCalledWith({
+      filters: expect.arrayContaining([
+        { services: ['000018f0-0000-1000-8000-00805f9b34fb'] },
+        { services: ['49535343-fe7d-4ae5-8fa9-9fafd205e455'] },
+        { services: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2'] },
+      ]),
+      optionalServices: expect.arrayContaining([
+        '000018f0-0000-1000-8000-00805f9b34fb',
+        '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+        'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+      ]),
+    });
   });
 });

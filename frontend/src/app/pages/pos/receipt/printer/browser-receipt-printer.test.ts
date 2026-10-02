@@ -16,8 +16,21 @@ describe('BrowserReceiptPrinter', () => {
   });
 
   function mockPopup() {
+    const pageStyle = { textContent: '' };
     return {
-      document: { open: vi.fn(), write: vi.fn(), close: vi.fn() },
+      document: {
+        open: vi.fn(),
+        write: vi.fn(),
+        close: vi.fn(),
+        body: {
+          scrollHeight: 680,
+          getBoundingClientRect: () => ({ top: 0 }),
+          children: [{ getBoundingClientRect: () => ({ top: 48, bottom: 480 }) }],
+        },
+        head: { append: vi.fn() },
+        createElement: vi.fn(() => pageStyle),
+      },
+      pageStyle,
       addEventListener: vi.fn(),
       focus: vi.fn(),
       print: vi.fn(),
@@ -93,6 +106,89 @@ describe('BrowserReceiptPrinter', () => {
     expect(html).toContain('line--inverse');
   });
 
+  it('aligns total colons and only emphasizes Subtotal and Total Amount', async () => {
+    const popup = mockPopup();
+    window.open = vi.fn(() => popup) as unknown as typeof window.open;
+
+    const printer = new BrowserReceiptPrinter();
+    const promise = printer.print([
+      { type: 'text', text: 'Subtotal        :                                        123.45', bold: true },
+      { type: 'text', text: 'Total Amount    :                                         123.45', bold: true },
+      { type: 'text', text: 'Paid Amount     :                                          50.00' },
+    ]);
+    await vi.advanceTimersByTimeAsync(200);
+    await promise;
+
+    const html = popup.document.write.mock.calls[0]?.[0] as string;
+    expect(html).toContain(
+      '<div class="line line--bold line--total"><span>Subtotal</span><span class="line--colon">:</span><span class="line--total-value">123.45</span></div>',
+    );
+    expect(html).toContain(
+      '<div class="line line--bold line--total"><span>Total Amount</span><span class="line--colon">:</span><span class="line--total-value">123.45</span></div>',
+    );
+    expect(html).toContain(
+      '<div class="line line--total"><span>Paid Amount</span><span class="line--colon">:</span><span class="line--total-value">50.00</span></div>',
+    );
+  });
+
+  it('renders item rows on one line at the previous size and in bold', async () => {
+    const popup = mockPopup();
+    window.open = vi.fn(() => popup) as unknown as typeof window.open;
+    const itemRow = `${'1'.padEnd(3)} ${'Repair service'.padEnd(26)} ${'2'.padStart(5)}    ${'45.00'.padStart(12)} ${'90.00'.padStart(11)}`;
+
+    const printer = new BrowserReceiptPrinter();
+    const promise = printer.print([{ type: 'text', text: itemRow }]);
+    await vi.advanceTimersByTimeAsync(200);
+    await promise;
+
+    const html = popup.document.write.mock.calls[0]?.[0] as string;
+    expect(html).toContain('class="line line--items line--item"');
+    expect(html).toContain(
+      '<span>1</span><span>Repair service</span><span>2</span><span>45.00</span><span>90.00</span>',
+    );
+    expect(html).toContain('font-size: 11px');
+    expect(itemRow).toHaveLength(64);
+  });
+
+  it('renders invoice detail colons in aligned columns using regular weight', async () => {
+    const popup = mockPopup();
+    window.open = vi.fn(() => popup) as unknown as typeof window.open;
+
+    const printer = new BrowserReceiptPrinter();
+    const promise = printer.print([{ type: 'text', text: 'Invoice No      : INV-1001'.padEnd(64) }]);
+    await vi.advanceTimersByTimeAsync(200);
+    await promise;
+
+    const html = popup.document.write.mock.calls[0]?.[0] as string;
+    expect(html).toContain('class="line line--label-value"');
+    expect(html).toContain(
+      '<span>Invoice No</span><span class="line--colon">:</span><span class="line--value">INV-1001</span>',
+    );
+  });
+
+  it('renders payment details and divider rules in aligned full-width columns', async () => {
+    const popup = mockPopup();
+    window.open = vi.fn(() => popup) as unknown as typeof window.open;
+
+    const printer = new BrowserReceiptPrinter();
+    const promise = printer.print([
+      { type: 'text', text: 'Payment Method  : Cash'.padEnd(64) },
+      { type: 'text', text: '-'.repeat(64) },
+    ]);
+    await vi.advanceTimersByTimeAsync(200);
+    await promise;
+
+    const html = popup.document.write.mock.calls[0]?.[0] as string;
+    expect(html).toContain(
+      '<span>Payment Method</span><span class="line--colon">:</span><span class="line--value">Cash</span>',
+    );
+    expect(html).toContain('.line--label-value { display: grid; grid-template-columns: 26mm 3mm minmax(0, 1fr);');
+    expect(html).toContain('class="line line--divider"');
+    expect(html).toContain('width: calc(100% + 4mm)');
+    expect(html).toContain('border-bottom: 0.2mm solid #000');
+    expect(html).toContain('.line--item-header { font-weight: 700; }');
+  });
+
   it('renders images as img tags', async () => {
     const popup = mockPopup();
     window.open = vi.fn(() => popup) as unknown as typeof window.open;
@@ -107,7 +203,7 @@ describe('BrowserReceiptPrinter', () => {
     expect(html).toContain('/logo.png');
   });
 
-  it('uses an inset 80mm receipt page and waits for the print dialog to finish before closing', async () => {
+  it('aligns with the POS-80 page and waits for printing to finish before closing', async () => {
     const popup = mockPopup();
     const addEventListener = popup.addEventListener;
     window.open = vi.fn(() => popup) as unknown as typeof window.open;
@@ -120,8 +216,16 @@ describe('BrowserReceiptPrinter', () => {
     const html = popup.document.write.mock.calls[0]?.[0] as string;
     expect(html).toContain('@page { size: 80mm auto; margin: 0; }');
     expect(html).toContain('width: 80mm');
-    expect(html).toContain('padding: 1mm 2mm 0');
-    expect(html).toContain('font-size: 9.5px');
+    expect(html).toContain('min-height: 210mm');
+    expect(html).not.toContain('margin-top: -12.7mm');
+    expect(html).toContain('padding: 2mm 2mm');
+    expect(html).toContain('font-size: 11px');
+    expect(html).toContain('font-weight: 400');
+    expect(html).toContain('font-family: Arial, Helvetica, sans-serif');
+    expect(html).toContain('.line--fixed  { width: 100%; font-family: Arial, Helvetica, sans-serif; font-size: 9px; font-weight: 400; }');
+    expect(html).not.toContain('-webkit-text-stroke');
+    expect(html).not.toContain('scaleX(0.68)');
+    expect(popup.pageStyle.textContent).toBe('@page { size: 80mm 210mm; margin: 0; }');
     expect(addEventListener).toHaveBeenCalledWith('afterprint', expect.any(Function), {
       once: true,
     });
