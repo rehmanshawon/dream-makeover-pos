@@ -11,6 +11,7 @@ files:
 extraMetadata:
   main: desktop/dist/index.js
 win:
+  icon: frontend/public/logo.png
   target:
     - target: nsis
       arch:
