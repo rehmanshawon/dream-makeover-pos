@@ -1,0 +1,7 @@
+Dream Makeover POS installer notices
+
+MySQL Community Server 8.4.10 is included as a separate component and is
+licensed under the GNU General Public License, version 2. Its license and
+copyright notices are included in the installed resources/mysql directory.
+
+MySQL is provided by Oracle. Dream Makeover POS is not affiliated with Oracle.

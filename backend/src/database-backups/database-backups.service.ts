@@ -11,6 +11,7 @@ import type { Response } from 'express';
 import type { Archiver, ArchiverOptions } from 'archiver';
 import type * as Unzipper from 'unzipper';
 import { DataSource } from 'typeorm';
+import { getUploadsDirectory } from '../common/storage-paths';
 
 const BACKUP_FORMAT = 'dream-makeover-pos-backup';
 const BACKUP_VERSION = 2;
@@ -40,8 +41,8 @@ export class DatabaseBackupsService {
     const workDir = await mkdtemp(join(tmpdir(), 'dream-makeover-backup-'));
     const sqlPath = join(workDir, 'database.sql');
     const manifestPath = join(workDir, 'manifest.json');
-    const employeePhotosPath = join(process.cwd(), 'uploads', 'employees');
-    const categoryIconsPath = join(process.cwd(), 'uploads', 'category-icons');
+    const employeePhotosPath = join(getUploadsDirectory(), 'employees');
+    const categoryIconsPath = join(getUploadsDirectory(), 'category-icons');
 
     try {
       await this.writeDatabaseDump(sqlPath);
@@ -95,8 +96,8 @@ export class DatabaseBackupsService {
     const rollbackSqlPath = join(workDir, 'rollback.sql');
     const rollbackPhotosPath = join(workDir, 'rollback-photos');
     const rollbackCategoryIconsPath = join(workDir, 'rollback-category-icons');
-    const livePhotosPath = join(process.cwd(), 'uploads', 'employees');
-    const liveCategoryIconsPath = join(process.cwd(), 'uploads', 'category-icons');
+    const livePhotosPath = join(getUploadsDirectory(), 'employees');
+    const liveCategoryIconsPath = join(getUploadsDirectory(), 'category-icons');
     let importStarted = false;
 
     try {

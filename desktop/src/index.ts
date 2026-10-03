@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, session } from 'electron';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { extname, resolve, sep } from 'node:path';
+import { startLocalServices } from './local-services';
 
 const RENDERER_HOST = '127.0.0.1';
 const RENDERER_PORT = 5173;
@@ -188,6 +189,8 @@ function createMainWindow(): BrowserWindow {
 }
 
 let rendererServer: Server | undefined;
+let stopLocalServices: (() => Promise<void>) | undefined;
+let stoppingServices = false;
 
 void app.whenReady().then(async () => {
 	session.defaultSession.setPermissionCheckHandler((_webContents, permission, origin) => {
@@ -200,7 +203,10 @@ void app.whenReady().then(async () => {
 		);
 	});
 
-	if (app.isPackaged) rendererServer = await startProductionRenderer();
+	if (app.isPackaged) {
+		stopLocalServices = await startLocalServices();
+		rendererServer = await startProductionRenderer();
+	}
 	createMainWindow();
 }).catch((error: unknown) => {
 	const message = error instanceof Error ? error.message : 'Unable to start the desktop app.';
@@ -214,6 +220,18 @@ app.on('activate', () => {
 });
 
 app.on('window-all-closed', () => {
-	rendererServer?.close();
 	if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('before-quit', (event) => {
+	if (!stopLocalServices || stoppingServices) return;
+	event.preventDefault();
+	stoppingServices = true;
+	void stopLocalServices().catch((error: unknown) => {
+		console.error('Failed to stop local POS services:', error);
+	}).finally(() => {
+		rendererServer?.close();
+		stopLocalServices = undefined;
+		app.quit();
+	});
 });

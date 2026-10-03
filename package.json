@@ -16,7 +16,8 @@
     "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "desktop:dev": "concurrently \"npm run dev --workspace frontend -- --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && npm run dev --workspace desktop\"",
-    "desktop:package:win": "npm run build --workspace frontend && npm run build --workspace desktop && electron-builder --projectDir . --config desktop/electron-builder.yml --win nsis",
+    "desktop:package:win": "npm run build --workspace backend && npm run build --workspace frontend && npm run prepare:desktop:win && npm run build --workspace desktop && electron-builder --projectDir . --config desktop/electron-builder.yml --win nsis",
+    "prepare:desktop:win": "node desktop/scripts/prepare-windows-package.mjs",
     "ci:all": "npm run lint && npm run type-check && npm run test && npm run build"
   },
   "devDependencies": {

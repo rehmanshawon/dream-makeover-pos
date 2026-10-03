@@ -8,6 +8,19 @@ files:
   - desktop/package.json
   - package.json
   - '!**/*.map'
+extraResources:
+  - from: desktop/installer-resources/backend
+    to: backend
+    filter:
+      - '**/*'
+  - from: desktop/installer-resources/runtime-deps
+    to: backend-runtime-deps
+    filter:
+      - '**/*'
+  - from: desktop/installer-resources/mysql
+    to: mysql
+    filter:
+      - '**/*'
 extraMetadata:
   main: desktop/dist/index.js
 win:
@@ -17,6 +30,7 @@ win:
       arch:
         - x64
 nsis:
+  license: desktop/installer-license.txt
   oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true

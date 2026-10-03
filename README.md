@@ -59,9 +59,11 @@ The backend is configured to run pending TypeORM migrations at startup. Back up 
 
 Run `npm run desktop:dev` to start the web frontend and Electron shell together. The desktop app uses Chromium Web Bluetooth for compatible BLE ESC/POS printers and presents a native Windows device chooser when more than one compatible printer is discovered. The existing backend and MySQL database must be running, and the backend CORS configuration must allow `http://localhost:5173`.
 
-Run `npm run desktop:package:win` on Windows to build an NSIS installer in `desktop/release`. Configure `frontend/.env` with the backend API URL before building; the installer packages the frontend and Electron shell, not the backend or database.
+Run `npm run desktop:package:win` on Windows x64 to build a self-contained NSIS installer in `desktop/release`. The packaging step stages backend production dependencies and downloads the pinned MySQL Community Server 8.4.10 Windows ZIP from Oracle's archive, verifying its published MD5 before packaging. An internet connection is required for the first build. The installer starts a private local MySQL instance and the NestJS API; it does not connect to a developer-installed MySQL server.
 
-Uploaded category icons are stored under the backend process's `uploads/category-icons` directory and served through the configured backend API host. Keep that directory writable and persistent; database backups include category icons.
+The desktop app keeps its database, generated database credentials, logs, and uploaded employee photos/category icons in its per-user Electron data directory. The bundled database listens only on `127.0.0.1:3307`, and the API listens on `127.0.0.1:3001`. Database backups include category icons. MySQL is a separate GPL-licensed component; its license is included with the installed resources. Review the applicable GPL source-code distribution requirements before redistributing the installer.
+
+The fresh database is initialized with the default categories, system accounting accounts, and loyalty settings. Initial login accounts are `admin` (ADMIN) and `staff` (STAFF); change both passwords after first login. The current development database is not included in the installer.
 
 ## Scripts
 ```bash

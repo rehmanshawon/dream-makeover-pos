@@ -28,6 +28,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
+import { getUploadsDirectory } from '../common/storage-paths';
 
 @Controller('categories')
 @UseGuards(JwtAuthGuard)
@@ -42,7 +43,7 @@ export class CategoriesController {
       limits: { fileSize: 5 * 1024 * 1024 },
       storage: diskStorage({
         destination: (_req, _file, callback) => {
-          const directory = join(process.cwd(), 'uploads', 'category-icons');
+          const directory = join(getUploadsDirectory(), 'category-icons');
           mkdirSync(directory, { recursive: true });
           callback(null, directory);
         },
