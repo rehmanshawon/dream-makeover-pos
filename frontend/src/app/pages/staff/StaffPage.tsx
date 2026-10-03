@@ -92,17 +92,19 @@ export function StaffPage(): JSX.Element {
     {
       key: 'role',
       header: 'Role',
+      align: 'center',
       render: (e) => e.role,
     },
     {
       key: 'phone',
       header: 'Phone',
+      align: 'center',
       render: (e) => e.phone ?? '—',
     },
     {
       key: 'salary',
       header: 'Salary',
-      align: 'right',
+   align: 'center',
       render: (e) => (
         <>
           {formatBdt(e.salaryMinor)}
@@ -113,11 +115,13 @@ export function StaffPage(): JSX.Element {
     {
       key: 'joinDate',
       header: 'Joined',
+      align: 'center',
       render: (e) => formatDate(e.joinDate),
     },
     {
       key: 'status',
       header: 'Status',
+      align: 'center',
       render: (e) => (
         <Badge variant={STATUS_VARIANT[e.status]}>
           {e.status === 'ACTIVE' ? 'Active' : 'Inactive'}
@@ -129,7 +133,7 @@ export function StaffPage(): JSX.Element {
   if (isAdmin) {
     columns.push({
       key: 'actions',
-      header: '',
+      header: 'Actions',
       align: 'right',
       render: (e) => (
         <div className="staff-page__row-actions" onClick={(ev) => ev.stopPropagation()}>

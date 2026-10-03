@@ -68,22 +68,25 @@ export function UsersSection(): JSX.Element {
   const columns: TableColumn<User>[] = [
     {
       key: 'username',
-      header: 'Username',
+      header: 'User name',
       render: (u) => <span className="users-section__username">{u.username}</span>,
     },
     {
       key: 'displayName',
       header: 'Display name',
+      align: 'center',
       render: (u) => u.displayName,
     },
     {
       key: 'role',
       header: 'Role',
+      align: 'center',
       render: (u) => <Badge variant={u.role === 'ADMIN' ? 'accent' : 'neutral'}>{u.role}</Badge>,
     },
     {
       key: 'status',
       header: 'Status',
+      align: 'center',
       render: (u) => (
         <Badge variant={u.active ? 'success' : 'neutral'}>{u.active ? 'Active' : 'Inactive'}</Badge>
       ),
@@ -91,11 +94,12 @@ export function UsersSection(): JSX.Element {
     {
       key: 'createdAt',
       header: 'Created',
+      align: 'center',
       render: (u) => formatDateTime(u.createdAt),
     },
     {
       key: 'actions',
-      header: '',
+      header: 'Actions',
       align: 'right',
       render: (u) => {
         const isSelf = currentUser?.id === u.id;

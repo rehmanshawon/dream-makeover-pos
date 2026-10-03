@@ -32,10 +32,10 @@ function BalanceSection({ title, rows }: { title: string; rows: BalanceSheetLine
           <tbody>
             {rows.map((row) => (
               <tr key={row.code}>
-                <td>
+                <td className="accounting-statements__code-cell">
                   <span className="accounting-statements__code">{row.code}</span>
-                  {row.name}
                 </td>
+                <td>{row.name}</td>
                 <td className="accounting-statements__amount">{formatBdt(row.balanceMinor)}</td>
               </tr>
             ))}
@@ -57,6 +57,7 @@ function TrialBalanceRows({ rows }: { rows: TrialBalanceLine[] }): JSX.Element {
     <AccountingTable label="Trial balance">
       <thead>
         <tr>
+          <th scope="col">Code</th>
           <th scope="col">Account</th>
           <th scope="col" className="accounting-statements__amount">
             Debit
@@ -69,10 +70,10 @@ function TrialBalanceRows({ rows }: { rows: TrialBalanceLine[] }): JSX.Element {
       <tbody>
         {nonzeroRows.map((row) => (
           <tr key={row.accountId}>
-            <td>
+            <td className="accounting-statements__code-cell">
               <span className="accounting-statements__code">{row.code}</span>
-              {row.name}
             </td>
+            <td>{row.name}</td>
             <td className="accounting-statements__amount">
               {row.debitBalanceMinor ? formatBdt(row.debitBalanceMinor) : '—'}
             </td>

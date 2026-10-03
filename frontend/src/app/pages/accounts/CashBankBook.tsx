@@ -84,32 +84,35 @@ export function CashBankBook(): JSX.Element {
 
   const columns: TableColumn<AccountingJournalEntry>[] = [
     { key: 'date', header: 'Date', render: (entry) => formatDate(entry.entryDate) },
-    { key: 'type', header: 'Voucher', render: (entry) => typeLabels[entry.entryType] },
+    { key: 'type', header: 'Voucher', align: 'center', render: (entry) => typeLabels[entry.entryType] },
     {
       key: 'debit',
       header: 'Debit account',
+      align: 'center',
       render: (entry) => entry.lines.find((line) => line.debitMinor > 0)?.account.name ?? '—',
     },
     {
       key: 'credit',
       header: 'Credit account',
+      align: 'center',
       render: (entry) => entry.lines.find((line) => line.creditMinor > 0)?.account.name ?? '—',
     },
     {
       key: 'amount',
       header: 'Amount',
-      align: 'right',
+      align: 'center',
       render: (entry) => formatBdt(entry.lines.reduce((sum, line) => sum + line.debitMinor, 0)),
     },
-    { key: 'memo', header: 'Description', render: (entry) => entry.memo },
+    { key: 'memo', header: 'Description', align: 'center',render: (entry) => entry.memo },
     {
       key: 'recorded',
       header: 'Recorded',
+      align: 'center',
       render: (entry) => `${entry.createdBy} · ${formatDateTime(entry.createdAt)}`,
     },
     {
       key: 'correction',
-      header: '',
+      header: 'Actions',
       align: 'right',
       render: (entry) => {
         const alreadyReversed = (journal.data ?? []).some(
@@ -117,10 +120,9 @@ export function CashBankBook(): JSX.Element {
         );
         if (entry.entryType === 'JOURNAL_REVERSAL' || alreadyReversed) return '—';
         return (
-          <Button
+         <Button
             size="sm"
-            variant="secondary"
-            className="button--icon"
+            variant="danger"
             aria-label={`Reverse journal entry dated ${formatDate(entry.entryDate)}`}
             title="Create a reversing entry"
             onClick={() => {
@@ -130,7 +132,6 @@ export function CashBankBook(): JSX.Element {
               setReversalError(null);
             }}
           >
-            <span aria-hidden="true">↶</span>
             Reverse
           </Button>
         );

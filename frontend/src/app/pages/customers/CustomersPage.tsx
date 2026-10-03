@@ -54,6 +54,7 @@ export function CustomersPage(): JSX.Element {
     {
       key: 'area',
       header: 'Area',
+      align: 'center',
       render: (c) => c.area || '—',
     },
     {

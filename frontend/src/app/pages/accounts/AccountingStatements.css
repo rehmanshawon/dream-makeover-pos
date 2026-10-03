@@ -32,6 +32,7 @@
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  table-layout: fixed;
 }
 
 .accounting-statements__table th,
@@ -40,23 +41,41 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+/* First column: left-aligned */
+.accounting-statements__table th:first-child,
+.accounting-statements__table td:first-child {
+  text-align: left;
+}
+
+/* Last column: right-aligned */
+.accounting-statements__table th:last-child,
+.accounting-statements__table td:last-child {
+  text-align: right;
+}
+
+/* Middle columns: center-aligned */
+.accounting-statements__table th:not(:first-child):not(:last-child),
+.accounting-statements__table td:not(:first-child):not(:last-child) {
+  text-align: center;
+}
+
 .accounting-statements__table th {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
   font-weight: 600;
 }
 
+.accounting-statements__code-cell {
+  white-space: nowrap;
+}
+
 .accounting-statements__code {
-  display: inline-block;
-  min-width: 150px;
-  margin-right: var(--space-2);
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
 }
 
 .accounting-statements__amount {
-  min-width: 130px;
-  text-align: right !important;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -95,10 +114,6 @@
   font-size: var(--font-size-md);
 }
 
-.accounting-statements__section td:first-child {
-  min-width: 240px;
-}
-
 .accounting-statements__empty,
 .accounting-statements__error,
 .accounting-statements__note {
@@ -125,9 +140,7 @@
     padding-inline: var(--space-2);
   }
 
-  .accounting-statements__code {
-    display: block;
-    min-width: 0;
-    margin: 0;
+  .accounting-statements__code-cell {
+    white-space: normal;
   }
 }

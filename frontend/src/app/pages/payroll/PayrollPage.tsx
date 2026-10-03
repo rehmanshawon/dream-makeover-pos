@@ -42,18 +42,20 @@ export function PayrollPage(): JSX.Element {
     {
       key: 'range',
       header: 'Dates',
+      align: 'center',
       render: (p) => `${formatDate(p.startDate)} – ${formatDate(p.endDate)}`,
     },
     {
       key: 'status',
       header: 'Status',
+      align: 'center',
       render: (p) => (
         <Badge variant={p.status === 'OPEN' ? 'success' : 'neutral'}>{p.status}</Badge>
       ),
     },
     {
       key: 'actions',
-      header: '',
+      header: 'Actions',
       align: 'right',
       render: (p) => (
         <div className="payroll__actions">
