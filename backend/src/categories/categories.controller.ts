@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,8 +9,16 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
   UseGuards,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { mkdirSync } from 'node:fs';
+import { unlink } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
 import { CategoriesService } from './categories.service';
 import { CategoryKind } from './category-kind.enum';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -28,8 +37,52 @@ export class CategoriesController {
   @Post()
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
-  async create(@Body() dto: CreateCategoryDto): Promise<CategoryResponseDto> {
-    return this.categoriesService.create(dto);
+  @UseInterceptors(
+    FileInterceptor('icon', {
+      limits: { fileSize: 5 * 1024 * 1024 },
+      storage: diskStorage({
+        destination: (_req, _file, callback) => {
+          const directory = join(process.cwd(), 'uploads', 'category-icons');
+          mkdirSync(directory, { recursive: true });
+          callback(null, directory);
+        },
+        filename: (_req, file, callback) => {
+          const extension =
+            file.mimetype === 'image/png'
+              ? '.png'
+              : file.mimetype === 'image/webp'
+                ? '.webp'
+                : '.jpg';
+          callback(null, `${randomUUID()}${extension}`);
+        },
+      }),
+      fileFilter: (_req, file, callback) => {
+        if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.mimetype)) {
+          callback(new BadRequestException('Icon must be a PNG, JPEG, or WebP image.'), false);
+          return;
+        }
+        callback(null, true);
+      },
+    }),
+  )
+  async create(
+    @Body() dto: CreateCategoryDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ): Promise<CategoryResponseDto> {
+    if (file && dto.parentId) {
+      await unlink(file.path);
+      throw new BadRequestException('Only top-level categories can have a sidebar icon');
+    }
+
+    try {
+      return await this.categoriesService.create(
+        dto,
+        file ? `/uploads/category-icons/${file.filename}` : null,
+      );
+    } catch (error) {
+      if (file) await unlink(file.path).catch(() => undefined);
+      throw error;
+    }
   }
 
   @Get()

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type JSX } from 'react';
+import { useEffect, useMemo, useState, type DragEvent, type FormEvent, type JSX } from 'react';
 import { ApiError } from '../../../api/api-error';
 import { useCategories, useCreateCategory, useUpdateCategory } from '../../../api/category-hooks';
 import { Button } from '../../../ui/Button';
@@ -12,6 +12,8 @@ const KIND_OPTIONS: SelectOption[] = [
   { value: 'PRODUCT', label: 'Product' },
   { value: 'SERVICE', label: 'Service' },
 ];
+const MAX_ICON_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_ICON_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
 interface CategoryFormModalProps {
   open: boolean;
@@ -61,6 +63,10 @@ export function CategoryFormModal({
   const [form, setForm] = useState<FormState>(() => emptyForm(defaultKind));
   const [errors, setErrors] = useState<FormErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [iconPreviewUrl, setIconPreviewUrl] = useState<string | null>(null);
+  const [iconError, setIconError] = useState<string | null>(null);
+  const [draggingIcon, setDraggingIcon] = useState(false);
 
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
@@ -73,7 +79,19 @@ export function CategoryFormModal({
     setForm(category ? formFromCategory(category) : emptyForm(defaultKind));
     setErrors({});
     setFormError(null);
+    setIconFile(null);
+    setIconError(null);
   }, [open, category, defaultKind]);
+
+  useEffect(() => {
+    if (!iconFile) {
+      setIconPreviewUrl(null);
+      return;
+    }
+    const previewUrl = URL.createObjectURL(iconFile);
+    setIconPreviewUrl(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [iconFile]);
 
   const parentOptions: SelectOption[] = useMemo(() => {
     const list: SelectOption[] = [{ value: '', label: '— None (top level) —' }];
@@ -88,6 +106,28 @@ export function CategoryFormModal({
     }
     return list;
   }, [existing, category]);
+
+  const selectIcon = (file?: File): void => {
+    setIconError(null);
+    if (!file) return;
+    if (!ALLOWED_ICON_TYPES.includes(file.type)) {
+      setIconFile(null);
+      setIconError('Choose a PNG, JPEG, or WebP image.');
+      return;
+    }
+    if (file.size > MAX_ICON_SIZE_BYTES) {
+      setIconFile(null);
+      setIconError('Icon image must be 5 MB or smaller.');
+      return;
+    }
+    setIconFile(file);
+  };
+
+  const handleIconDrop = (event: DragEvent<HTMLLabelElement>): void => {
+    event.preventDefault();
+    setDraggingIcon(false);
+    selectIcon(event.dataTransfer.files.item(0) ?? undefined);
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -122,11 +162,14 @@ export function CategoryFormModal({
         });
       } else {
         await createMutation.mutateAsync({
-          name: trimmedName,
-          kind: form.kind,
-          displayOrder,
-          ...(form.parentId ? { parentId: form.parentId } : {}),
-          active: true,
+          payload: {
+            name: trimmedName,
+            kind: form.kind,
+            displayOrder,
+            ...(form.parentId ? { parentId: form.parentId } : {}),
+            active: true,
+          },
+          ...(iconFile && !form.parentId ? { iconFile } : {}),
         });
       }
       onClose();
@@ -188,6 +231,56 @@ export function CategoryFormModal({
             hint="Leave empty to create a top-level category."
             disabled={submitting}
           />
+        )}
+
+        {!isEdit && !form.parentId && (
+          <div className="category-form__icon-field">
+            <span className="category-form__icon-label">Menu icon</span>
+            <label
+              className={`category-form__icon-dropzone${draggingIcon ? ' category-form__icon-dropzone--active' : ''}`}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDraggingIcon(true);
+              }}
+              onDragLeave={() => setDraggingIcon(false)}
+              onDrop={handleIconDrop}
+            >
+              <input
+                className="category-form__icon-input"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                aria-label="Menu icon"
+                disabled={submitting}
+                onChange={(event) => selectIcon(event.target.files?.[0])}
+              />
+              {iconPreviewUrl ? (
+                <img
+                  className="category-form__icon-preview"
+                  src={iconPreviewUrl}
+                  alt="Selected menu icon preview"
+                />
+              ) : (
+                <span className="category-form__icon-empty">Drop an image or browse</span>
+              )}
+            </label>
+            <span className="category-form__icon-hint">PNG, JPEG, or WebP · up to 5 MB</span>
+            {iconFile && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIconFile(null)}
+                disabled={submitting}
+              >
+                Remove icon
+              </Button>
+            )}
+            {iconError && (
+              <span className="category-form__icon-error" role="alert">
+                {iconError}
+              </span>
+            )}
+          </div>
         )}
 
         <Input

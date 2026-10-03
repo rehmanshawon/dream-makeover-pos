@@ -1,6 +1,7 @@
-import type { JSX } from 'react';
+import { useState, type JSX } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useCategoryTree } from '../../api/category-hooks';
+import { apiAssetUrl } from '../../api/api-client';
 import { Icon, type IconName } from './Icon';
 import type { CategoryNode } from '../../types/categories';
 import './CatalogNav.css';
@@ -26,6 +27,25 @@ function iconForCategory(category: CategoryNode): IconName {
     default:
       return category.kind === 'SERVICE' ? 'sparkles' : 'package';
   }
+}
+
+function CategoryIcon({ category }: { category: CategoryNode }): JSX.Element {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  if (!category.iconUrl || imageFailed) {
+    return <Icon name={iconForCategory(category)} size={36} />;
+  }
+
+  return (
+    <img
+      src={apiAssetUrl(category.iconUrl)}
+      alt=""
+      aria-hidden="true"
+      width={36}
+      height={36}
+      onError={() => setImageFailed(true)}
+    />
+  );
 }
 
 /**
@@ -65,7 +85,7 @@ export function CatalogNav(): JSX.Element | null {
               }
             >
               <span className="sidebar__link-icon">
-                <Icon name={iconForCategory(category)} size={36} />
+                <CategoryIcon category={category} />
               </span>
               <span className="sidebar__link-label">{category.name}</span>
             </NavLink>

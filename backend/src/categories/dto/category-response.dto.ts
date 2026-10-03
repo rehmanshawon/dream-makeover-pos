@@ -6,6 +6,7 @@ export class CategoryResponseDto {
   slug: string;
   kind: CategoryKind;
   parentId: string | null;
+  iconUrl: string | null;
   displayOrder: number;
   active: boolean;
   createdAt: Date;

@@ -13,6 +13,7 @@ const TREE = [
     slug: 'cosmetics',
     kind: 'PRODUCT',
     parentId: null,
+    iconUrl: null,
     displayOrder: 0,
     active: true,
     createdAt: '2026-01-01T00:00:00.000Z',
@@ -25,7 +26,21 @@ const TREE = [
     slug: 'services',
     kind: 'SERVICE',
     parentId: null,
+    iconUrl: null,
     displayOrder: 0,
+    active: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    children: [],
+  },
+  {
+    id: 'c3',
+    name: 'Bridal',
+    slug: 'bridal',
+    kind: 'SERVICE',
+    parentId: null,
+    iconUrl: '/uploads/category-icons/bridal.png',
+    displayOrder: 1,
     active: true,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
@@ -79,5 +94,14 @@ describe('CatalogNav', () => {
   it('shows the Catalog group label', async () => {
     renderNav();
     expect(await screen.findByText('Catalog')).toBeInTheDocument();
+  });
+
+  it('loads uploaded icons from the configured API host', async () => {
+    renderNav();
+    const bridal = await screen.findByRole('link', { name: /bridal/i });
+    expect(bridal.querySelector('img')).toHaveAttribute(
+      'src',
+      'http://test.local/uploads/category-icons/bridal.png',
+    );
   });
 });

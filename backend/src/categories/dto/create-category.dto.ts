@@ -9,6 +9,8 @@ import {
   Min,
 } from 'class-validator';
 import { CategoryKind } from '../category-kind.enum';
+import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 
 export class CreateCategoryDto {
   @IsString()
@@ -23,11 +25,15 @@ export class CreateCategoryDto {
   parentId?: string;
 
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   displayOrder?: number;
 
   @IsOptional()
+  @Transform(({ value }) =>
+    value === 'true' ? true : value === 'false' ? false : value,
+  )
   @IsBoolean()
   active?: boolean;
 }

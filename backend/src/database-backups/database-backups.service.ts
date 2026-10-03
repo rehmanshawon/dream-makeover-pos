@@ -13,7 +13,7 @@ import type * as Unzipper from 'unzipper';
 import { DataSource } from 'typeorm';
 
 const BACKUP_FORMAT = 'dream-makeover-pos-backup';
-const BACKUP_VERSION = 1;
+const BACKUP_VERSION = 2;
 const MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024;
 const MAX_UNCOMPRESSED_BYTES = 4 * 1024 * 1024 * 1024;
 const runtimeRequire = createRequire(
@@ -41,10 +41,12 @@ export class DatabaseBackupsService {
     const sqlPath = join(workDir, 'database.sql');
     const manifestPath = join(workDir, 'manifest.json');
     const employeePhotosPath = join(process.cwd(), 'uploads', 'employees');
+    const categoryIconsPath = join(process.cwd(), 'uploads', 'category-icons');
 
     try {
       await this.writeDatabaseDump(sqlPath);
       await mkdir(employeePhotosPath, { recursive: true });
+      await mkdir(categoryIconsPath, { recursive: true });
       const manifest: BackupManifest = {
         format: BACKUP_FORMAT,
         version: BACKUP_VERSION,
@@ -67,6 +69,7 @@ export class DatabaseBackupsService {
       archive.file(manifestPath, { name: 'manifest.json' });
       archive.file(sqlPath, { name: 'database.sql' });
       archive.directory(employeePhotosPath, 'uploads/employees');
+      archive.directory(categoryIconsPath, 'uploads/category-icons');
       await archive.finalize();
       await responseFinished;
     } catch (error) {
@@ -88,15 +91,22 @@ export class DatabaseBackupsService {
     const workDir = await mkdtemp(join(tmpdir(), 'dream-makeover-restore-'));
     const sqlPath = join(workDir, 'database.sql');
     const incomingPhotosPath = join(workDir, 'uploads', 'employees');
+    const incomingCategoryIconsPath = join(workDir, 'uploads', 'category-icons');
     const rollbackSqlPath = join(workDir, 'rollback.sql');
     const rollbackPhotosPath = join(workDir, 'rollback-photos');
+    const rollbackCategoryIconsPath = join(workDir, 'rollback-category-icons');
     const livePhotosPath = join(process.cwd(), 'uploads', 'employees');
+    const liveCategoryIconsPath = join(process.cwd(), 'uploads', 'category-icons');
     let importStarted = false;
 
     try {
       await mkdir(incomingPhotosPath, { recursive: true });
+      await mkdir(incomingCategoryIconsPath, { recursive: true });
       const manifest = await this.extractAndValidate(archivePath, workDir, sqlPath);
-      if (manifest.format !== BACKUP_FORMAT || manifest.version !== BACKUP_VERSION) {
+      if (
+        manifest.format !== BACKUP_FORMAT ||
+        (manifest.version !== 1 && manifest.version !== BACKUP_VERSION)
+      ) {
         throw new BadRequestException('This backup format is not supported by this version.');
       }
       if ((await this.fileSha256(sqlPath)) !== manifest.databaseSha256) {
@@ -110,17 +120,26 @@ export class DatabaseBackupsService {
           return mkdir(rollbackPhotosPath, { recursive: true });
         },
       );
+      await cp(liveCategoryIconsPath, rollbackCategoryIconsPath, {
+        recursive: true,
+        force: true,
+      }).catch((error: NodeJS.ErrnoException) => {
+        if (error.code !== 'ENOENT') throw error;
+        return mkdir(rollbackCategoryIconsPath, { recursive: true });
+      });
 
       importStarted = true;
       await this.importDatabaseDump(sqlPath);
       await this.dataSource.runMigrations({ transaction: 'all' });
       await this.replaceEmployeePhotos(incomingPhotosPath, livePhotosPath);
+      await this.replaceCategoryIcons(incomingCategoryIconsPath, liveCategoryIconsPath);
     } catch (error) {
       if (importStarted) {
         try {
           await this.importDatabaseDump(rollbackSqlPath);
           await this.dataSource.runMigrations({ transaction: 'all' });
           await this.replaceEmployeePhotos(rollbackPhotosPath, livePhotosPath);
+          await this.replaceCategoryIcons(rollbackCategoryIconsPath, liveCategoryIconsPath);
         } catch (rollbackError) {
           throw new InternalServerErrorException(
             `Restore failed and automatic rollback also failed: ${this.errorMessage(rollbackError)}`,
@@ -183,6 +202,13 @@ export class DatabaseBackupsService {
           throw new BadRequestException('Backup contains an invalid employee photo path.');
         }
         const destination = join(workDir, 'uploads', 'employees', basename(relativePath));
+        await pipeline(entry.stream(), createWriteStream(destination, { flags: 'wx' }));
+      } else if (entryPath.startsWith('uploads/category-icons/')) {
+        const relativePath = entryPath.slice('uploads/category-icons/'.length);
+        if (!relativePath || relativePath.includes('/') || !/\.(png|jpe?g|webp)$/i.test(relativePath)) {
+          throw new BadRequestException('Backup contains an invalid category icon path.');
+        }
+        const destination = join(workDir, 'uploads', 'category-icons', basename(relativePath));
         await pipeline(entry.stream(), createWriteStream(destination, { flags: 'wx' }));
       } else {
         throw new BadRequestException(`Backup contains an unexpected file: ${entryPath}`);
@@ -294,6 +320,12 @@ export class DatabaseBackupsService {
   }
 
   private async replaceEmployeePhotos(sourcePath: string, destinationPath: string): Promise<void> {
+    await rm(destinationPath, { recursive: true, force: true });
+    await mkdir(destinationPath, { recursive: true });
+    await cp(sourcePath, destinationPath, { recursive: true, force: true });
+  }
+
+  private async replaceCategoryIcons(sourcePath: string, destinationPath: string): Promise<void> {
     await rm(destinationPath, { recursive: true, force: true });
     await mkdir(destinationPath, { recursive: true });
     await cp(sourcePath, destinationPath, { recursive: true, force: true });

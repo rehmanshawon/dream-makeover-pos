@@ -61,6 +61,8 @@ Run `npm run desktop:dev` to start the web frontend and Electron shell together.
 
 Run `npm run desktop:package:win` on Windows to build an NSIS installer in `desktop/release`. Configure `frontend/.env` with the backend API URL before building; the installer packages the frontend and Electron shell, not the backend or database.
 
+Uploaded category icons are stored under the backend process's `uploads/category-icons` directory and served through the configured backend API host. Keep that directory writable and persistent; database backups include category icons.
+
 ## Scripts
 ```bash
 npm run lint

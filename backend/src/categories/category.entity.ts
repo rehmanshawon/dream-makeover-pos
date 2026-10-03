@@ -29,6 +29,9 @@ export class Category {
   @Column({ name: 'parent_id', type: 'char', length: 36, nullable: true })
   parentId: string | null = null;
 
+  @Column({ name: 'icon_url', type: 'varchar', length: 255, nullable: true })
+  iconUrl: string | null = null;
+
   @Column({ name: 'display_order', type: 'int', unsigned: true, default: 0 })
   displayOrder: number = 0;
 

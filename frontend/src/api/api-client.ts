@@ -26,6 +26,11 @@ function baseUrl(): string {
   return url.replace(/\/+$/, '');
 }
 
+export function apiAssetUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${baseUrl()}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
 function buildHeaders(options: RequestOptions, hasBody: boolean): HeadersInit {
   const headers: Record<string, string> = {
     Accept: 'application/json',

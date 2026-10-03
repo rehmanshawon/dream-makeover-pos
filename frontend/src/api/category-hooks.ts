@@ -35,11 +35,15 @@ export function useCategoryTree(kind?: CategoryKind): UseQueryResult<CategoryNod
   });
 }
 
-export function useCreateCategory(): UseMutationResult<Category, Error, CreateCategoryRequest> {
+export function useCreateCategory(): UseMutationResult<
+  Category,
+  Error,
+  { payload: CreateCategoryRequest; iconFile?: File }
+> {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload) => categoriesApi.create(payload),
+    mutationFn: ({ payload, iconFile }) => categoriesApi.create(payload, iconFile),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: categoryKeys.all });
     },

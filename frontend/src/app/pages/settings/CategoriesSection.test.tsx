@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../../../test/render-with-providers';
 import { CategoriesSection } from './CategoriesSection';
@@ -120,5 +120,58 @@ describe('CategoriesSection', () => {
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Cosmetics')).toBeInTheDocument();
+  });
+
+  it('uploads a menu icon when creating a top-level category', async () => {
+    let createBody: BodyInit | null | undefined;
+    globalThis.fetch = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        createBody = init.body;
+        return new Response(
+          JSON.stringify({
+            id: 'c3',
+            name: 'Bridal',
+            slug: 'bridal',
+            kind: 'PRODUCT',
+            parentId: null,
+            iconUrl: '/uploads/category-icons/bridal.png',
+            displayOrder: 0,
+            active: true,
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          }),
+          { status: 201, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      return new Response(JSON.stringify(TREE), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }) as unknown as typeof fetch;
+
+    const user = userEvent.setup();
+    renderSection();
+    await screen.findByText('Cosmetics');
+    await user.click(screen.getByRole('button', { name: /new category/i }));
+    await user.type(screen.getByLabelText(/^name$/i), 'Bridal');
+    const iconFile = new File(['icon-data'], 'bridal.png', { type: 'image/png' });
+    await user.upload(screen.getByLabelText('Menu icon'), iconFile);
+    await user.click(screen.getByRole('button', { name: /create category/i }));
+
+    await waitFor(() => expect(createBody).toBeInstanceOf(FormData));
+    expect((createBody as FormData).get('icon')).toBe(iconFile);
+    expect((createBody as FormData).get('name')).toBe('Bridal');
+    expect((createBody as FormData).has('parentId')).toBe(false);
+  });
+
+  it('hides the icon picker for a child category', async () => {
+    mockTree();
+    const user = userEvent.setup();
+    renderSection();
+    await screen.findByText('Cosmetics');
+    await user.click(screen.getByRole('button', { name: /new category/i }));
+    await user.selectOptions(screen.getByLabelText('Parent category'), 'c1');
+
+    expect(screen.queryByLabelText('Menu icon')).not.toBeInTheDocument();
   });
 });

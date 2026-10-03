@@ -36,13 +36,16 @@ export class CategoriesService {
     private readonly categoryRepository: Repository<Category>,
   ) {}
 
-  async create(dto: CreateCategoryDto): Promise<CategoryResponseDto> {
+  async create(dto: CreateCategoryDto, iconUrl: string | null = null): Promise<CategoryResponseDto> {
     const slug = slugify(dto.name);
     if (!slug) {
       throw new BadRequestException('Category name must contain at least one letter or number');
     }
 
     if (dto.parentId) {
+      if (iconUrl) {
+        throw new BadRequestException('Only top-level categories can have a sidebar icon');
+      }
       const parent = await this.categoryRepository.findOne({
         where: { id: dto.parentId },
       });
@@ -66,6 +69,7 @@ export class CategoriesService {
       slug,
       kind: dto.kind,
       parentId: dto.parentId ?? null,
+      iconUrl,
       displayOrder: dto.displayOrder ?? 0,
       active: dto.active ?? true,
     });
@@ -199,6 +203,7 @@ export class CategoriesService {
       slug: category.slug,
       kind: category.kind,
       parentId: category.parentId,
+      iconUrl: category.iconUrl,
       displayOrder: category.displayOrder,
       active: category.active,
       createdAt: category.createdAt,

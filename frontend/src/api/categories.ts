@@ -22,7 +22,17 @@ export const categoriesApi = {
     return api.get<Category>(`/categories/${id}`);
   },
 
-  create(payload: CreateCategoryRequest): Promise<Category> {
+  create(payload: CreateCategoryRequest, iconFile?: File): Promise<Category> {
+    if (iconFile) {
+      const body = new FormData();
+      body.set('name', payload.name);
+      body.set('kind', payload.kind);
+      body.set('displayOrder', String(payload.displayOrder ?? 0));
+      if (payload.parentId) body.set('parentId', payload.parentId);
+      if (payload.active !== undefined) body.set('active', String(payload.active));
+      body.set('icon', iconFile);
+      return api.post<Category>('/categories', body, { formData: true });
+    }
     return api.post<Category>('/categories', payload);
   },
 
