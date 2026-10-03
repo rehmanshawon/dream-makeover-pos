@@ -165,6 +165,15 @@
   color: var(--color-text-muted);
 }
 
+.sidebar__account-link {
+  color: var(--color-sidebar-text);
+  font-size: var(--font-size-sm);
+}
+
+.sidebar__account-link:hover {
+  color: var(--color-accent);
+}
+
 .sidebar__logout {
   width: 100%;
   justify-content: flex-start;

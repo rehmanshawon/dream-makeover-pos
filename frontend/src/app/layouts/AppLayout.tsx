@@ -21,7 +21,8 @@ export function AppLayout(): JSX.Element {
     return location.pathname === item.path || location.pathname.startsWith(item.path + '/');
   });
 
-  const pageTitle = currentItem?.label ?? 'Dream Makeover';
+  const pageTitle =
+    currentItem?.label ?? (location.pathname === '/security' ? 'Security' : 'Dream Makeover');
 
   return (
     <div className="app-layout">

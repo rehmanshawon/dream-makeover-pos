@@ -233,6 +233,11 @@ export function Sidebar(): JSX.Element {
           <span className="sidebar__user-name">{user?.displayName ?? 'Not signed in'}</span>
           <span className="sidebar__user-role">{user?.role ?? '—'}</span>
         </div>
+        {user?.role === 'STAFF' && (
+          <NavLink to="/security" className="sidebar__account-link">
+            Change password
+          </NavLink>
+        )}
         {user && (
           <Button variant="ghost" size="sm" onClick={logout} className="sidebar__logout">
             Sign out

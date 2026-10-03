@@ -28,10 +28,9 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: /^dashboard$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /^new sale$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /^staff$/i })).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: /accounts \/ financial summary/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^accounts$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /^settings$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^change password$/i })).not.toBeInTheDocument();
   });
 
   it('hides admin-only navigation links from staff', () => {
@@ -41,17 +40,20 @@ describe('Sidebar', () => {
     // which may contain the same word as a nav label.
     expect(screen.queryByRole('link', { name: /^dashboard$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /^staff$/i })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('link', { name: /accounts \/ financial summary/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^accounts$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /^settings$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^security$/i })).not.toBeInTheDocument();
   });
 
   it('shows staff-visible navigation links to staff', () => {
     renderSidebar(STAFF);
     expect(screen.getByRole('link', { name: /^new sale$/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /^stock \/ inventory$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^inventory$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /^customers$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^change password$/i })).toHaveAttribute(
+      'href',
+      '/security',
+    );
   });
 
   it('displays the current user name and role', () => {
