@@ -14,7 +14,7 @@ extraResources:
     filter:
       - '**/*'
   - from: desktop/installer-resources/runtime-deps
-    to: backend-runtime-deps
+    to: node_modules
     filter:
       - '**/*'
   - from: desktop/installer-resources/mysql

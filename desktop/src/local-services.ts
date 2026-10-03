@@ -33,9 +33,14 @@ function delay(milliseconds: number): Promise<void> {
   return new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds));
 }
 
-function runProcess(command: string, args: string[], cwd: string): Promise<void> {
+function runProcess(
+  command: string,
+  args: string[],
+  cwd: string,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<void> {
   return new Promise((resolveProcess, rejectProcess) => {
-    const child = spawn(command, args, { cwd, windowsHide: true, stdio: 'ignore' });
+    const child = spawn(command, args, { cwd, env, windowsHide: true, stdio: 'ignore' });
     child.once('error', rejectProcess);
     child.once('close', (code) => {
       if (code === 0) resolveProcess();
@@ -189,7 +194,7 @@ async function waitForApi(child: ChildProcess): Promise<void> {
 export async function startLocalServices(): Promise<() => Promise<void>> {
   const resourceRoot = process.resourcesPath;
   const backendRoot = join(resourceRoot, 'backend');
-  const backendRuntimeDeps = join(resourceRoot, 'backend-runtime-deps');
+  const backendRuntimeDeps = join(resourceRoot, 'node_modules');
   const mysqlBase = join(resourceRoot, 'mysql');
   const mysqlExecutable = join(mysqlBase, 'bin', 'mysqld.exe');
   const mysqlAdmin = join(mysqlBase, 'bin', 'mysqladmin.exe');
@@ -289,6 +294,7 @@ export async function startLocalServices(): Promise<() => Promise<void>> {
         mysqlAdmin,
         ['--host=127.0.0.1', `--port=${DATABASE_PORT}`, '--user=root', 'shutdown'],
         mysqlBase,
+        { ...process.env, MYSQL_PWD: settings.rootPassword },
       ).catch(() => mysqlProcess.kill());
     }
   };

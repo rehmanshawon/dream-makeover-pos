@@ -15,6 +15,18 @@ type BluetoothDeviceOption = {
 
 app.commandLine.appendSwitch('enable-web-bluetooth');
 
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    const window = BrowserWindow.getAllWindows()[0];
+    if (!window) return;
+    if (window.isMinimized()) window.restore();
+    window.focus();
+  });
+}
+
 function isTrustedOrigin(origin: string): boolean {
   return origin === DEVELOPMENT_URL;
 }
@@ -194,6 +206,7 @@ let stoppingServices = false;
 void app
   .whenReady()
   .then(async () => {
+    if (!hasSingleInstanceLock) return;
     session.defaultSession.setPermissionCheckHandler((_webContents, permission, origin) => {
       return (permission as string) === 'bluetooth' && isTrustedOrigin(origin);
     });
