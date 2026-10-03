@@ -7,6 +7,7 @@ import { Card } from '../../../ui/Card';
 import { ConfirmDialog } from '../../../ui/ConfirmDialog';
 import { EmptyState } from '../../../ui/EmptyState';
 import { Spinner } from '../../../ui/Spinner';
+import { Table, type TableColumn } from '../../../ui/Table';
 import { Icon } from '../../components/Icon';
 import type { Category, CategoryNode } from '../../../types/categories';
 import { CategoryFormModal } from './CategoryFormModal';
@@ -62,6 +63,86 @@ export function CategoriesSection(): JSX.Element {
     }
   };
 
+  const columns: TableColumn<FlatRow>[] = [
+    {
+      key: 'name',
+      header: 'Name',
+     // width: '50%',
+      render: ({ category, depth }) => (
+        <span
+          className="categories-section__name"
+          style={{ paddingInlineStart: `calc(${depth} * var(--space-5))` }}
+        >
+          {category.name}
+        </span>
+      ),
+    },
+    {
+      key: 'kind',
+      header: 'Kind',
+     // width: '18%',
+      align: 'center',
+      render: ({ category }) => (
+        <Badge variant={category.kind === 'SERVICE' ? 'accent' : 'neutral'}>
+          {category.kind === 'SERVICE' ? 'Service' : 'Product'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+     // width: '16%',
+      align: 'center',
+      render: ({ category }) => (
+        <Badge variant={category.active ? 'success' : 'neutral'}>
+          {category.active ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      align: 'right',
+      width: '16%',
+      render: ({ category }) => (
+        <div className="categories-section__actions">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="button--icon"
+            aria-label={`Edit ${category.name}`}
+            title="Edit category"
+            onClick={() => setEditing(category)}
+          >
+            <Icon name="edit" size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="button--icon"
+            aria-label={category.active ? `Deactivate ${category.name}` : `Activate ${category.name}`}
+            title={category.active ? 'Deactivate category' : 'Activate category'}
+            onClick={() => handleToggle(category)}
+            disabled={updateMutation.isPending}
+          >
+            <Icon name="power" size={16} />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="button--icon"
+            aria-label={`Delete ${category.name}`}
+            title="Delete category"
+            onClick={() => setPendingDelete(category)}
+            disabled={deleteMutation.isPending}
+          >
+            <Icon name="trash" size={16} />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <Card
       title="Categories"
@@ -95,57 +176,12 @@ export function CategoriesSection(): JSX.Element {
       )}
 
       {!isLoading && !error && rows.length > 0 && (
-        <div className="categories-section__tree">
-          {rows.map(({ category, depth }) => (
-            <div
-              key={category.id}
-              className="categories-section__row"
-              style={{ paddingLeft: `calc(${depth} * var(--space-5))` }}
-            >
-              <div className="categories-section__main">
-                <span className="categories-section__name">{category.name}</span>
-                <Badge variant={category.kind === 'SERVICE' ? 'accent' : 'neutral'}>
-                  {category.kind === 'SERVICE' ? 'Service' : 'Product'}
-                </Badge>
-                {!category.active && <Badge variant="neutral">Inactive</Badge>}
-              </div>
-              <div className="categories-section__actions">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="button--icon"
-                  aria-label="Edit"
-                  title="Edit category"
-                  onClick={() => setEditing(category)}
-                >
-                  <Icon name="edit" size={16} />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="button--icon"
-                  aria-label={category.active ? 'Deactivate' : 'Activate'}
-                  title={category.active ? 'Deactivate category' : 'Activate category'}
-                  onClick={() => handleToggle(category)}
-                  disabled={updateMutation.isPending}
-                >
-                  <Icon name="power" size={16} />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="button--icon"
-                  aria-label="Delete"
-                  title="Delete category"
-                  onClick={() => setPendingDelete(category)}
-                  disabled={deleteMutation.isPending}
-                >
-                  <Icon name="trash" size={16} />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+        <Table
+          columns={columns}
+          rows={rows}
+          getRowKey={({ category }) => category.id}
+          emptyMessage="No categories"
+        />
       )}
 
       <CategoryFormModal open={createOpen} onClose={() => setCreateOpen(false)} />

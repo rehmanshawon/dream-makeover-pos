@@ -88,6 +88,11 @@ describe('CategoriesSection', () => {
     expect(await screen.findByText('Cosmetics')).toBeInTheDocument();
     expect(screen.getByText('Lipstick')).toBeInTheDocument();
     expect(screen.getByText('Services')).toBeInTheDocument();
+    expect(screen.getByRole('table')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Kind' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Status' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeInTheDocument();
   });
 
   it('renders kind badges', async () => {
@@ -115,7 +120,7 @@ describe('CategoriesSection', () => {
     renderSection();
 
     await screen.findByText('Cosmetics');
-    const editButtons = screen.getAllByRole('button', { name: /^edit$/i });
+    const editButtons = screen.getAllByRole('button', { name: /^edit /i });
     await userEvent.click(editButtons[0]!);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
