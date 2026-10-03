@@ -57,6 +57,8 @@ describe('TransactionDetailModal', () => {
                 itemType: 'SERVICE',
                 itemName: 'Facial',
                 quantity: 1,
+                returnedQuantity: 0,
+                remainingQuantity: 1,
                 unitPriceMinor: 200000,
                 totalPriceMinor: 200000,
               },
@@ -78,7 +80,7 @@ describe('TransactionDetailModal', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('allows an admin to submit a product return', async () => {
+  it('allows an admin to refund a product', async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
       if (init?.method === 'POST') {
         return new Response(JSON.stringify({ id: 'return-1', refundMinor: 5000 }), {
@@ -104,6 +106,8 @@ describe('TransactionDetailModal', () => {
               itemType: 'PRODUCT',
               itemName: 'Lipstick',
               quantity: 1,
+              returnedQuantity: 0,
+              remainingQuantity: 1,
               unitPriceMinor: 5000,
               totalPriceMinor: 5000,
             },
@@ -116,19 +120,78 @@ describe('TransactionDetailModal', () => {
 
     const user = userEvent.setup();
     renderModal('tx-1');
-    await user.click(await screen.findByRole('button', { name: 'Return products' }));
-    await user.clear(screen.getByRole('spinbutton', { name: 'Quantity to return for Lipstick' }));
+    await user.click(
+      await screen.findByRole('button', { name: 'Refund products or services' }),
+    );
+    await user.clear(screen.getByRole('spinbutton', { name: 'Quantity to refund for Lipstick' }));
     await user.type(
-      screen.getByRole('spinbutton', { name: 'Quantity to return for Lipstick' }),
+      screen.getByRole('spinbutton', { name: 'Quantity to refund for Lipstick' }),
       '1',
     );
     await user.click(screen.getByRole('button', { name: 'Post return' }));
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Return posted');
+    expect(await screen.findByRole('status')).toHaveTextContent('Refund posted');
     const post = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST');
     expect(JSON.parse(String(post?.[1]?.body))).toMatchObject({
       transactionId: 'tx-1',
       lines: [{ transactionItemId: 'item-1', quantity: 1 }],
+    });
+  });
+
+  it('allows an admin to refund remaining services only', async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        return new Response(JSON.stringify({ id: 'return-2', refundMinor: 10000 }), {
+          status: 201,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response(
+        JSON.stringify({
+          id: 'tx-2',
+          invoiceId: 'DM-20260916-0002',
+          createdAt: '2026-09-16T10:00:00.000Z',
+          cashier: 'admin',
+          customer: null,
+          subtotalMinor: 30000,
+          discountMinor: 0,
+          totalMinor: 30000,
+          cashReceivedMinor: 30000,
+          changeMinor: 0,
+          items: [
+            {
+              id: 'service-item-1',
+              itemType: 'SERVICE',
+              itemName: 'Facial',
+              quantity: 3,
+              returnedQuantity: 1,
+              remainingQuantity: 2,
+              unitPriceMinor: 10000,
+              totalPriceMinor: 30000,
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const user = userEvent.setup();
+    renderModal('tx-2');
+    await user.click(
+      await screen.findByRole('button', { name: 'Refund products or services' }),
+    );
+    const quantityInput = screen.getByRole('spinbutton', { name: 'Quantity to refund for Facial' });
+    expect(quantityInput).toHaveAttribute('max', '2');
+    await user.clear(quantityInput);
+    await user.type(quantityInput, '2');
+    await user.click(screen.getByRole('button', { name: 'Post return' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Refund posted');
+    const post = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST');
+    expect(JSON.parse(String(post?.[1]?.body))).toMatchObject({
+      transactionId: 'tx-2',
+      lines: [{ transactionItemId: 'service-item-1', quantity: 2 }],
     });
   });
 });

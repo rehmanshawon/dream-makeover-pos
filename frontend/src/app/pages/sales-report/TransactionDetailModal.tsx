@@ -183,7 +183,7 @@ export function TransactionDetailModal({
                           max={item.remainingQuantity}
                           step="1"
                           value={quantities[item.id] ?? 0}
-                          aria-label={`Quantity to return for ${item.itemName}`}
+                          aria-label={`Quantity to refund for ${item.itemName}`}
                           onChange={(event) => {
                             const quantity = Number(event.target.value);
                             setQuantities((current) => ({
@@ -226,7 +226,7 @@ export function TransactionDetailModal({
                   )}
                   {createReturn.isSuccess && (
                     <p className="txn-detail__return-success" role="status">
-                      Return posted. Refund: {formatBdt(createReturn.data.refundMinor)}.
+                      Refund posted: {formatBdt(createReturn.data.refundMinor)}.
                     </p>
                   )}
                   <div className="txn-detail__return-actions">
