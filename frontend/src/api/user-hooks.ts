@@ -6,7 +6,12 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 import { usersApi } from './users';
-import type { User, CreateUserRequest, UpdateUserRequest } from '../types/users';
+import type {
+  User,
+  CreateUserRequest,
+  UpdateUserRequest,
+  ResetUserPasswordRequest,
+} from '../types/users';
 
 export const userKeys = {
   all: ['users'] as const,
@@ -43,5 +48,15 @@ export function useUpdateUser(): UseMutationResult<
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: userKeys.all });
     },
+  });
+}
+
+export function useResetUserPassword(): UseMutationResult<
+  void,
+  Error,
+  { id: string; payload: ResetUserPasswordRequest }
+> {
+  return useMutation({
+    mutationFn: ({ id, payload }) => usersApi.resetPassword(id, payload),
   });
 }

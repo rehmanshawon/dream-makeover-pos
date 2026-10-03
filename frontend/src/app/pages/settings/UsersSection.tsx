@@ -14,6 +14,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { formatDateTime } from '../../../utils/format';
 import type { User } from '../../../types/users';
 import { UserFormModal } from './UserFormModal';
+import { ResetUserPasswordModal } from './ResetUserPasswordModal';
 import './UsersSection.css';
 
 export function UsersSection(): JSX.Element {
@@ -24,6 +25,7 @@ export function UsersSection(): JSX.Element {
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<User | undefined>(undefined);
+  const [resettingPassword, setResettingPassword] = useState<User | null>(null);
   const [pendingDeactivate, setPendingDeactivate] = useState<User | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -108,6 +110,16 @@ export function UsersSection(): JSX.Element {
               onClick={() => setEditing(u)}
             >
               <Icon name="edit" size={16} />
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="button--icon"
+              aria-label="Reset password"
+              title={`Reset password for ${u.username}`}
+              onClick={() => setResettingPassword(u)}
+            >
+              <Icon name="key" size={16} />
             </Button>
             {u.active ? (
               <Button
@@ -195,6 +207,11 @@ export function UsersSection(): JSX.Element {
         open={editing !== undefined}
         {...(editing !== undefined ? { user: editing } : {})}
         onClose={() => setEditing(undefined)}
+      />
+
+      <ResetUserPasswordModal
+        user={resettingPassword}
+        onClose={() => setResettingPassword(null)}
       />
 
       <ConfirmDialog

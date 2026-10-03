@@ -15,6 +15,7 @@ describe('Users (integration)', () => {
   let dataSource: DataSource;
   let jwtService: JwtService;
   let adminToken: string;
+  let staffToken: string;
   let adminId: string;
   let staffId: string;
 
@@ -71,6 +72,11 @@ describe('Users (integration)', () => {
       username: admin.username,
       role: admin.role,
     });
+    staffToken = await jwtService.signAsync({
+      sub: staff.id,
+      username: staff.username,
+      role: staff.role,
+    });
   });
 
   afterAll(async () => {
@@ -86,6 +92,23 @@ describe('Users (integration)', () => {
       .expect(200);
 
     expect(response.body.displayName).toBe('Updated Staff');
+  });
+
+  it('allows admins to reset a user's password and rejects staff', async () => {
+    await request(app.getHttpServer())
+      .patch(`/users/${staffId}/password`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ newPassword: 'resetpass123' })
+      .expect(200);
+
+    const updatedStaff = await dataSource.getRepository(User).findOneByOrFail({ id: staffId });
+    expect(await bcrypt.compare('resetpass123', updatedStaff.passwordHash)).toBe(true);
+
+    await request(app.getHttpServer())
+      .patch(`/users/${staffId}/password`)
+      .set('Authorization', `Bearer ${staffToken}`)
+      .send({ newPassword: 'resetpass456' })
+      .expect(403);
   });
 
   it('rejects self-deactivation', async () => {

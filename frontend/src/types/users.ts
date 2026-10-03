@@ -24,6 +24,10 @@ export interface UpdateUserRequest {
   active?: boolean;
 }
 
+export interface ResetUserPasswordRequest {
+  newPassword: string;
+}
+
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;

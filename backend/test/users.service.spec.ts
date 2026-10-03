@@ -71,6 +71,19 @@ describe('UsersService', () => {
     expect(result).toBe(false);
   });
 
+  it('sets a user password through the entity hashing method', async () => {
+    const user = new User();
+    user.id = 'uuid-user-2';
+    jest.spyOn(repository, 'findOne').mockResolvedValue(user);
+    jest.spyOn(user, 'setPassword').mockResolvedValue(undefined);
+    jest.spyOn(repository, 'save').mockResolvedValue(user);
+
+    await service.setPassword(user.id, 'newsecret123');
+
+    expect(user.setPassword).toHaveBeenCalledWith('newsecret123');
+    expect(repository.save).toHaveBeenCalledWith(user);
+  });
+
   it('updates displayName', async () => {
     const user = {
       id: 'u1',

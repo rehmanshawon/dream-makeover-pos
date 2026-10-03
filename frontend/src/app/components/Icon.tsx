@@ -34,7 +34,7 @@ export type IllustrationIconName =
   | 'settings';
 
 export type UtilityIconName =
-  'edit' | 'power' | 'trash' | 'calendar-check' | 'adjust' | 'pay' | 'print';
+  'edit' | 'power' | 'trash' | 'calendar-check' | 'adjust' | 'pay' | 'print' | 'key';
 
 export type IconName = IllustrationIconName | UtilityIconName;
 
@@ -64,6 +64,7 @@ const UTILITY_ICONS: UtilityIconName[] = [
   'adjust',
   'pay',
   'print',
+  'key',
 ];
 
 function isUtilityIcon(name: IconName): name is UtilityIconName {
@@ -183,6 +184,13 @@ function renderUtilityIcon(
         <svg {...common}>
           <path d="M7 8V3h10v5M7 17H5a2 2 0 01-2-2v-4a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2h-2" />
           <path d="M7 14h10v7H7zM17 11h.01" />
+        </svg>
+      );
+    case 'key':
+      return (
+        <svg {...common}>
+          <circle cx="8" cy="15" r="5" />
+          <path d="m11.5 11.5 8-8L22 6l-2 2 2 2-3 3-2-2-2 2" />
         </svg>
       );
   }
