@@ -14,6 +14,7 @@ import { TransactionItem, TransactionItemType } from '../src/transactions/transa
 import { SalesReturn } from '../src/returns/sales-return.entity';
 import { SalesReturnLine } from '../src/returns/sales-return-line.entity';
 import { SalesReturnsService } from '../src/returns/sales-returns.service';
+import { SalonService } from '../src/services/service.entity';
 import { LoyaltySettings } from '../src/loyalty/loyalty-settings.entity';
 import { LoyaltySettingsService } from '../src/loyalty/loyalty-settings.service';
 import {
@@ -157,6 +158,65 @@ describe('Sales returns (integration)', () => {
       stock: 0,
     });
     expect(await dataSource.getRepository(SalesReturn).count()).toBe(0);
+  });
+
+  it('refunds directly sold services without adding inventory', async () => {
+    const salonService = await dataSource.getRepository(SalonService).save(
+      dataSource.getRepository(SalonService).create({
+        name: 'Facial treatment',
+        categoryId: '22222222-2222-4222-8222-222222222222',
+        priceMinor: 10001,
+        durationMinutes: 60,
+      }),
+    );
+    const serviceTransaction = await dataSource.getRepository(Transaction).save(
+      dataSource.getRepository(Transaction).create({
+        invoiceId: 'DM-RETURN-SERVICE-0001',
+        customerId: null,
+        subtotalMinor: 30003,
+        discountMinor: 0,
+        vatRatePercent: 0,
+        vatMinor: 0,
+        totalMinor: 30003,
+        cashReceivedMinor: 30003,
+        changeMinor: 0,
+        costOfGoodsSoldMinor: 0,
+        cashier: 'admin',
+      }),
+    );
+    const serviceItem = await dataSource.getRepository(TransactionItem).save(
+      dataSource.getRepository(TransactionItem).create({
+        transactionId: serviceTransaction.id,
+        productId: null,
+        serviceId: salonService.id,
+        packageId: null,
+        itemType: TransactionItemType.SERVICE,
+        itemName: salonService.name,
+        quantity: 3,
+        unitPriceMinor: 10001,
+        totalPriceMinor: 30003,
+        costOfGoodsSoldMinor: 0,
+      }),
+    );
+
+    const returned = await service.create(
+      {
+        transactionId: serviceTransaction.id,
+        returnDate: '2026-09-30',
+        lines: [{ transactionItemId: serviceItem.id, quantity: 1 }],
+      },
+      'admin',
+    );
+
+    const returnLine = await dataSource.getRepository(SalesReturnLine).findOneByOrFail({
+      salesReturnId: returned.id,
+    });
+    expect(returned.refundMinor).toBe(10001);
+    expect(returned.cogsReversalMinor).toBe(0);
+    expect(returnLine.productId).toBeNull();
+    expect(await dataSource.getRepository(Product).findOneByOrFail({ id: productId })).toMatchObject({
+      stock: 0,
+    });
   });
 
   it('restores redeemed points and removes sale-earned points on a full return', async () => {

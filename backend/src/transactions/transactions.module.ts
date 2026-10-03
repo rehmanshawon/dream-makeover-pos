@@ -7,10 +7,11 @@ import { CheckoutModule } from './checkout/checkout.module';
 import { TransactionsService } from './transactions.service';
 import { TransactionsController } from './transactions.controller';
 import { AuthCommonModule } from '../auth/auth-common.module';
+import { SalesReturnLine } from '../returns/sales-return-line.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Transaction, TransactionItem, Customer]),
+    TypeOrmModule.forFeature([Transaction, TransactionItem, Customer, SalesReturnLine]),
     CheckoutModule,
     AuthCommonModule,
   ],

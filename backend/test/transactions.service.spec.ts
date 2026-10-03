@@ -7,12 +7,14 @@ import { TransactionsService } from '../src/transactions/transactions.service';
 import { Transaction } from '../src/transactions/transaction.entity';
 import { TransactionItem } from '../src/transactions/transaction-item.entity';
 import { Customer } from '../src/customers/customer.entity';
+import { SalesReturnLine } from '../src/returns/sales-return-line.entity';
 
 describe('TransactionsService', () => {
   let service: TransactionsService;
   let txRepo: jest.Mocked<Partial<Repository<Transaction>>>;
   let itemRepo: jest.Mocked<Partial<Repository<TransactionItem>>>;
   let customerRepo: jest.Mocked<Partial<Repository<Customer>>>;
+  let salesReturnLineRepo: jest.Mocked<Partial<Repository<SalesReturnLine>>>;
 
   beforeEach(async () => {
     const txQueryBuilder = {
@@ -56,6 +58,9 @@ describe('TransactionsService', () => {
       })) as never,
       findOne: jest.fn(),
     };
+    salesReturnLineRepo = {
+      find: jest.fn().mockResolvedValue([]),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -63,6 +68,7 @@ describe('TransactionsService', () => {
         { provide: getRepositoryToken(Transaction), useValue: txRepo },
         { provide: getRepositoryToken(TransactionItem), useValue: itemRepo },
         { provide: getRepositoryToken(Customer), useValue: customerRepo },
+        { provide: getRepositoryToken(SalesReturnLine), useValue: salesReturnLineRepo },
       ],
     }).compile();
 
@@ -117,10 +123,13 @@ describe('TransactionsService', () => {
         id: 'item-1',
         itemType: 'SERVICE',
         itemName: 'Facial',
-        quantity: 1,
+        quantity: 3,
         unitPriceMinor: 200000,
         totalPriceMinor: 200000,
       } as TransactionItem,
+    ]);
+    (salesReturnLineRepo.find as jest.Mock).mockResolvedValue([
+      { transactionItemId: 'item-1', quantity: 1 } as SalesReturnLine,
     ]);
 
     (customerRepo.findOne as jest.Mock).mockResolvedValue({
@@ -134,6 +143,8 @@ describe('TransactionsService', () => {
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0].itemName).toBe('Facial');
+    expect(result.items[0].returnedQuantity).toBe(1);
+    expect(result.items[0].remainingQuantity).toBe(2);
     expect(result.customer?.fullName).toBe('Alice');
   });
 });

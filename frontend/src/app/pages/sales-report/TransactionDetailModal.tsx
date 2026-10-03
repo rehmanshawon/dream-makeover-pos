@@ -31,7 +31,12 @@ export function TransactionDetailModal({
   const [refundMethod, setRefundMethod] = useState<'CASH' | 'BANK' | 'MOBILE'>('CASH');
   const [note, setNote] = useState('');
 
-  const returnableItems = data?.items.filter((item) => item.itemType === 'PRODUCT') ?? [];
+  const returnableItems =
+    data?.items.filter(
+      (item) =>
+        (item.itemType === 'PRODUCT' || item.itemType === 'SERVICE') &&
+        item.remainingQuantity > 0,
+    ) ?? [];
   const selectedLines = returnableItems.flatMap((item) => {
     const quantity = quantities[item.id] ?? 0;
     return quantity > 0 ? [{ transactionItemId: item.id, quantity }] : [];
@@ -155,11 +160,11 @@ export function TransactionDetailModal({
             <section className="txn-detail__return" aria-label="Customer return">
               {!returnMode ? (
                 <Button variant="secondary" onClick={() => setReturnMode(true)}>
-                  Return products
+                  Refund products or services
                 </Button>
               ) : (
                 <form onSubmit={submitReturn}>
-                  <h3>Return products</h3>
+                  <h3>Refund products or services</h3>
                   <p className="txn-detail__return-hint">
                     Enter quantities to refund. The sale history is checked before posting.
                   </p>
@@ -167,12 +172,15 @@ export function TransactionDetailModal({
                     {returnableItems.map((item) => (
                       <label className="txn-detail__return-line" key={item.id}>
                         <span>
-                          {item.itemName} <small>Sold: {item.quantity}</small>
+                          {item.itemName}{' '}
+                          <small>
+                            Sold: {item.quantity} | Remaining: {item.remainingQuantity}
+                          </small>
                         </span>
                         <input
                           type="number"
                           min="0"
-                          max={item.quantity}
+                          max={item.remainingQuantity}
                           step="1"
                           value={quantities[item.id] ?? 0}
                           aria-label={`Quantity to return for ${item.itemName}`}

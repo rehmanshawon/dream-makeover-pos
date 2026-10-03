@@ -74,8 +74,14 @@ export class SalesReturnsService {
 
       const selected = dto.lines.map((requested) => {
         const item = items.find((candidate) => candidate.id === requested.transactionItemId);
-        if (!item || item.itemType !== TransactionItemType.PRODUCT || !item.productId) {
-          throw new BadRequestException('Only directly sold product lines can be returned.');
+        if (
+          !item ||
+          (item.itemType !== TransactionItemType.PRODUCT &&
+            item.itemType !== TransactionItemType.SERVICE) ||
+          (item.itemType === TransactionItemType.PRODUCT && !item.productId) ||
+          (item.itemType === TransactionItemType.SERVICE && !item.serviceId)
+        ) {
+          throw new BadRequestException('Only directly sold products and services can be returned.');
         }
         const prior = returnedByItem.get(item.id) ?? {
           quantity: 0,
@@ -103,9 +109,10 @@ export class SalesReturnsService {
           transaction.subtotalMinor > 0
             ? Math.floor((cumulativeGross * transaction.vatMinor) / transaction.subtotalMinor)
             : 0;
-        const cumulativeCogs = Math.round(
-          (item.costOfGoodsSoldMinor * cumulativeQuantity) / item.quantity,
-        );
+        const cumulativeCogs =
+          item.itemType === TransactionItemType.PRODUCT
+            ? Math.round((item.costOfGoodsSoldMinor * cumulativeQuantity) / item.quantity)
+            : 0;
         return {
           item,
           quantity: requested.quantity,
@@ -174,7 +181,7 @@ export class SalesReturnsService {
           returnLineRepo.create({
             salesReturnId: salesReturn.id,
             transactionItemId: line.item.id,
-            productId: line.item.productId!,
+            productId: line.item.productId,
             quantity: line.quantity,
             grossMinor: line.grossMinor,
             revenueReversalMinor: line.revenueMinor,
@@ -184,13 +191,15 @@ export class SalesReturnsService {
           }),
         );
         savedLines.push(savedLine);
-        await this.inventoryService.receiveCustomerReturn(manager, {
-          productId: line.item.productId!,
-          quantity: line.quantity,
-          returnedCostMinor: line.cogsMinor,
-          referenceId: salesReturn.id,
-          createdBy,
-        });
+        if (line.item.itemType === TransactionItemType.PRODUCT) {
+          await this.inventoryService.receiveCustomerReturn(manager, {
+            productId: line.item.productId!,
+            quantity: line.quantity,
+            returnedCostMinor: line.cogsMinor,
+            referenceId: salesReturn.id,
+            createdBy,
+          });
+        }
       }
 
       await this.accountingService.createSalesReturnEntry(manager, {

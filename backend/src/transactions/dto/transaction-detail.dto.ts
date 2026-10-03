@@ -6,6 +6,8 @@ export class TransactionDetailItemDto {
   itemType: string;
   itemName: string;
   quantity: number;
+  returnedQuantity: number;
+  remainingQuantity: number;
   unitPriceMinor: number;
   totalPriceMinor: number;
 }

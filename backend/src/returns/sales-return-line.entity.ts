@@ -23,12 +23,12 @@ export class SalesReturnLine {
   @JoinColumn({ name: 'transaction_item_id' })
   transactionItem: Relation<TransactionItem>;
 
-  @Column({ name: 'product_id', type: 'char', length: 36 })
-  productId: string;
+  @Column({ name: 'product_id', type: 'char', length: 36, nullable: true })
+  productId: string | null;
 
-  @ManyToOne(() => Product, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => Product, { onDelete: 'RESTRICT', nullable: true })
   @JoinColumn({ name: 'product_id' })
-  product: Relation<Product>;
+  product: Relation<Product> | null;
 
   @Column({ type: 'int', unsigned: true })
   quantity: number;

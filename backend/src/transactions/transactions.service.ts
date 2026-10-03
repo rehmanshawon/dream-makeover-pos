@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Transaction } from './transaction.entity';
 import { TransactionItem } from './transaction-item.entity';
 import { Customer } from '../customers/customer.entity';
@@ -8,6 +8,7 @@ import { TransactionsQueryDto } from './dto/transactions-query.dto';
 import { TransactionListItemDto } from './dto/transaction-list-item.dto';
 import { TransactionListResponseDto } from './dto/transaction-list-response.dto';
 import { TransactionDetailDto } from './dto/transaction-detail.dto';
+import { SalesReturnLine } from '../returns/sales-return-line.entity';
 
 const DEFAULT_LIMIT = 100;
 
@@ -33,6 +34,8 @@ export class TransactionsService {
     private readonly itemRepository: Repository<TransactionItem>,
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
+    @InjectRepository(SalesReturnLine)
+    private readonly salesReturnLineRepository: Repository<SalesReturnLine>,
   ) {}
 
   /**
@@ -174,6 +177,18 @@ export class TransactionsService {
       where: { transactionId: id },
       order: { createdAt: 'ASC' },
     });
+    const returnedQuantities = new Map<string, number>();
+    if (items.length > 0) {
+      const returnLines = await this.salesReturnLineRepository.find({
+        where: { transactionItemId: In(items.map((item) => item.id)) },
+      });
+      for (const line of returnLines) {
+        returnedQuantities.set(
+          line.transactionItemId,
+          (returnedQuantities.get(line.transactionItemId) ?? 0) + line.quantity,
+        );
+      }
+    }
 
     let customer: TransactionDetailDto['customer'] = null;
     if (transaction.customerId) {
@@ -209,6 +224,8 @@ export class TransactionsService {
         itemType: item.itemType,
         itemName: item.itemName,
         quantity: item.quantity,
+        returnedQuantity: returnedQuantities.get(item.id) ?? 0,
+        remainingQuantity: Math.max(0, item.quantity - (returnedQuantities.get(item.id) ?? 0)),
         unitPriceMinor: item.unitPriceMinor,
         totalPriceMinor: item.totalPriceMinor,
       })),
