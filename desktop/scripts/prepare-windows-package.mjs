@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { createReadStream, createWriteStream } from 'node:fs';
 import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import process from 'node:process';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { dirname, join, resolve } from 'node:path';
@@ -25,7 +26,7 @@ function run(command, args, options = {}) {
 }
 
 async function downloadMysql(archivePath) {
-  const response = await fetch(mysqlUrl, { redirect: 'follow' });
+  const response = await globalThis.fetch(mysqlUrl, { redirect: 'follow' });
   if (!response.ok || !response.body) {
     throw new Error(`MySQL download failed with HTTP ${response.status}`);
   }
@@ -101,17 +102,14 @@ if (await hasExpectedMysql(previousMysqlRoot)) {
   }
   await mkdir(extractionRoot, { recursive: true });
   const quotePowerShell = (value) => `'${value.replace(/'/g, "''")}'`;
-  run(
-    'powershell.exe',
-    [
-      '-NoProfile',
-      '-NonInteractive',
-      '-ExecutionPolicy',
-      'Bypass',
-      '-Command',
-      `Expand-Archive -LiteralPath ${quotePowerShell(archivePath)} -DestinationPath ${quotePowerShell(extractionRoot)} -Force`,
-    ],
-  );
+  run('powershell.exe', [
+    '-NoProfile',
+    '-NonInteractive',
+    '-ExecutionPolicy',
+    'Bypass',
+    '-Command',
+    `Expand-Archive -LiteralPath ${quotePowerShell(archivePath)} -DestinationPath ${quotePowerShell(extractionRoot)} -Force`,
+  ]);
 
   const extractedEntries = await readdir(extractionRoot, { withFileTypes: true });
   const extractedMysql = extractedEntries.find(
@@ -127,4 +125,4 @@ if (!(await stat(licensePath).catch(() => null))) {
   throw new Error('The MySQL distribution license file is missing.');
 }
 
-console.log(`Prepared backend production dependencies and MySQL ${mysqlVersion}.`);
+globalThis.console.log(`Prepared backend production dependencies and MySQL ${mysqlVersion}.`);

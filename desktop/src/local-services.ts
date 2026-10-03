@@ -114,14 +114,23 @@ async function prepareDatabase(
 ): Promise<void> {
   const appPassword = escapeSqlString(settings.appPassword);
   const rootPassword = escapeSqlString(settings.rootPassword);
-  await root.query(`CREATE DATABASE IF NOT EXISTS \`${DATABASE_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+  await root.query(
+    `CREATE DATABASE IF NOT EXISTS \`${DATABASE_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
+  );
   await root.query(
     `CREATE USER IF NOT EXISTS '${DATABASE_USER}'@'127.0.0.1' IDENTIFIED BY ${appPassword}`,
   );
+  await root.query(`ALTER USER '${DATABASE_USER}'@'127.0.0.1' IDENTIFIED BY ${appPassword}`);
   await root.query(
-    `ALTER USER '${DATABASE_USER}'@'127.0.0.1' IDENTIFIED BY ${appPassword}`,
+    `GRANT ALL PRIVILEGES ON \`${DATABASE_NAME}\`.* TO '${DATABASE_USER}'@'127.0.0.1'`,
   );
-  await root.query(`GRANT ALL PRIVILEGES ON \`${DATABASE_NAME}\`.* TO '${DATABASE_USER}'@'127.0.0.1'`);
+  await root.query(
+    `CREATE USER IF NOT EXISTS '${DATABASE_USER}'@'localhost' IDENTIFIED BY ${appPassword}`,
+  );
+  await root.query(`ALTER USER '${DATABASE_USER}'@'localhost' IDENTIFIED BY ${appPassword}`);
+  await root.query(
+    `GRANT ALL PRIVILEGES ON \`${DATABASE_NAME}\`.* TO '${DATABASE_USER}'@'localhost'`,
+  );
   await root.query(`ALTER USER 'root'@'localhost' IDENTIFIED BY ${rootPassword}`);
   settings.initialized = true;
   await writeSettings(settingsPath, settings);
@@ -192,7 +201,11 @@ export async function startLocalServices(): Promise<() => Promise<void>> {
   const mysqlLog = join(logRoot, 'mysql.log');
   const backendLog = join(logRoot, 'backend.log');
 
-  await Promise.all([mkdir(dataRoot, { recursive: true }), mkdir(uploadsPath, { recursive: true }), mkdir(logRoot, { recursive: true })]);
+  await Promise.all([
+    mkdir(dataRoot, { recursive: true }),
+    mkdir(uploadsPath, { recursive: true }),
+    mkdir(logRoot, { recursive: true }),
+  ]);
   const settings = await readOrCreateSettings(settingsPath);
   process.env.NODE_PATH = [process.env.NODE_PATH, backendRuntimeDeps].filter(Boolean).join(';');
   const nodeModule = createRequire(join(backendRoot, 'package.json'))('node:module') as {
@@ -206,7 +219,11 @@ export async function startLocalServices(): Promise<() => Promise<void>> {
   let backendProcess: ChildProcess | undefined;
 
   try {
-    const rootConnection = await waitForDatabase(mysql, settings.rootPassword, settings.initialized);
+    const rootConnection = await waitForDatabase(
+      mysql,
+      settings.rootPassword,
+      settings.initialized,
+    );
     try {
       await prepareDatabase(settingsPath, settings, rootConnection);
     } finally {
@@ -268,12 +285,11 @@ export async function startLocalServices(): Promise<() => Promise<void>> {
   return async () => {
     if (backendProcess && backendProcess.exitCode === null) backendProcess.kill();
     if (mysqlProcess.exitCode === null) {
-      await runProcess(mysqlAdmin, [
-        '--host=127.0.0.1',
-        `--port=${DATABASE_PORT}`,
-        '--user=root',
-        'shutdown',
-      ], mysqlBase).catch(() => mysqlProcess.kill());
+      await runProcess(
+        mysqlAdmin,
+        ['--host=127.0.0.1', `--port=${DATABASE_PORT}`, '--user=root', 'shutdown'],
+        mysqlBase,
+      ).catch(() => mysqlProcess.kill());
     }
   };
 }

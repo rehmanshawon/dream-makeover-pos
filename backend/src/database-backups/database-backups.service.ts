@@ -206,7 +206,11 @@ export class DatabaseBackupsService {
         await pipeline(entry.stream(), createWriteStream(destination, { flags: 'wx' }));
       } else if (entryPath.startsWith('uploads/category-icons/')) {
         const relativePath = entryPath.slice('uploads/category-icons/'.length);
-        if (!relativePath || relativePath.includes('/') || !/\.(png|jpe?g|webp)$/i.test(relativePath)) {
+        if (
+          !relativePath ||
+          relativePath.includes('/') ||
+          !/\.(png|jpe?g|webp)$/i.test(relativePath)
+        ) {
           throw new BadRequestException('Backup contains an invalid category icon path.');
         }
         const destination = join(workDir, 'uploads', 'category-icons', basename(relativePath));

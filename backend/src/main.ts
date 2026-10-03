@@ -64,8 +64,18 @@ async function bootstrap(): Promise<void> {
 
 async function seedInitialUsers(app: NestExpressApplication): Promise<void> {
   const initialPasswords = [
-    { username: 'admin', displayName: 'Admin', role: UserRole.ADMIN, password: process.env.INITIAL_ADMIN_PASSWORD },
-    { username: 'staff', displayName: 'Staff', role: UserRole.STAFF, password: process.env.INITIAL_STAFF_PASSWORD },
+    {
+      username: 'admin',
+      displayName: 'Admin',
+      role: UserRole.ADMIN,
+      password: process.env.INITIAL_ADMIN_PASSWORD,
+    },
+    {
+      username: 'staff',
+      displayName: 'Staff',
+      role: UserRole.STAFF,
+      password: process.env.INITIAL_STAFF_PASSWORD,
+    },
   ];
   if (initialPasswords.some((user) => !user.password)) return;
 
