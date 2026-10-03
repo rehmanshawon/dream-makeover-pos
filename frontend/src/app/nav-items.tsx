@@ -13,6 +13,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { path: '/', label: 'Dashboard', icon: 'dashboard', group: 'main', adminOnly: true },
   { path: '/pos', label: 'New Sale', icon: 'pos', group: 'main', adminOnly: false },
+  { path: '/security', label: 'Security', icon: 'settings', group: 'main', adminOnly: false },
 
   {
     path: '/stock',

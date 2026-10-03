@@ -22,6 +22,7 @@ import { StaffPage } from './app/pages/staff/StaffPage';
 import { EmployeeDetailPage } from './app/pages/staff/EmployeeDetailPage';
 import { ExpenditurePage } from './app/pages/expenditure/ExpenditurePage';
 import { SettingsPage } from './app/pages/settings/SettingsPage';
+import { SecurityPage } from './app/pages/settings/SecurityPage';
 import { PayPeriodDetailPage } from './app/pages/payroll/PayPeriodDetailPage';
 import { PayrollPage } from './app/pages/payroll/PayrollPage';
 import { PayrollTimeGate } from './app/components/PayrollTimeGate';
@@ -66,6 +67,7 @@ export function App(): JSX.Element {
               }
             />
             <Route path="pos" element={<NewSalePage />} />
+            <Route path="security" element={<SecurityPage />} />
             <Route path="parlour" element={<ServicesPage />} />
             <Route path="catalog/:slug" element={<CatalogPage />} />
             <Route path="cosmetics" element={<CatalogPage />} />
