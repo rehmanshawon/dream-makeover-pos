@@ -115,16 +115,17 @@
 // }
 
 import type { JSX } from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Icon } from './Icon';
 import { CatalogNav } from './CatalogNav';
-import { NAV_ITEMS, NAV_GROUP_LABELS, type NavGroup } from '../nav-items';
+import { NAV_ITEMS, NAV_GROUP_LABELS, isNavItemActive, type NavGroup } from '../nav-items';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from '../../ui/Button';
 import './Sidebar.css';
 
 export function Sidebar(): JSX.Element {
   const { user, isAdmin, logout } = useAuth();
+  const location = useLocation();
 
   const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
 
@@ -157,18 +158,19 @@ export function Sidebar(): JSX.Element {
             <ul className="sidebar__list">
               {groupedItems.main.map((item) => (
                 <li key={item.path}>
-                  <NavLink
+                  <Link
                     to={item.path}
-                    end={item.path === '/'}
-                    className={({ isActive }) =>
-                      'sidebar__link' + (isActive ? ' sidebar__link--active' : '')
+                    className={
+                      'sidebar__link' +
+                      (isNavItemActive(location.pathname, item.path) ? ' sidebar__link--active' : '')
                     }
+                    aria-current={isNavItemActive(location.pathname, item.path) ? 'page' : undefined}
                   >
                     <span className="sidebar__link-icon">
                       <Icon name={item.icon} size={36} />
                     </span>
                     <span className="sidebar__link-label">{item.label}</span>
-                  </NavLink>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -185,17 +187,19 @@ export function Sidebar(): JSX.Element {
             <ul className="sidebar__list">
               {groupedItems.operations.map((item) => (
                 <li key={item.path}>
-                  <NavLink
+                  <Link
                     to={item.path}
-                    className={({ isActive }) =>
-                      'sidebar__link' + (isActive ? ' sidebar__link--active' : '')
+                    className={
+                      'sidebar__link' +
+                      (isNavItemActive(location.pathname, item.path) ? ' sidebar__link--active' : '')
                     }
+                    aria-current={isNavItemActive(location.pathname, item.path) ? 'page' : undefined}
                   >
                     <span className="sidebar__link-icon">
                       <Icon name={item.icon} size={36} />
                     </span>
                     <span className="sidebar__link-label">{item.label}</span>
-                  </NavLink>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -210,17 +214,19 @@ export function Sidebar(): JSX.Element {
             <ul className="sidebar__list">
               {groupedItems.admin.map((item) => (
                 <li key={item.path}>
-                  <NavLink
+                  <Link
                     to={item.path}
-                    className={({ isActive }) =>
-                      'sidebar__link' + (isActive ? ' sidebar__link--active' : '')
+                    className={
+                      'sidebar__link' +
+                      (isNavItemActive(location.pathname, item.path) ? ' sidebar__link--active' : '')
                     }
+                    aria-current={isNavItemActive(location.pathname, item.path) ? 'page' : undefined}
                   >
                     <span className="sidebar__link-icon">
                       <Icon name={item.icon} size={36} />
                     </span>
                     <span className="sidebar__link-label">{item.label}</span>
-                  </NavLink>
+                  </Link>
                 </li>
               ))}
             </ul>

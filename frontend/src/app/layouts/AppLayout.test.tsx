@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
-import { Route, Routes } from 'react-router-dom';
+import userEvent from '@testing-library/user-event';
+import { Link, Route, Routes } from 'react-router-dom';
 import { AppLayout } from './AppLayout';
 import type { AuthenticatedUser } from '../auth/AuthContext';
 import { renderWithProviders } from '../../test/render-with-providers';
@@ -23,7 +24,15 @@ function renderLayout(initialPath: string): void {
   renderWithProviders(
     <Routes>
       <Route path="/" element={<AppLayout />}>
-        <Route path="pos" element={<div>POS Page Content</div>} />
+        <Route
+          path="pos"
+          element={
+            <>
+              <div>POS Page Content</div>
+              <Link to="/customers">Open customers</Link>
+            </>
+          }
+        />
         <Route path="customers" element={<div>Customers Page Content</div>} />
       </Route>
     </Routes>,
@@ -66,6 +75,30 @@ describe('AppLayout', () => {
   it('keeps the sidebar visible across routes', () => {
     renderLayout('/customers');
     expect(screen.getByRole('complementary', { name: /primary navigation/i })).toBeInTheDocument();
+  });
+
+  it('navigates back to the previous app route from the topbar', async () => {
+    const user = userEvent.setup();
+    renderLayout('/pos');
+
+    await user.click(screen.getByRole('link', { name: /open customers/i }));
+    expect(screen.getByText('Customers Page Content')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /go back/i }));
+    expect(screen.getByText('POS Page Content')).toBeInTheDocument();
+  });
+
+  it('returns to the dashboard when there is no earlier app history', async () => {
+    const user = userEvent.setup();
+    const previousHistoryState = window.history.state;
+    window.history.replaceState({ idx: 0 }, '');
+
+    renderLayout('/customers');
+
+    await user.click(screen.getByRole('button', { name: /go back/i }));
+    expect(screen.getByRole('heading', { name: /dashboard/i, level: 1 })).toBeInTheDocument();
+
+    window.history.replaceState(previousHistoryState, '');
   });
 
   it('does not render the obsolete manual pay-period reminder banner', () => {

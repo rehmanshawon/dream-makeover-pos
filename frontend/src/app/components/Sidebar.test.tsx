@@ -4,8 +4,8 @@ import { Sidebar } from './Sidebar';
 import type { AuthenticatedUser } from '../auth/AuthContext';
 import { renderWithProviders } from '../../test/render-with-providers';
 
-function renderSidebar(user: AuthenticatedUser | null): void {
-  renderWithProviders(<Sidebar />, { user, token: user ? 'test-token' : null });
+function renderSidebar(user: AuthenticatedUser | null, route = '/'): void {
+  renderWithProviders(<Sidebar />, { route, user, token: user ? 'test-token' : null });
 }
 
 const ADMIN: AuthenticatedUser = {
@@ -53,6 +53,18 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: /^change password$/i })).toHaveAttribute(
       'href',
       '/security',
+    );
+  });
+
+  it('marks the current route as selected', () => {
+    renderSidebar(ADMIN, '/products/123');
+
+    expect(screen.getByRole('link', { name: /^inventory$/i })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(screen.getByRole('link', { name: /^inventory$/i })).toHaveClass(
+      'sidebar__link--active',
     );
   });
 

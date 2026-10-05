@@ -62,6 +62,12 @@ export const NAV_ITEMS: NavItem[] = [
   { path: '/settings', label: 'Settings', icon: 'settings', group: 'admin', adminOnly: true },
 ];
 
+export function isNavItemActive(pathname: string, itemPath: string): boolean {
+  if (itemPath === '/') return pathname === '/';
+  if (pathname === itemPath || pathname.startsWith(itemPath + '/')) return true;
+  return itemPath === '/stock' && pathname.startsWith('/products/');
+}
+
 export const NAV_GROUP_LABELS: Record<NavGroup, string> = {
   main: '',
   operations: 'Operations',

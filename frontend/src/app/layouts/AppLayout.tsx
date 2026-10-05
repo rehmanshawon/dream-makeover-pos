@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
 import { Topbar } from '../components/Topbar';
-import { NAV_ITEMS } from '../nav-items';
+import { NAV_ITEMS, isNavItemActive } from '../nav-items';
 import { usePayrollTimeTrust } from '../../api/time-trust-hooks';
 import './AppLayout.css';
 
@@ -16,10 +16,7 @@ export function AppLayout(): JSX.Element {
   const location = useLocation();
   const timeTrust = usePayrollTimeTrust();
 
-  const currentItem = NAV_ITEMS.find((item) => {
-    if (item.path === '/') return location.pathname === '/';
-    return location.pathname === item.path || location.pathname.startsWith(item.path + '/');
-  });
+  const currentItem = NAV_ITEMS.find((item) => isNavItemActive(location.pathname, item.path));
 
   const pageTitle =
     currentItem?.label ?? (location.pathname === '/security' ? 'Security' : 'Dream Makeover');
