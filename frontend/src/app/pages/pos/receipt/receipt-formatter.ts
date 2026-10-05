@@ -251,7 +251,9 @@ export function formatReceipt(data: ReceiptData): ReceiptLine[] {
   // 7. Footer greeting
   // ---------------------------------------------------------------------------
   //lines.push(text('Thank You', { align: 'center', bold: true, large: false }));
-  lines.push(text('Thank you for choosing Dream Makeover.', { align: 'center' }));
+  lines.push(text(divider()));
+  lines.push(text(''));
+  lines.push(text('Thank you for choosing Dream Makeover.', { align: 'center', bold: true }));
   lines.push(text(divider()));
   //lines.push(text(''));
   //lines.push(text(''));
