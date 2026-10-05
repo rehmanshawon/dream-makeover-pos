@@ -58,10 +58,10 @@
 
   /* Typography — Segoe UI stack, Facebook-style */
   --font-sans:
-    system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, 'Noto Sans',
-    'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+    'Taka Symbol', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial,
+    'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
   --font-serif: var(--font-sans); /* Facebook uses no serif */
-  --font-mono: 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
+  --font-mono: 'Taka Symbol', 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
 
   /* Slightly larger than typical web apps: Facebook base is 15px */
   --font-size-xs: 12px;
