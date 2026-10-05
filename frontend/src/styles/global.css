@@ -15,7 +15,7 @@ body,
 }
 
 body {
-  font-family: var(--font-sans);
+  font-family: 'Taka Symbol', var(--font-sans);
   font-size: var(--font-size-base);
   line-height: var(--line-height-base);
   color: var(--color-text);
