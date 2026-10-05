@@ -102,12 +102,13 @@ export function ProductDetailPage(): JSX.Element {
     {
       key: 'reason',
       header: 'Reason',
+      align: 'center',
       render: (m) => REASON_LABEL[m.reason],
     },
     {
       key: 'delta',
       header: 'Change',
-      align: 'right',
+  align: 'center',
       render: (m) => (
         <span className={m.delta > 0 ? 'delta--positive' : 'delta--negative'}>
           {m.delta > 0 ? '+' : ''}
@@ -118,11 +119,13 @@ export function ProductDetailPage(): JSX.Element {
     {
       key: 'note',
       header: 'Note',
+      align: 'center',
       render: (m) => m.note ?? '—',
     },
     {
       key: 'createdBy',
       header: 'By',
+      align: 'right',
       render: (m) => m.createdBy,
     },
   ];

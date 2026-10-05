@@ -9,6 +9,8 @@ const DATABASE_PORT = 3307;
 const API_PORT = 3001;
 const DATABASE_NAME = 'dream_makeover';
 const DATABASE_USER = 'dream_app';
+const DEFAULT_ADMIN_PASSWORD = 'admin12345';
+const DEFAULT_STAFF_PASSWORD = 'staff12345';
 
 interface DatabaseSettings {
   rootPassword: string;
@@ -88,7 +90,13 @@ function escapeSqlString(value: string): string {
 
 async function readOrCreateSettings(settingsPath: string): Promise<DatabaseSettings> {
   try {
-    return JSON.parse(await readFile(settingsPath, 'utf8')) as DatabaseSettings;
+    const settings = JSON.parse(await readFile(settingsPath, 'utf8')) as DatabaseSettings;
+    if (settings.initialCredentialsPending === true) {
+      settings.initialAdminPassword = DEFAULT_ADMIN_PASSWORD;
+      settings.initialStaffPassword = DEFAULT_STAFF_PASSWORD;
+      await writeSettings(settingsPath, settings);
+    }
+    return settings;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
   }
@@ -98,8 +106,8 @@ async function readOrCreateSettings(settingsPath: string): Promise<DatabaseSetti
     appPassword: randomBytes(32).toString('hex'),
     jwtSecret: randomBytes(48).toString('hex'),
     initialized: false,
-    initialAdminPassword: randomBytes(9).toString('hex'),
-    initialStaffPassword: randomBytes(9).toString('hex'),
+    initialAdminPassword: DEFAULT_ADMIN_PASSWORD,
+    initialStaffPassword: DEFAULT_STAFF_PASSWORD,
     initialCredentialsPending: true,
   };
   await writeSettings(settingsPath, settings);

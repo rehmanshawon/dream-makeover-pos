@@ -63,7 +63,7 @@ Run `npm run desktop:package:win` on Windows x64 to build a self-contained NSIS 
 
 The desktop app keeps its database, generated database credentials, logs, and uploaded employee photos/category icons in its per-user Electron data directory. The bundled database listens only on `127.0.0.1:3307`, and the API listens on `127.0.0.1:3001`. Database backups include category icons. MySQL is a separate GPL-licensed component; its license is included with the installed resources. Review the applicable GPL source-code distribution requirements before redistributing the installer.
 
-The fresh database is initialized with the default categories, system accounting accounts, and loyalty settings. Initial login accounts are `admin` (ADMIN) and `staff` (STAFF); change both passwords after first login. The current development database is not included in the installer.
+The fresh database is initialized with the default categories, system accounting accounts, and loyalty settings. Initial login accounts are `admin` (ADMIN) with password `admin12345` and `staff` (STAFF) with password `staff12345`; change both passwords after first login. The current development database is not included in the installer.
 
 ## Scripts
 ```bash

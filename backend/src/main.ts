@@ -10,6 +10,9 @@ import { getUploadsDirectory } from './common/storage-paths';
 import { User } from './users/user.entity';
 import { UserRole } from './users/user-role.enum';
 
+const DEFAULT_ADMIN_PASSWORD = 'admin12345';
+const DEFAULT_STAFF_PASSWORD = 'staff12345';
+
 /**
  * Parses the CORS_ALLOWED_ORIGINS env variable into an array.
  *
@@ -68,17 +71,15 @@ async function seedInitialUsers(app: NestExpressApplication): Promise<void> {
       username: 'admin',
       displayName: 'Admin',
       role: UserRole.ADMIN,
-      password: process.env.INITIAL_ADMIN_PASSWORD,
+      password: process.env.INITIAL_ADMIN_PASSWORD ?? DEFAULT_ADMIN_PASSWORD,
     },
     {
       username: 'staff',
       displayName: 'Staff',
       role: UserRole.STAFF,
-      password: process.env.INITIAL_STAFF_PASSWORD,
+      password: process.env.INITIAL_STAFF_PASSWORD ?? DEFAULT_STAFF_PASSWORD,
     },
   ];
-  if (initialPasswords.some((user) => !user.password)) return;
-
   const users = app.get<Repository<User>>(getRepositoryToken(User));
   for (const initialUser of initialPasswords) {
     if (await users.findOneBy({ username: initialUser.username })) continue;
@@ -87,7 +88,7 @@ async function seedInitialUsers(app: NestExpressApplication): Promise<void> {
       displayName: initialUser.displayName,
       role: initialUser.role,
     });
-    await user.setPassword(initialUser.password!);
+    await user.setPassword(initialUser.password);
     await users.save(user);
   }
 }
