@@ -49,6 +49,13 @@ const REASON_LABEL: Record<StockMovement['reason'], string> = {
   SUPPLIER_RETURN: 'Supplier return',
 };
 
+function formatStockNote(note: string | null): string {
+  if (!note) return '—';
+  const purchaseUnitCost = /^Purchase unit cost (\d+)$/.exec(note);
+  if (!purchaseUnitCost) return note;
+  return `Purchase unit cost ${formatBdt(Number(purchaseUnitCost[1]))}`;
+}
+
 export function ProductDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const { isAdmin } = useAuth();
@@ -108,7 +115,7 @@ export function ProductDetailPage(): JSX.Element {
     {
       key: 'delta',
       header: 'Change',
-  align: 'center',
+      align: 'center',
       render: (m) => (
         <span className={m.delta > 0 ? 'delta--positive' : 'delta--negative'}>
           {m.delta > 0 ? '+' : ''}
@@ -120,7 +127,7 @@ export function ProductDetailPage(): JSX.Element {
       key: 'note',
       header: 'Note',
       align: 'center',
-      render: (m) => m.note ?? '—',
+      render: (m) => formatStockNote(m.note),
     },
     {
       key: 'createdBy',
@@ -144,7 +151,6 @@ export function ProductDetailPage(): JSX.Element {
           subtitle={data.category}
           actions={
             <div className="product-detail__actions">
-              <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>
               {isAdmin && (
                 <>
                   <Button
@@ -174,6 +180,9 @@ export function ProductDetailPage(): JSX.Element {
             </div>
           }
         >
+          <div className="product-detail__status">
+            <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>
+          </div>
           <dl className="product-detail__facts">
             <div className="product-detail__fact">
               <dt>Current stock</dt>

@@ -38,8 +38,12 @@
 
 @media (min-width: 960px) {
   .product-detail__grid {
-    grid-template-columns: 360px 1fr;
+    grid-template-columns: minmax(420px, 0.95fr) minmax(0, 1.05fr);
   }
+}
+
+.product-detail__status {
+  margin-bottom: var(--space-4);
 }
 
 .product-detail__facts {

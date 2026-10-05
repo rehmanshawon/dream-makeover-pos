@@ -75,6 +75,16 @@ describe('ProductDetailPage', () => {
               createdBy: 'admin',
               createdAt: '2026-01-01T00:00:00.000Z',
             },
+            {
+              id: 'm2',
+              productId: 'p1',
+              delta: 5,
+              reason: 'PURCHASE',
+              referenceId: 'purchase-1',
+              note: 'Purchase unit cost 80000',
+              createdBy: 'admin',
+              createdAt: '2026-01-02T00:00:00.000Z',
+            },
           ]),
           { status: 200, headers: { 'content-type': 'application/json' } },
         );
@@ -112,6 +122,19 @@ describe('ProductDetailPage', () => {
     expect(await screen.findAllByText('Lipstick')).not.toHaveLength(0);
     expect(screen.getByText(/1,200\.00/)).toBeInTheDocument();
     expect(await screen.findByText('Opening stock')).toBeInTheDocument();
+    expect(screen.getByText('Purchase unit cost ৳800.00')).toBeInTheDocument();
+  });
+
+  it('shows the stock status below the product name', async () => {
+    mockProductAndHistory();
+    renderPage(ADMIN);
+
+    const productName = await screen.findByRole('heading', { name: 'Lipstick' });
+    const stockStatus = screen.getByText('In stock');
+
+    expect(
+      productName.compareDocumentPosition(stockStatus) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('hides purchase cost from staff', async () => {
