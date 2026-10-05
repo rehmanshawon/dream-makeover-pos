@@ -9,6 +9,17 @@
   flex-shrink: 0;
 }
 
+.topbar__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.topbar__back {
+  flex-shrink: 0;
+}
+
 .topbar__title {
   font-family: var(--font-serif);
   font-size: var(--font-size-xl);
