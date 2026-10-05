@@ -34,6 +34,7 @@ function renderLayout(initialPath: string): void {
           }
         />
         <Route path="customers" element={<div>Customers Page Content</div>} />
+        <Route path="*" element={<div />} />
       </Route>
     </Routes>,
     { route: initialPath, user: ADMIN },
@@ -57,14 +58,31 @@ describe('AppLayout', () => {
     } as ReturnType<typeof usePayrollTimeTrust>);
   });
 
-  it('renders the POS page title in the topbar when at /pos', () => {
+  it('preserves the New Sale heading on the POS page', () => {
     renderLayout('/pos');
     expect(screen.getByRole('heading', { name: /new sale/i, level: 1 })).toBeInTheDocument();
   });
 
-  it('renders the customers page title in the topbar when at /customers', () => {
+  it('uses the Catalog heading for catalog routes', () => {
+    renderLayout('/catalog/cosmetics');
+    expect(screen.getByRole('heading', { name: /catalog/i, level: 1 })).toBeInTheDocument();
+  });
+
+  it('uses Operations as the heading for operations pages', () => {
     renderLayout('/customers');
-    expect(screen.getByRole('heading', { name: /customers/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /operations/i, level: 1 })).toBeInTheDocument();
+  });
+
+  it('uses Administration with a Settings subheading on the settings page', () => {
+    renderLayout('/settings');
+    expect(screen.getByRole('heading', { name: /administration/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /settings/i, level: 2 })).toBeInTheDocument();
+  });
+
+  it('uses Administration as the heading for other administration pages', () => {
+    renderLayout('/staff/employee-1');
+    expect(screen.getByRole('heading', { name: /administration/i, level: 1 })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
   });
 
   it('renders the child route content inside the layout', () => {

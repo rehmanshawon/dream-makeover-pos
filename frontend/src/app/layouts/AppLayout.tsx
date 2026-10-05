@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
 import { Topbar } from '../components/Topbar';
-import { NAV_ITEMS, isNavItemActive } from '../nav-items';
+import { NAV_GROUP_LABELS, NAV_ITEMS, isNavItemActive } from '../nav-items';
 import { usePayrollTimeTrust } from '../../api/time-trust-hooks';
 import './AppLayout.css';
 
@@ -17,15 +17,25 @@ export function AppLayout(): JSX.Element {
   const timeTrust = usePayrollTimeTrust();
 
   const currentItem = NAV_ITEMS.find((item) => isNavItemActive(location.pathname, item.path));
+  const isCatalogRoute =
+    location.pathname.startsWith('/catalog/') ||
+    ['/cosmetics', '/shari', '/three-piece'].includes(location.pathname);
 
   const pageTitle =
-    currentItem?.label ?? (location.pathname === '/security' ? 'Security' : 'Dream Makeover');
+    isCatalogRoute
+      ? 'Catalog'
+      : currentItem?.group === 'operations'
+        ? NAV_GROUP_LABELS.operations
+        : currentItem?.group === 'admin'
+          ? NAV_GROUP_LABELS.admin
+          : currentItem?.label ?? (location.pathname === '/security' ? 'Security' : 'Dream Makeover');
+  const pageSubtitle = currentItem?.path === '/settings' ? 'Settings' : undefined;
 
   return (
     <div className="app-layout">
       <Sidebar />
       <div className="app-layout__main">
-        <Topbar title={pageTitle} />
+        <Topbar title={pageTitle} {...(pageSubtitle ? { subtitle: pageSubtitle } : {})} />
 
         {(timeTrust.data?.warning || timeTrust.isError) && (
           <div

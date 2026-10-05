@@ -6,6 +6,7 @@ import './Topbar.css';
 
 interface TopbarProps {
   title: string;
+  subtitle?: string;
   actions?: ReactNode;
 }
 
@@ -15,7 +16,7 @@ interface TopbarProps {
  * Displays the current page title on the left and optional actions on
  * the right. Page-specific actions are supplied by the route.
  */
-export function Topbar({ title, actions }: TopbarProps): JSX.Element {
+export function Topbar({ title, subtitle, actions }: TopbarProps): JSX.Element {
   const location = useLocation();
   const navigate = useNavigate();
   const historyIndex = (window.history.state as { idx?: number } | null)?.idx;
@@ -44,7 +45,10 @@ export function Topbar({ title, actions }: TopbarProps): JSX.Element {
         >
           <Icon name="arrow-left" size={20} />
         </Button>
-        <h1 className="topbar__title">{title}</h1>
+        <div className="topbar__title-group">
+          <h1 className="topbar__title">{title}</h1>
+          {subtitle && <h2 className="topbar__subtitle">{subtitle}</h2>}
+        </div>
       </div>
       <div className="topbar__actions">{actions}</div>
     </header>

@@ -20,11 +20,28 @@
   flex-shrink: 0;
 }
 
+.topbar__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .topbar__title {
   font-family: var(--font-serif);
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text);
+  margin: 0;
+}
+
+.topbar__subtitle {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+  color: var(--color-text-muted);
+  text-transform: none;
   margin: 0;
 }
 
